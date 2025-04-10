@@ -10,3 +10,7 @@
 #   universal: false
 
 -e file:.
+libcst==1.7.0
+    # via aiai
+pyyaml==6.0.2
+    # via libcst

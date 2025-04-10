@@ -5,7 +5,9 @@ description = "Add your description here"
 authors = [
     { name = "Amir Mehr", email = "amir.saiedmehr@gmail.com" }
 ]
-dependencies = []
+dependencies = [
+    "libcst>=1.7.0",
+]
 readme = "README.md"
 requires-python = ">= 3.8"
 
