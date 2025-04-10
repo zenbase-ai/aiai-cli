@@ -4,6 +4,7 @@ import typer
 import os
 import django
 from django.core.management import call_command
+import openlit
 
 def setup_django():
     # Point to your minimal_django settings
