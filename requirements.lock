@@ -15,9 +15,12 @@ aiohappyeyeballs==2.6.1
 aiohttp==3.11.16
     # via auth0-python
     # via instructor
+    # via langchain-community
     # via litellm
 aiosignal==1.3.2
     # via aiohttp
+alembic==1.15.2
+    # via embedchain
 annotated-types==0.7.0
     # via pydantic
 anthropic==0.42.0
@@ -46,6 +49,8 @@ backoff==2.2.1
     # via posthog
 bcrypt==4.3.0
     # via chromadb
+beautifulsoup4==4.13.3
+    # via embedchain
 blinker==1.9.0
     # via crewai
 boto3==1.37.32
@@ -58,6 +63,7 @@ build==1.2.2.post1
     # via chromadb
 cachetools==5.5.2
     # via google-auth
+    # via gptcache
 certifi==2025.1.31
     # via httpcore
     # via httpx
@@ -72,18 +78,28 @@ chroma-hnswlib==0.7.6
     # via chromadb
 chromadb==0.5.23
     # via crewai
+    # via crewai-tools
+    # via embedchain
 click==8.1.8
     # via crewai
+    # via crewai-tools
     # via litellm
     # via typer
     # via uvicorn
+cohere==5.14.2
+    # via langchain-cohere
 coloredlogs==15.0.1
     # via onnxruntime
 crewai==0.114.0
     # via aiai
+    # via crewai-tools
+crewai-tools==0.40.1
+    # via aiai
 cryptography==44.0.2
     # via auth0-python
     # via pdfminer-six
+dataclasses-json==0.6.7
+    # via langchain-community
 decorator==5.2.1
     # via ipython
 deprecated==1.2.18
@@ -91,6 +107,8 @@ deprecated==1.2.18
     # via opentelemetry-exporter-otlp-proto-grpc
     # via opentelemetry-exporter-otlp-proto-http
     # via opentelemetry-semantic-conventions
+deprecation==2.1.0
+    # via lancedb
 distro==1.9.0
     # via anthropic
     # via openai
@@ -103,16 +121,22 @@ django-stubs==5.1.3
     # via aiai
 django-stubs-ext==5.1.3
     # via django-stubs
+docker==7.1.0
+    # via crewai-tools
 docstring-parser==0.16
     # via instructor
 durationpy==0.9
     # via kubernetes
+embedchain==0.1.128
+    # via crewai-tools
 et-xmlfile==2.0.0
     # via openpyxl
 executing==2.2.0
     # via stack-data
 fastapi==0.115.12
     # via chromadb
+fastavro==1.10.0
+    # via cohere
 filelock==3.18.0
     # via huggingface-hub
 flatbuffers==25.2.10
@@ -127,12 +151,22 @@ google-auth==2.38.0
 googleapis-common-protos==1.69.2
     # via opentelemetry-exporter-otlp-proto-grpc
     # via opentelemetry-exporter-otlp-proto-http
+gptcache==0.1.44
+    # via embedchain
 grpcio==1.71.0
     # via chromadb
+    # via grpcio-tools
     # via opentelemetry-exporter-otlp-proto-grpc
+    # via qdrant-client
+grpcio-tools==1.71.0
+    # via qdrant-client
 h11==0.14.0
     # via httpcore
     # via uvicorn
+h2==4.2.0
+    # via httpx
+hpack==4.1.0
+    # via h2
 httpcore==1.0.7
     # via httpx
 httptools==0.6.4
@@ -140,12 +174,20 @@ httptools==0.6.4
 httpx==0.27.2
     # via anthropic
     # via chromadb
+    # via cohere
+    # via langsmith
     # via litellm
     # via openai
+    # via qdrant-client
+httpx-sse==0.4.0
+    # via cohere
+    # via langchain-community
 huggingface-hub==0.30.2
     # via tokenizers
 humanfriendly==10.0
     # via coloredlogs
+hyperframe==6.1.0
+    # via h2
 idna==3.10
     # via anyio
     # via httpx
@@ -179,8 +221,12 @@ json-repair==0.41.0
     # via crewai
 json5==0.12.0
     # via crewai
+jsonpatch==1.33
+    # via langchain-core
 jsonpickle==4.0.5
     # via pyvis
+jsonpointer==3.0.0
+    # via jsonpatch
 jsonref==1.1.0
     # via crewai
 jsonschema==4.23.0
@@ -189,18 +235,53 @@ jsonschema-specifications==2024.10.1
     # via jsonschema
 kubernetes==32.0.1
     # via chromadb
+lancedb==0.21.2
+    # via crewai-tools
+langchain==0.3.23
+    # via embedchain
+    # via langchain-community
+langchain-cohere==0.3.5
+    # via embedchain
+langchain-community==0.3.21
+    # via embedchain
+    # via langchain-experimental
+langchain-core==0.3.51
+    # via langchain
+    # via langchain-cohere
+    # via langchain-community
+    # via langchain-experimental
+    # via langchain-openai
+    # via langchain-text-splitters
+langchain-experimental==0.3.4
+    # via langchain-cohere
+langchain-openai==0.2.14
+    # via embedchain
+langchain-text-splitters==0.3.8
+    # via langchain
+langsmith==0.3.29
+    # via embedchain
+    # via langchain
+    # via langchain-community
+    # via langchain-core
 libcst==1.7.0
     # via aiai
 litellm==1.60.2
     # via crewai
+mako==1.3.10
+    # via alembic
 markdown-it-py==3.0.0
     # via rich
 markupsafe==3.0.2
     # via jinja2
+    # via mako
+marshmallow==3.26.1
+    # via dataclasses-json
 matplotlib-inline==0.1.7
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
+mem0ai==0.1.88
+    # via embedchain
 mmh3==5.1.0
     # via chromadb
 monotonic==1.6
@@ -210,12 +291,20 @@ mpmath==1.3.0
 multidict==6.4.2
     # via aiohttp
     # via yarl
+mypy-extensions==1.0.0
+    # via typing-inspect
 networkx==3.4.2
     # via pyvis
+nodeenv==1.9.1
+    # via pyright
 numpy==2.2.4
     # via chroma-hnswlib
     # via chromadb
+    # via gptcache
+    # via langchain-community
     # via onnxruntime
+    # via pandas
+    # via qdrant-client
 oauthlib==3.2.2
     # via kubernetes
     # via requests-oauthlib
@@ -223,10 +312,14 @@ onnxruntime==1.21.0
     # via chromadb
 openai==1.72.0
     # via crewai
+    # via crewai-tools
+    # via embedchain
     # via instructor
+    # via langchain-openai
     # via litellm
+    # via mem0ai
     # via openlit
-openlit @ git+https://github.com/ammirsm/openlit.git@5066fa9e8b81cebb30df0a3f72439487f2a8300f#egg=openlit&subdirectory=sdk/python
+openlit @ git+https://github.com/ammirsm/openlit.git@03dc641d108b848acf2a269efaa394f11fac57a5#egg=openlit&subdirectory=sdk/python
     # via aiai
 openpyxl==3.1.5
     # via crewai
@@ -280,14 +373,23 @@ opentelemetry-util-http==0.53b0
     # via opentelemetry-instrumentation-fastapi
 orjson==3.10.16
     # via chromadb
+    # via langsmith
 overrides==7.7.0
     # via chromadb
+    # via lancedb
 packaging==24.2
     # via build
+    # via deprecation
     # via huggingface-hub
+    # via lancedb
+    # via langchain-core
+    # via langsmith
+    # via marshmallow
     # via onnxruntime
     # via opentelemetry-instrumentation
     # via pytest
+pandas==2.2.3
+    # via langchain-cohere
 parso==0.8.4
     # via jedi
 pdfminer-six==20250327
@@ -300,8 +402,12 @@ pillow==11.1.0
     # via pdfplumber
 pluggy==1.5.0
     # via pytest
+portalocker==2.10.1
+    # via qdrant-client
 posthog==3.24.0
     # via chromadb
+    # via embedchain
+    # via mem0ai
 prompt-toolkit==3.0.50
     # via ipython
 propcache==0.3.1
@@ -309,12 +415,17 @@ propcache==0.3.1
     # via yarl
 protobuf==5.29.4
     # via googleapis-common-protos
+    # via grpcio-tools
     # via onnxruntime
     # via opentelemetry-proto
+psycopg2-binary==2.9.10
+    # via mem0ai
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
+pyarrow==19.0.1
+    # via lancedb
 pyasn1==0.6.1
     # via pyasn1-modules
     # via rsa
@@ -325,26 +436,45 @@ pycparser==2.22
 pydantic==2.11.3
     # via anthropic
     # via chromadb
+    # via cohere
     # via crewai
+    # via crewai-tools
     # via fastapi
     # via instructor
+    # via lancedb
+    # via langchain
+    # via langchain-cohere
+    # via langchain-core
+    # via langsmith
     # via litellm
+    # via mem0ai
     # via openai
     # via openlit
+    # via pydantic-settings
+    # via qdrant-client
 pydantic-core==2.33.1
+    # via cohere
     # via instructor
     # via pydantic
+pydantic-settings==2.8.1
+    # via langchain-community
 pygments==2.19.1
     # via ipython
     # via rich
 pyjwt==2.10.1
     # via auth0-python
+pypdf==5.4.0
+    # via embedchain
 pypdfium2==4.30.1
     # via pdfplumber
 pypika==0.48.9
     # via chromadb
 pyproject-hooks==1.2.0
     # via build
+pyright==1.1.399
+    # via crewai-tools
+pysbd==0.3.4
+    # via embedchain
 pytest==8.3.5
     # via pytest-django
 pytest-django==4.11.1
@@ -352,19 +482,32 @@ pytest-django==4.11.1
 python-dateutil==2.9.0.post0
     # via botocore
     # via kubernetes
+    # via pandas
     # via posthog
 python-dotenv==1.1.0
     # via crewai
+    # via embedchain
     # via litellm
+    # via pydantic-settings
     # via uvicorn
+pytube==15.0.0
+    # via crewai-tools
+pytz==2024.2
+    # via mem0ai
+    # via pandas
 pyvis==0.3.2
     # via crewai
 pyyaml==6.0.2
     # via chromadb
     # via huggingface-hub
     # via kubernetes
+    # via langchain
+    # via langchain-community
+    # via langchain-core
     # via libcst
     # via uvicorn
+qdrant-client==1.13.3
+    # via mem0ai
 referencing==0.36.2
     # via jsonschema
     # via jsonschema-specifications
@@ -373,18 +516,29 @@ regex==2024.11.6
     # via tiktoken
 requests==2.32.3
     # via auth0-python
+    # via cohere
+    # via crewai-tools
+    # via docker
+    # via gptcache
     # via huggingface-hub
     # via instructor
     # via kubernetes
+    # via langchain
+    # via langchain-community
+    # via langsmith
     # via openlit
     # via opentelemetry-exporter-otlp-proto-http
     # via posthog
     # via requests-oauthlib
+    # via requests-toolbelt
     # via tiktoken
 requests-oauthlib==2.0.0
     # via kubernetes
+requests-toolbelt==1.0.0
+    # via langsmith
 rich==13.9.4
     # via chromadb
+    # via embedchain
     # via instructor
     # via typer
 rpds-py==0.24.0
@@ -396,6 +550,10 @@ s3transfer==0.11.4
     # via boto3
 schedule==1.2.2
     # via openlit
+schema==0.7.7
+    # via embedchain
+setuptools==78.1.0
+    # via grpcio-tools
 shellingham==1.5.4
     # via typer
 six==1.17.0
@@ -407,6 +565,14 @@ sniffio==1.3.1
     # via anyio
     # via httpx
     # via openai
+soupsieve==2.6
+    # via beautifulsoup4
+sqlalchemy==2.0.40
+    # via alembic
+    # via embedchain
+    # via langchain
+    # via langchain-community
+    # via mem0ai
 sqlparse==0.5.3
     # via django
 stack-data==0.6.3
@@ -415,13 +581,19 @@ starlette==0.46.1
     # via fastapi
 sympy==1.13.3
     # via onnxruntime
+tabulate==0.9.0
+    # via langchain-cohere
 tenacity==9.1.2
     # via chromadb
     # via instructor
+    # via langchain-community
+    # via langchain-core
 tiktoken==0.9.0
+    # via langchain-openai
     # via litellm
 tokenizers==0.20.3
     # via chromadb
+    # via cohere
     # via litellm
 tomli==2.2.1
     # via crewai
@@ -430,6 +602,7 @@ tomli-w==1.2.0
 tqdm==4.67.1
     # via chromadb
     # via huggingface-hub
+    # via lancedb
     # via openai
 traitlets==5.14.3
     # via ipython
@@ -440,29 +613,45 @@ typer==0.15.2
     # via instructor
 types-pyyaml==6.0.12.20250402
     # via django-stubs
+types-requests==2.32.0.20250328
+    # via cohere
 typing-extensions==4.13.2
+    # via alembic
     # via anthropic
     # via anyio
+    # via beautifulsoup4
     # via chromadb
+    # via cohere
     # via django-stubs
     # via django-stubs-ext
     # via fastapi
     # via huggingface-hub
     # via ipython
+    # via langchain-core
     # via openai
     # via opentelemetry-sdk
     # via pydantic
     # via pydantic-core
+    # via pyright
     # via referencing
+    # via sqlalchemy
     # via typer
+    # via typing-inspect
     # via typing-inspection
+typing-inspect==0.9.0
+    # via dataclasses-json
 typing-inspection==0.4.0
     # via pydantic
+tzdata==2025.2
+    # via pandas
 urllib3==2.4.0
     # via auth0-python
     # via botocore
+    # via docker
     # via kubernetes
+    # via qdrant-client
     # via requests
+    # via types-requests
 uv==0.6.14
     # via crewai
 uvicorn==0.34.0
@@ -486,3 +675,5 @@ yarl==1.19.0
     # via aiohttp
 zipp==3.21.0
     # via importlib-metadata
+zstandard==0.23.0
+    # via langsmith
