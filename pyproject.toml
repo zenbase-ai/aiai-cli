@@ -7,6 +7,11 @@ authors = [
 ]
 dependencies = [
     "libcst>=1.7.0",
+    "django>=5.2",
+    "django-stubs>=5.1.3",
+    "typer>=0.15.2",
+    "openlit>=1.33.19",
+    "pytest-django>=4.11.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
