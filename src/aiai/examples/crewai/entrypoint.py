@@ -45,18 +45,9 @@ def main():
     os.chdir(script_dir)
     
     # Run the crew
-    try:
-        print("Starting LeadEmailCrew execution...")
-        crew_instance = LeadEmailCrew()
-        result = crew_instance.crew().kickoff()
-        
-        print("\n\n########################")
-        print("## Crew Execution Result:")
-        print("########################\n")
-        print(result)
-    except Exception as e:
-        print(f"Error running crew: {e}")
-        sys.exit(1)
+    crew_instance = LeadEmailCrew()
+    result = crew_instance.crew().kickoff()
+    return result
 
 
 if __name__ == "__main__":

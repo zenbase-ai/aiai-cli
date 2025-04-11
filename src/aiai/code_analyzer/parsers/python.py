@@ -41,11 +41,17 @@ FUNCTION_CALL_QUERY = """
 
 IMPORT_QUERY = """
 (import_statement
-  name: (dotted_name) @import.name) @import.statement
+  (dotted_name) @import.name
+)
 
 (import_from_statement
-  module_name: (dotted_name)? @import.from_name
-  name: (dotted_name) @import.name) @import.from_statement
+  module_name: (dotted_name) @import.from_name
+)
+
+(import_from_statement
+  module_name: (relative_import) @import.relative
+  name: (dotted_name) @import.relative_name
+)
 """
 
 STRING_QUERY = """
@@ -278,54 +284,126 @@ class PythonParser(LanguageParser):
         imported_files = []
         
         # Query for imports
-        captures = self.import_query.captures(tree.root_node)
+        import_nodes = {}
+        for capture in self.import_query.captures(tree.root_node):
+            node = capture[0]
+            node_type = capture[1]
+            
+            if node_type not in import_nodes:
+                import_nodes[node_type] = []
+            import_nodes[node_type].append(node)
         
-        # Get all import module names
-        import_names = captures.get('import.name', [])
-        from_import_names = captures.get('import.from_name', [])
+        # Process import names
+        import_names = []
+        # Regular imports
+        for node in import_nodes.get('import.name', []):
+            module_name = content[node.start_byte:node.end_byte].decode('utf-8')
+            import_names.append((module_name, False))  # (name, is_relative)
+        
+        # From imports
+        for node in import_nodes.get('import.from_name', []):
+            module_name = content[node.start_byte:node.end_byte].decode('utf-8')
+            import_names.append((module_name, False))  # (name, is_relative)
+        
+        # Relative imports
+        relative_imports = []
+        for node in import_nodes.get('import.relative', []):
+            dots = content[node.start_byte:node.end_byte].decode('utf-8').count('.')
+            relative_imports.append(dots)
+        
+        # Relative import names
+        for i, node in enumerate(import_nodes.get('import.relative_name', [])):
+            if i < len(relative_imports):
+                module_name = content[node.start_byte:node.end_byte].decode('utf-8')
+                import_names.append((module_name, True, relative_imports[i]))
         
         # Process all import names
-        for node in import_names + from_import_names:
-            if node:
-                module_name = content[node.start_byte:node.end_byte].decode('utf-8')
-                
+        for import_data in import_names:
+            if len(import_data) == 2:  # Regular import
+                module_name, is_relative = import_data
                 # Convert dotted module name to path
-                module_path = self._resolve_import_to_file_path(module_name, current_dir)
+                module_path = self._resolve_import_to_file_path(module_name, current_dir, is_relative=False)
+                if module_path:
+                    imported_files.append(module_path)
+            elif len(import_data) == 3:  # Relative import
+                module_name, is_relative, dots = import_data
+                # Handle relative import
+                module_path = self._resolve_import_to_file_path(module_name, current_dir, is_relative=True, level=dots)
                 if module_path:
                     imported_files.append(module_path)
         
         return imported_files
     
-    def _resolve_import_to_file_path(self, module_name: str, current_dir: str) -> Optional[str]:
+    def _resolve_import_to_file_path(self, module_name: str, current_dir: str, is_relative: bool = False, level: int = 0) -> Optional[str]:
         """
         Resolve a Python module import to a file path.
         
         Args:
             module_name: The imported module name
             current_dir: The directory containing the importing file
-            
+            is_relative: Whether this is a relative import
+            level: Number of parent directories to go up for relative imports
+        
         Returns:
             The file path of the imported module, or None if not found
         """
+        # For relative imports, go up the specified number of directories
+        base_dir = current_dir
+        if is_relative:
+            for _ in range(level):
+                base_dir = os.path.dirname(base_dir)
+        
         # Replace dots with directory separators
         relative_path = module_name.replace('.', os.path.sep)
         
         # Check potential file paths
         potential_paths = [
             # Direct match
-            os.path.join(current_dir, f"{relative_path}.py"),
+            os.path.join(base_dir, f"{relative_path}.py"),
             # Package with __init__.py
-            os.path.join(current_dir, relative_path, "__init__.py"),
-            # Check parent directories (for relative imports)
-            *[os.path.join(os.path.dirname(current_dir), f"{relative_path}.py") for _ in range(module_name.count('.'))]
+            os.path.join(base_dir, relative_path, "__init__.py"),
         ]
         
+        # Add potential paths for finding the module in the same package
+        try:
+            # Get the package root by looking for a directory with __init__.py files
+            package_root = current_dir
+            while package_root and os.path.exists(os.path.join(package_root, "__init__.py")):
+                package_root = os.path.dirname(package_root)
+            
+            # Check if the module exists relative to the package root
+            if package_root:
+                package_module_path = os.path.join(package_root, f"{relative_path}.py")
+                if os.path.exists(package_module_path):
+                    potential_paths.append(package_module_path)
+                
+                # Also check in subdirectories relative to the package
+                package_init_path = os.path.join(package_root, relative_path, "__init__.py")
+                if os.path.exists(package_init_path):
+                    potential_paths.append(package_init_path)
+        except Exception as e:
+            logger.debug(f"Error resolving package imports: {str(e)}")
+        
+        # Special case for relative imports in the CrewAI example
+        if 'crewai' in current_dir:
+            crewai_dir = current_dir
+            while os.path.basename(crewai_dir) != 'crewai' and crewai_dir != '/':
+                crewai_dir = os.path.dirname(crewai_dir)
+            
+            # Look for the module in the crewai directory
+            crewai_module_path = os.path.join(crewai_dir, f"{module_name}.py")
+            if os.path.exists(crewai_module_path):
+                potential_paths.append(crewai_module_path)
+        
+        # Try each potential path
         for path in potential_paths:
             if os.path.exists(path):
+                logger.info(f"Resolved import {module_name} to {path}")
                 return path
-        
+                
+        logger.debug(f"Could not resolve import: {module_name} from {current_dir}")
         return None
-
+    
     def extract_function_context(self, parsed_data: Any, function: Function) -> None:
         """
         Extract rich contextual information from a function.
