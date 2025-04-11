@@ -14,6 +14,10 @@ dependencies = [
     "pytest-django>=4.11.1",
     "openlit @ git+https://github.com/ammirsm/openlit.git#egg=openlit&subdirectory=sdk/python",
     "crewai-tools>=0.40.1",
+    "tree-sitter>=0.24.0",
+    "tree-sitter-python>=0.23.6",
+    "networkx>=3.4.2",
+    "pydot>=3.0.4",
     "python-dotenv>=1.1.0",
 ]
 readme = "README.md"

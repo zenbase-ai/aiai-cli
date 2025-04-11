@@ -11,3 +11,8 @@ wheels/
 
 # sqlite
 db.sqlite3
+
+output/
+
+# any json file that have output in its name
+*.json
