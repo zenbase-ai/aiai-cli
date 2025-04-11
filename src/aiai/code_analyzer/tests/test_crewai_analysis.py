@@ -25,7 +25,7 @@ def crewai_entrypoint_path():
 def test_comprehensive_code_analysis(crewai_entrypoint_path):
     """
     Test a comprehensive code analysis that captures all important aspects of the codebase:
-    - Related files
+    - Related files through imports
     - Function dependencies
     - Function descriptions
     - Execution flow
@@ -40,23 +40,9 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
     os.makedirs(output_dir, exist_ok=True)
     
-    # Reset analyzer state
-    analyzer.visited_files = set()
-    analyzer.dependency_graph = DependencyGraph()
-    
-    # First analyze the entrypoint
-    analyzer._analyze_file(entrypoint_path)
-    
-    # Also analyze related files in the same directory
-    entrypoint_dir = os.path.dirname(entrypoint_path)
-    for filename in os.listdir(entrypoint_dir):
-        if filename.endswith(".py") and filename != os.path.basename(entrypoint_path):
-            related_file = os.path.join(entrypoint_dir, filename)
-            print(f"Analyzing related file: {related_file}")
-            analyzer._analyze_file(related_file)
-    
-    # Get the complete dependency graph
-    graph = analyzer.dependency_graph
+    # Analyze the code with recursive import analysis
+    print(f"Analyzing {entrypoint_path} with recursive import analysis...")
+    graph = analyzer.analyze_from_file(entrypoint_path, recursive=True, max_depth=3)
     
     # Generate visualizations
     md_path = os.path.join(output_dir, "comprehensive_analysis.md")
@@ -177,7 +163,89 @@ def run_crewai_analysis():
         A dictionary with analysis results.
     """
     entrypoint_path = Path(__file__).parent.parent.parent / "examples" / "crewai" / "entrypoint.py"
-    return test_comprehensive_code_analysis(entrypoint_path)
+    
+    # Set up the analyzer
+    analyzer = CodeAnalyzer(language="python")
+    
+    # Get the entrypoint path
+    entrypoint_path_str = str(entrypoint_path)
+    
+    # Set up output directory
+    output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Analyze the code with recursive import analysis
+    print(f"Analyzing {entrypoint_path_str} with recursive import analysis...")
+    graph = analyzer.analyze_from_file(entrypoint_path_str, recursive=True, max_depth=3)
+    
+    # Generate visualizations
+    md_path = os.path.join(output_dir, "comprehensive_analysis.md")
+    json_path = os.path.join(output_dir, "comprehensive_analysis.json")
+    dot_path = os.path.join(output_dir, "comprehensive_analysis.dot")
+    
+    graph.visualize(format="markdown", output_path=md_path)
+    graph.visualize(format="json", output_path=json_path)
+    graph.visualize(format="dot", output_path=dot_path)
+    
+    print(f"\nAnalysis outputs:")
+    print(f"- Markdown: {md_path}")
+    print(f"- JSON: {json_path}")
+    print(f"- DOT: {dot_path}")
+    
+    # Print some statistics
+    print(f"\nFiles analyzed: {len(analyzer.visited_files)}")
+    for file in analyzer.visited_files:
+        print(f"- {file}")
+    
+    all_functions = list(graph.functions.values())
+    print(f"\nFunctions found: {len(all_functions)}")
+    for func in all_functions:
+        print(f"- {func.name} (from {os.path.basename(func.file_path)})")
+    
+    # Find crew functions
+    crew_function_names = [
+        "lead_extractor_agent",
+        "email_crafter_agent", 
+        "extract_lead_profiles_task",
+        "create_personalized_emails_task",
+        "crew"
+    ]
+    
+    found_crew_functions = []
+    for func in all_functions:
+        if func.name in crew_function_names:
+            found_crew_functions.append(func.name)
+    
+    # Find main function
+    main_function = None
+    for func in all_functions:
+        if func.name == "main":
+            main_function = func
+            break
+    
+    # Create analysis summary dictionary
+    analysis_summary = {
+        "files_analyzed": list(analyzer.visited_files),
+        "total_functions": len(all_functions),
+        "crew_functions": found_crew_functions,
+        "main_function_info": {
+            "source_code_length": len(main_function.source_code) if main_function else 0,
+            "string_literals_count": len(main_function.string_literals) if main_function else 0,
+            "comments_count": len(main_function.comments) if main_function else 0,
+            "variables_count": len(main_function.variables) if main_function else 0,
+            "file_references": [ref["path"] for ref in main_function.file_references] if main_function else []
+        },
+        "execution_flow": [
+            "1. main() in entrypoint.py loads environment and creates data",
+            "2. main() instantiates LeadEmailCrew",
+            "3. LeadEmailCrew defines agents and tasks in crew.py",
+            "4. main() calls crew_instance.crew().kickoff() to execute",
+            "5. Execution follows through the defined tasks in crew.py",
+            "6. Result is returned back to main()"
+        ]
+    }
+    
+    return analysis_summary
 
 
 if __name__ == "__main__":

@@ -76,6 +76,7 @@ class CodeAnalyzer:
             return
         
         self.visited_files.add(file_path)
+        logger.info(f"Analyzing file: {file_path} (depth {current_depth})")
         
         try:
             # Parse the file
@@ -101,7 +102,8 @@ class CodeAnalyzer:
             imports = self.parser.extract_imports(parsed_data)
             
             # If recursive is enabled, analyze imported files
-            if recursive:
+            if recursive and imports:
+                logger.info(f"Found {len(imports)} imports in {file_path}")
                 for imported_file in imports:
                     # Check if the imported file exists and has not been visited yet
                     if os.path.exists(imported_file) and imported_file not in self.visited_files:
