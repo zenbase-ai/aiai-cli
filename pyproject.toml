@@ -6,14 +6,12 @@ authors = [
     { name = "Amir Mehr", email = "amir.saiedmehr@gmail.com" }
 ]
 dependencies = [
-    "crewai==0.114.0",
     "libcst>=1.7.0",
     "django>=5.2",
     "django-stubs>=5.1.3",
     "typer>=0.15.2",
     "pytest-django>=4.11.1",
     "openlit @ git+https://github.com/ammirsm/openlit.git#egg=openlit&subdirectory=sdk/python",
-    "crewai-tools>=0.40.1",
     "tree-sitter>=0.24.0",
     "tree-sitter-python>=0.23.6",
     "networkx>=3.4.2",
@@ -22,6 +20,12 @@ dependencies = [
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
+
+[project.optional-dependencies]
+crewai = [
+    "crewai==0.114.0",
+    "crewai-tools>=0.40.1",
+]
 
 [project.scripts]
 aiai = "aiai.main:main"
