@@ -319,7 +319,7 @@ openai==1.72.0
     # via litellm
     # via mem0ai
     # via openlit
-openlit @ git+https://github.com/ammirsm/openlit.git@03dc641d108b848acf2a269efaa394f11fac57a5#egg=openlit&subdirectory=sdk/python
+openlit @ git+https://github.com/ammirsm/openlit.git@1cad83689340418b6a6c84a1011fcb949a7a4a78#egg=openlit&subdirectory=sdk/python
     # via aiai
 openpyxl==3.1.5
     # via crewai
@@ -485,6 +485,7 @@ python-dateutil==2.9.0.post0
     # via pandas
     # via posthog
 python-dotenv==1.1.0
+    # via aiai
     # via crewai
     # via embedchain
     # via litellm

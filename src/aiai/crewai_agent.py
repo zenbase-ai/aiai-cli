@@ -1,5 +1,4 @@
-import json
-import os
+from dotenv import load_dotenv
 from textwrap import dedent
 from crewai import Agent, Task, Crew, Process
 from crewai_tools import FileReadTool
@@ -10,18 +9,15 @@ import openlit
 
 from openlit_exporters import FileSpanExporter
 
-
+load_dotenv()
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
-
-my_processor = BatchSpanProcessor(FileSpanExporter())
-provider.add_span_processor(my_processor)
-
+span_exporter = FileSpanExporter()
+trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(span_exporter))
 openlit.init()
-
+tracer = trace.get_tracer(__name__)
 
 file_read_tool = FileReadTool(file_path='people_data.json')
-
 
 lead_extractor = Agent(
     role='Lead Profile Extractor',
@@ -132,8 +128,3 @@ if __name__ == "__main__":
     print("## Crew Execution Result:")
     print("########################\n")
     print(result)
-
-    # # Force flush spans before exiting (Optional with SimpleSpanProcessor, but doesn't hurt)
-    # print("Flushing remaining spans...")
-    # provider.force_flush()
-    # print("Flushing complete.")
