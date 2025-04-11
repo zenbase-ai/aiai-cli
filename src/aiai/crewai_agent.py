@@ -1,3 +1,5 @@
+import uuid
+
 from dotenv import load_dotenv
 from textwrap import dedent
 from crewai import Agent, Task, Crew, Process
@@ -22,7 +24,7 @@ file_read_tool = FileReadTool(file_path='people_data.json')
 lead_extractor = Agent(
     role='Lead Profile Extractor',
     goal='Extract relevant details (name, company, role, specific interests/pain points) for each person from the provided data.',
-    backstory=dedent("""
+    backstory=dedent("""\
         You are an expert analyst specializing in identifying key information 
         from unstructured data. Your goal is to pinpoint the most relevant details 
         about a potential lead that can be used for personalized outreach.
@@ -35,7 +37,7 @@ lead_extractor = Agent(
 email_crafter = Agent(
     role='Zenbase Sales Email Crafter',
     goal='Write a concise and compelling personalized sales email to a potential lead, highlighting how Zenbase can address their specific needs related to LLM development, prompt engineering, and model optimization.',
-    backstory=dedent("""
+    backstory=dedent("""\
         You are a persuasive sales copywriter with deep knowledge of Zenbase. 
         Zenbase helps developers automate prompt engineering and model selection, 
         leveraging DSPy to optimize LLM applications and improve performance. 
@@ -79,7 +81,7 @@ extract_task = Task(
 )
 
 email_task = Task(
-    description=dedent("""
+    description=dedent("""\
         For each lead profile extracted in the previous step, write a personalized 
         sales email. Use the lead's specific details (role, company, pain points) 
         to explain how Zenbase can help them automate prompt engineering, 
@@ -87,7 +89,7 @@ email_task = Task(
         Reference Zenbase's connection to DSPy and its benefits.
         Keep the email concise (2-3 paragraphs) and professional.
         """),
-    expected_output=dedent("""
+    expected_output=dedent("""\
         A series of personalized sales emails, one for each lead.
         Each email should:
         - Be addressed to the lead by name.
@@ -113,17 +115,24 @@ email_task = Task(
     context=[extract_task]
 )
 
-crew = Crew(
+crew1 = Crew(
     agents=[lead_extractor, email_crafter],
     tasks=[extract_task, email_task],
-    process=Process.sequential, # Tasks will run in order
+    process=Process.sequential,
+    verbose=True
+)
+crew2 = Crew(
+    agents=[lead_extractor, email_crafter],
+    tasks=[extract_task, email_task],
+    process=Process.sequential,
     verbose=True
 )
 
 if __name__ == "__main__":
     print("Starting Crew execution...")
-    result = crew.kickoff()
-
+    agent_run_id = str(uuid.uuid4())
+    span_exporter.set_agent_run_id(agent_run_id)
+    result = crew1.kickoff()
     print("\n\n########################")
     print("## Crew Execution Result:")
     print("########################\n")

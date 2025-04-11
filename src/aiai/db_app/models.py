@@ -1,20 +1,18 @@
-# src/aiai/db_app/models.py
 from django.db import models
-from django.db.models import TextField
-from django.db.models import DecimalField
 
 class AgentRunLog(models.Model):
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    agent_run_id = models.CharField(max_length=32, db_index=True, null=True, blank=True)
     input_data: models.JSONField = models.JSONField()
-    output_data: TextField = models.TextField()
+    output_data: models.TextField = models.TextField()
     success: models.BooleanField = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return f"Run at {self.timestamp} - Success: {self.success}"
+        return f"Run at {self.timestamp} - Agent Run Id: {self.agent_run_id} - Success: {self.success}"
 
 class DiscoveredRule(models.Model):
-    rule_text: TextField = models.TextField()
-    confidence: DecimalField = models.DecimalField(max_digits=5, decimal_places=2)
+    rule_text: models.TextField = models.TextField()
+    confidence: models.DecimalField = models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self) -> str:
         return f"Rule: {self.rule_text[:50]}... ({self.confidence}%)"
