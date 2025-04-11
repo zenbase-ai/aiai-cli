@@ -133,6 +133,12 @@ if __name__ == "__main__":
     agent_run_id = str(uuid.uuid4())
     span_exporter.set_agent_run_id(agent_run_id)
     result = crew1.kickoff()
+    from aiai.db_app.models import AgentRunLog
+    AgentRunLog.objects.create(
+        agent_run_id=agent_run_id,
+        input_data={},
+        output_data=result,
+    )
     print("\n\n########################")
     print("## Crew Execution Result:")
     print("########################\n")
