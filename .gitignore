@@ -19,3 +19,7 @@ output/
 
 # .env file
 src/aiai/.env
+
+.env
+
+.DS_Store
