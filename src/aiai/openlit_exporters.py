@@ -30,7 +30,7 @@ class FileSpanExporter(SpanExporter):
                     agent_run_id=self.agent_run_id,
                     input_data={"prompt": prompt},
                     output_data=response,
-                    success=True,
+                    success={"result": True},
                 )
 
         return SpanExportResult.SUCCESS

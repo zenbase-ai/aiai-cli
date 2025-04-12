@@ -5,7 +5,7 @@ class AgentRunLog(models.Model):
     agent_run_id = models.CharField(max_length=32, db_index=True, null=True, blank=True)
     input_data: models.JSONField = models.JSONField(null=True, blank=True)
     output_data: models.TextField = models.TextField(null=True, blank=True)
-    success: models.BooleanField = models.BooleanField(default=False)
+    success: models.JSONField = models.JSONField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"Run at {self.timestamp} - Agent Run Id: {self.agent_run_id} - Success: {self.success}"

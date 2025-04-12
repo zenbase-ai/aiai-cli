@@ -15,6 +15,9 @@ dependencies = [
     "openlit @ git+https://github.com/ammirsm/openlit.git#egg=openlit&subdirectory=sdk/python",
     "crewai-tools>=0.40.1",
     "python-dotenv>=1.1.0",
+    "litellm==1.60.2",
+    "instructor>=1.7.9",
+    "pydantic>=2.11.3",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
