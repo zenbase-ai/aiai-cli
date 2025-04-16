@@ -12,9 +12,9 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 import openlit
 
-from evals import evaluate_crew_output
-from openlit_exporters import FileSpanExporter
-from utils import setup_django
+from aiai.evals import evaluate_crew_output
+from aiai.openlit_exporters import FileSpanExporter
+from aiai.utils import setup_django
 
 
 load_dotenv()
@@ -24,6 +24,7 @@ span_exporter = FileSpanExporter()
 trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(span_exporter))
 openlit.init()
 tracer = trace.get_tracer(__name__)
+
 
 def run(file_path):
     print(f"Starting execution of: {file_path}...")
@@ -35,17 +36,20 @@ def run(file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     if spec is None or spec.loader is None:
         raise ImportError(f"Could not load spec for module from file: {file_path}")
-    
+
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
 
-    if hasattr(module, 'main') and callable(module.main):
+    if hasattr(module, "main") and callable(module.main):
         result = module.main()
     else:
-        raise AttributeError(f"'main' function not found or not callable in {file_path}")
+        raise AttributeError(
+            f"'main' function not found or not callable in {file_path}"
+        )
 
     from aiai.db_app.models import AgentRunLog
+
     client = instructor.from_litellm(completion)
     success = evaluate_crew_output(result, client)
     AgentRunLog.objects.create(
@@ -54,6 +58,7 @@ def run(file_path):
         output_data=result,
         success={"result": success.classification, "reasoning": success.reasoning},
     )
+
 
 if __name__ == "__main__":
     setup_django()
