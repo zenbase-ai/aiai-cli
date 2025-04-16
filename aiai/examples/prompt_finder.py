@@ -133,7 +133,7 @@ def find_prompts(
     Find where prompts from AgentRunLogs are defined and constructed in code.
     """
     # Import models after Django setup
-    from aiai.db_app.models import AgentRunLog, FunctionInfo
+    from aiai.app.models import AgentRunLog, FunctionInfo
 
     # Load all functions once
     functions = list(FunctionInfo.objects.all())

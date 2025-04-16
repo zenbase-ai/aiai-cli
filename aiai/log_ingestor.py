@@ -48,7 +48,7 @@ def run(file_path):
             f"'main' function not found or not callable in {file_path}"
         )
 
-    from aiai.db_app.models import AgentRunLog
+    from aiai.app.models import AgentRunLog
 
     client = instructor.from_litellm(completion)
     success = evaluate_crew_output(result, client)

@@ -8,7 +8,7 @@ from aiai.utils import setup_django
 def main():
     typer.echo("Hello from aiai CLI!")
     # If you want to do any DB operations here:
-    from aiai.db_app.models import AgentRunLog
+    from aiai.app.models import AgentRunLog
 
     log = AgentRunLog.objects.create(
         input_data={"example": "data"}, output_data="Sample output", success=True

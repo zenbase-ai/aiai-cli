@@ -170,7 +170,7 @@ class CodeAnalyzer:
             func: The Function object to save
         """
         try:
-            from ..db_app.models import FunctionInfo
+            from ..app.models import FunctionInfo
 
             # Create or update the function information in the database
             function_info, created = FunctionInfo.objects.update_or_create(

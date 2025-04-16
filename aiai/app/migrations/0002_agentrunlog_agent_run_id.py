@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('db_app', '0001_initial'),
+        ("app", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='agentrunlog',
-            name='agent_run_id',
+            model_name="agentrunlog",
+            name="agent_run_id",
             field=models.CharField(blank=True, db_index=True, max_length=32, null=True),
         ),
     ]

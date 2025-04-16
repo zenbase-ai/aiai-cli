@@ -15,7 +15,7 @@ class FileSpanExporter(SpanExporter):
         self.agent_run_id = agent_run_id
 
     def export(self, spans: typing.Sequence[ReadableSpan]) -> SpanExportResult:
-        from aiai.db_app.models import AgentRunLog
+        from aiai.app.models import AgentRunLog
 
         for span in spans:
             prompt = ""
