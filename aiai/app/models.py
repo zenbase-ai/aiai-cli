@@ -9,7 +9,7 @@ class OtelSpan(models.Model):
     raw_span: models.JSONField = models.JSONField(null=True, blank=True)
 
     def __str__(self) -> str:
-        return f"Run at {self.timestamp} - Agent Run Id: {self.agent_run_id} - Success: {self.success}"
+        return f"Run at {self.timestamp} - OtelSpan: {self.agent_run_id}"
 
 
 class DiscoveredRule(models.Model):
