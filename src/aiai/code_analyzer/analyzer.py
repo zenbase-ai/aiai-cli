@@ -10,6 +10,7 @@ import logging
 
 from .parsers import get_parser_for_language
 from .graph import DependencyGraph
+from ..utils import setup_django
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class CodeAnalyzer:
         Args:
             language: The programming language to analyze (default: "python")
         """
+        setup_django()
         self.language = language
         self.parser = get_parser_for_language(language)
         if not self.parser:
@@ -34,7 +36,7 @@ class CodeAnalyzer:
         self.visited_files: Set[str] = set()
         self.dependency_graph = DependencyGraph()
     
-    def analyze_from_file(self, entrypoint_file: str, recursive: bool = False, max_depth: int = 3) -> DependencyGraph:
+    def analyze_from_file(self, entrypoint_file: str, recursive: bool = False, max_depth: int = 3, save_to_db: bool = False) -> DependencyGraph:
         """
         Analyze code starting from an entrypoint file.
         
@@ -42,6 +44,7 @@ class CodeAnalyzer:
             entrypoint_file: Path to the entrypoint file to analyze
             recursive: Whether to recursively analyze imported files
             max_depth: Maximum depth of recursion for imports (to prevent infinite loops)
+            save_to_db: Whether to save function information to the database
             
         Returns:
             A dependency graph representing function calls
@@ -54,11 +57,11 @@ class CodeAnalyzer:
         self.dependency_graph = DependencyGraph()
         
         # Begin analysis from the entrypoint
-        self._analyze_file(entrypoint_file, recursive=recursive, current_depth=0, max_depth=max_depth)
+        self._analyze_file(entrypoint_file, recursive=recursive, current_depth=0, max_depth=max_depth, save_to_db=save_to_db)
         
         return self.dependency_graph
     
-    def _analyze_file(self, file_path: str, recursive: bool = False, current_depth: int = 0, max_depth: int = 3) -> None:
+    def _analyze_file(self, file_path: str, recursive: bool = False, current_depth: int = 0, max_depth: int = 3, save_to_db: bool = False) -> None:
         """
         Analyze a single file and add its functions and dependencies to the graph.
         
@@ -67,6 +70,7 @@ class CodeAnalyzer:
             recursive: Whether to recursively analyze imported files
             current_depth: Current depth of recursion
             max_depth: Maximum depth of recursion
+            save_to_db: Whether to save function information to the database
         """
         if file_path in self.visited_files:
             return
@@ -90,6 +94,11 @@ class CodeAnalyzer:
                 # Extract rich contextual information from the function
                 try:
                     self.parser.extract_function_context(parsed_data, func)
+                    
+                    # Save function information to the database if requested
+                    if save_to_db:
+                        self.save_function_to_db(func)
+                        
                 except Exception as e:
                     logger.warning(f"Error extracting context from function {func.name}: {str(e)}")
             
@@ -112,7 +121,8 @@ class CodeAnalyzer:
                             imported_file, 
                             recursive=recursive, 
                             current_depth=current_depth + 1,
-                            max_depth=max_depth
+                            max_depth=max_depth,
+                            save_to_db=save_to_db
                         )
             # If not recursive, just add imported files to the graph for reference
             else:
@@ -122,3 +132,37 @@ class CodeAnalyzer:
                     
         except Exception as e:
             logger.error(f"Error analyzing file {file_path}: {str(e)}")
+    
+    def save_function_to_db(self, func) -> None:
+        """
+        Save function information to the database.
+        
+        Args:
+            func: The Function object to save
+        """
+        try:
+            from ..db_app.models import FunctionInfo
+            # Create or update the function information in the database
+            function_info, created = FunctionInfo.objects.update_or_create(
+                file_path=func.file_path,
+                name=func.name,
+                line_start=func.line_start,
+                defaults={
+                    'line_end': func.line_end,
+                    'signature': func.signature,
+                    'source_code': func.source_code,
+                    'docstring': func.docstring,
+                    'comments': func.comments,
+                    'string_literals': func.string_literals,
+                    'variables': func.variables,
+                    'constants': func.constants,
+                }
+            )
+            
+            if created:
+                logger.info(f"Added function to database: {func.name} in {func.file_path}")
+            else:
+                logger.info(f"Updated function in database: {func.name} in {func.file_path}")
+                
+        except Exception as e:
+            logger.error(f"Error saving function {func.name} to database: {str(e)}")

@@ -1,4 +1,6 @@
+from pathlib import Path
 import typer
+
 
 from utils import setup_django
 
@@ -6,7 +8,6 @@ from utils import setup_django
 def main():
     typer.echo("Hello from aiai CLI!")
     # If you want to do any DB operations here:
-    setup_django()
     from aiai.db_app.models import AgentRunLog
     log = AgentRunLog.objects.create(
         input_data={"example": "data"},
@@ -16,4 +17,19 @@ def main():
     typer.echo(f"Created log with ID: {log.pk}")
 
 if __name__ == "__main__":
-    main()
+    setup_django()
+    from aiai.log_ingestor import run
+
+    cwd = Path(__file__).parent
+    script_to_run = str(cwd / "crewai_agent.py")
+
+    run(script_to_run)
+
+    from aiai.code_analyzer import CodeAnalyzer
+
+    # Initialize the analyzer with the appropriate language parser
+    analyzer = CodeAnalyzer()
+
+    # Analyze code starting from an entrypoint file without following imports
+    graph = analyzer.analyze_from_file(script_to_run, save_to_db=True)
+

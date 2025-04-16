@@ -27,6 +27,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'aiai.db_app',
+    'aiai.code_analyzer'
 ]
 
 # Database

@@ -16,3 +16,26 @@ class DiscoveredRule(models.Model):
 
     def __str__(self) -> str:
         return f"Rule: {self.rule_text[:50]}... ({self.confidence}%)"
+
+class FunctionInfo(models.Model):
+    name = models.CharField(max_length=255)
+    file_path = models.CharField(max_length=512)
+    line_start = models.IntegerField()
+    line_end = models.IntegerField()
+    signature = models.TextField()
+    source_code = models.TextField()
+    docstring = models.TextField(null=True, blank=True)
+    comments = models.JSONField(null=True, blank=True)
+    string_literals = models.JSONField(null=True, blank=True)
+    variables = models.JSONField(null=True, blank=True)
+    constants = models.JSONField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('file_path', 'name', 'line_start')
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['file_path']),
+        ]
+    
+    def __str__(self) -> str:
+        return f"{self.name} ({self.file_path}:{self.line_start}-{self.line_end})"
