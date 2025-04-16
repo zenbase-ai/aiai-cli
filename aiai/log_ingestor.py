@@ -48,11 +48,11 @@ def run(file_path):
             f"'main' function not found or not callable in {file_path}"
         )
 
-    from aiai.app.models import AgentRunLog
+    from aiai.app.models import OtelSpan
 
     client = instructor.from_litellm(completion)
     success = evaluate_crew_output(result, client)
-    AgentRunLog.objects.create(
+    OtelSpan.objects.create(
         agent_run_id=agent_run_id,
         input_data={"file_path": file_path},
         output_data=result,

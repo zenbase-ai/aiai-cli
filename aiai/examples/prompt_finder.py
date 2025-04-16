@@ -133,7 +133,7 @@ def find_prompts(
     Find where prompts from AgentRunLogs are defined and constructed in code.
     """
     # Import models after Django setup
-    from aiai.app.models import AgentRunLog, FunctionInfo
+    from aiai.app.models import OtelSpan, FunctionInfo
 
     # Load all functions once
     functions = list(FunctionInfo.objects.all())
@@ -141,12 +141,12 @@ def find_prompts(
 
     # Query for logs
     if log_id:
-        logs = AgentRunLog.objects.filter(id=log_id)
+        logs = OtelSpan.objects.filter(id=log_id)
         if not logs:
             print(f"No log found with ID {log_id}")
             return
     else:
-        logs = AgentRunLog.objects.all()
+        logs = OtelSpan.objects.all()
 
     # Process each log
     for log in logs:

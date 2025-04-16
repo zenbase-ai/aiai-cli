@@ -8,9 +8,9 @@ from aiai.utils import setup_django
 def main():
     typer.echo("Hello from aiai CLI!")
     # If you want to do any DB operations here:
-    from aiai.app.models import AgentRunLog
+    from aiai.app.models import OtelSpan
 
-    log = AgentRunLog.objects.create(
+    log = OtelSpan.objects.create(
         input_data={"example": "data"}, output_data="Sample output", success=True
     )
     typer.echo(f"Created log with ID: {log.pk}")
