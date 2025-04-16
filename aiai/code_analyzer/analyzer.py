@@ -4,7 +4,6 @@ CodeAnalyzer class implementation.
 This is the main entry point for analyzing code and generating function dependency graphs.
 """
 
-from typing import Set
 import os
 import logging
 
@@ -34,7 +33,7 @@ class CodeAnalyzer:
         if not self.parser:
             raise ValueError(f"Unsupported language: {language}")
 
-        self.visited_files: Set[str] = set()
+        self.visited_files = set[str]()
         self.dependency_graph = DependencyGraph()
 
     def analyze_from_file(
@@ -170,10 +169,10 @@ class CodeAnalyzer:
             func: The Function object to save
         """
         try:
-            from ..app.models import FunctionInfo
+            from aiai.app.models import FunctionInfo
 
             # Create or update the function information in the database
-            function_info, created = FunctionInfo.objects.update_or_create(
+            _function_info, created = FunctionInfo.objects.update_or_create(
                 file_path=func.file_path,
                 name=func.name,
                 line_start=func.line_start,
