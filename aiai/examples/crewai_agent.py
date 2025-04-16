@@ -3,11 +3,13 @@ from textwrap import dedent
 from crewai import Agent, Task, Crew, Process
 from crewai_tools import FileReadTool
 
+from aiai.app.settings import BASE_DIR
+
 load_dotenv()
 
 
 def get_crewai_agent():
-    file_read_tool = FileReadTool(file_path="people_data.json")
+    file_read_tool = FileReadTool(file_path=BASE_DIR / "aiai" / "examples" / "people_data.json")
 
     lead_extractor = Agent(
         role="Lead Profile Extractor",

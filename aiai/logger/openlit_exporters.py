@@ -6,7 +6,7 @@ from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from aiai.utils import setup_django
 
 
-class FileSpanExporter(SpanExporter):
+class DjangoSpanExporter(SpanExporter):
     def __init__(self, *args, **kwargs):
         setup_django()
         super().__init__(*args, **kwargs)

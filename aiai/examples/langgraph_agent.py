@@ -11,13 +11,13 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 import openlit
 
-from aiai.openlit_exporters import FileSpanExporter
+from aiai.logger.openlit_exporters import DjangoSpanExporter
 
 
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
 
-my_processor = BatchSpanProcessor(FileSpanExporter())
+my_processor = BatchSpanProcessor(DjangoSpanExporter())
 provider.add_span_processor(my_processor)
 
 openlit.init()
