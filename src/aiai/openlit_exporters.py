@@ -1,5 +1,4 @@
 import typing
-import json
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
@@ -10,6 +9,10 @@ class FileSpanExporter(SpanExporter):
     def __init__(self, *args, **kwargs):
         setup_django()
         super().__init__(*args, **kwargs)
+        self.agent_run_id = None
+
+    def set_agent_run_id(self, agent_run_id: str):
+        self.agent_run_id = agent_run_id
 
     def export(self, spans: typing.Sequence[ReadableSpan]) -> SpanExportResult:
         from aiai.db_app.models import AgentRunLog
@@ -24,8 +27,10 @@ class FileSpanExporter(SpanExporter):
 
             if prompt or response:
                 AgentRunLog.objects.create(
+                    agent_run_id=self.agent_run_id,
                     input_data={"prompt": prompt},
-                    output_data={"response": response},
-                    success=True,
+                    output_data=response,
+                    success={"result": True},
                 )
+
         return SpanExportResult.SUCCESS

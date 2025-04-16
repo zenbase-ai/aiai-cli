@@ -1,0 +1,124 @@
+"""
+CodeAnalyzer class implementation.
+
+This is the main entry point for analyzing code and generating function dependency graphs.
+"""
+
+from typing import Dict, List, Optional, Set, Union
+import os
+import logging
+
+from .parsers import get_parser_for_language
+from .graph import DependencyGraph
+
+logger = logging.getLogger(__name__)
+
+class CodeAnalyzer:
+    """
+    A service that analyzes source code files to generate a dependency graph
+    of functions and their relationships.
+    """
+    
+    def __init__(self, language: str = "python"):
+        """
+        Initialize the code analyzer with a specific language parser.
+        
+        Args:
+            language: The programming language to analyze (default: "python")
+        """
+        self.language = language
+        self.parser = get_parser_for_language(language)
+        if not self.parser:
+            raise ValueError(f"Unsupported language: {language}")
+        
+        self.visited_files: Set[str] = set()
+        self.dependency_graph = DependencyGraph()
+    
+    def analyze_from_file(self, entrypoint_file: str, recursive: bool = False, max_depth: int = 3) -> DependencyGraph:
+        """
+        Analyze code starting from an entrypoint file.
+        
+        Args:
+            entrypoint_file: Path to the entrypoint file to analyze
+            recursive: Whether to recursively analyze imported files
+            max_depth: Maximum depth of recursion for imports (to prevent infinite loops)
+            
+        Returns:
+            A dependency graph representing function calls
+        """
+        if not os.path.exists(entrypoint_file):
+            raise FileNotFoundError(f"Entrypoint file not found: {entrypoint_file}")
+        
+        # Reset state for new analysis
+        self.visited_files = set()
+        self.dependency_graph = DependencyGraph()
+        
+        # Begin analysis from the entrypoint
+        self._analyze_file(entrypoint_file, recursive=recursive, current_depth=0, max_depth=max_depth)
+        
+        return self.dependency_graph
+    
+    def _analyze_file(self, file_path: str, recursive: bool = False, current_depth: int = 0, max_depth: int = 3) -> None:
+        """
+        Analyze a single file and add its functions and dependencies to the graph.
+        
+        Args:
+            file_path: Path to the file to analyze
+            recursive: Whether to recursively analyze imported files
+            current_depth: Current depth of recursion
+            max_depth: Maximum depth of recursion
+        """
+        if file_path in self.visited_files:
+            return
+        
+        if current_depth > max_depth:
+            logger.warning(f"Maximum recursion depth reached for file: {file_path}")
+            return
+        
+        self.visited_files.add(file_path)
+        logger.info(f"Analyzing file: {file_path} (depth {current_depth})")
+        
+        try:
+            # Parse the file
+            parsed_data = self.parser.parse_file(file_path)
+            
+            # Extract functions and add them to the graph
+            functions = self.parser.extract_functions(parsed_data)
+            for func in functions:
+                self.dependency_graph.add_function(func)
+                
+                # Extract rich contextual information from the function
+                try:
+                    self.parser.extract_function_context(parsed_data, func)
+                except Exception as e:
+                    logger.warning(f"Error extracting context from function {func.name}: {str(e)}")
+            
+            # Extract function calls and add edges to the graph
+            function_calls = self.parser.identify_function_calls(parsed_data, functions)
+            for caller, callee in function_calls:
+                self.dependency_graph.add_dependency(caller, callee)
+            
+            # Process imports to find additional files to analyze
+            imports = self.parser.extract_imports(parsed_data)
+            
+            # If recursive is enabled, analyze imported files
+            if recursive and imports:
+                logger.info(f"Found {len(imports)} imports in {file_path}")
+                for imported_file in imports:
+                    # Check if the imported file exists and has not been visited yet
+                    if os.path.exists(imported_file) and imported_file not in self.visited_files:
+                        logger.info(f"Recursively analyzing imported file: {imported_file}")
+                        self._analyze_file(
+                            imported_file, 
+                            recursive=recursive, 
+                            current_depth=current_depth + 1,
+                            max_depth=max_depth
+                        )
+            # If not recursive, just add imported files to the graph for reference
+            else:
+                for imported_file in imports:
+                    if os.path.exists(imported_file):
+                        logger.debug(f"Found import: {imported_file} (not analyzing recursively)")
+                    
+        except Exception as e:
+            logger.error(f"Error analyzing file {file_path}: {str(e)}")
