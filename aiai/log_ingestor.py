@@ -56,7 +56,7 @@ def run(file_path):
         agent_run_id=agent_run_id,
         input_data={"file_path": file_path},
         output_data=result,
-        success={"result": success.classification, "reasoning": success.reasoning},
+        raw_span={"success": {"result": success.classification, "reasoning": success.reasoning}},
     )
 
 
