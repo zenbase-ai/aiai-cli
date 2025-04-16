@@ -17,7 +17,7 @@ dependencies = [
     "networkx>=3.4.2",
     "pydot>=3.0.4",
     "python-dotenv>=1.1.0",
-    "litellm==1.60.2",
+    "litellm==1.61.15",
     "instructor>=1.7.9",
     "pydantic>=2.11.3",
 ]
