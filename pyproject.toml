@@ -39,6 +39,10 @@ dev-dependencies = [
     "ipython>=9.1.0",
 ]
 
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "aiai.app.settings"
+python_files = ["test_*.py", "*_test.py"]
+
 [tool.hatch.metadata]
 allow-direct-references = true
 

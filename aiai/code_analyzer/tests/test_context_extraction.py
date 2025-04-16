@@ -46,6 +46,7 @@ def dependency_graph(analyzer, prompt_example_path):
     return analyzer.analyze_from_file(str(prompt_example_path))
 
 
+@pytest.mark.django_db
 def test_analyzer_finds_all_functions(dependency_graph):
     """Test that the analyzer finds all functions in the prompt example."""
     # The prompt_example.py file contains 5 functions
@@ -63,6 +64,7 @@ def test_analyzer_finds_all_functions(dependency_graph):
     assert expected_function_names == actual_function_names, "Not all expected functions were found"
 
 
+@pytest.mark.django_db
 def test_function_dependencies(dependency_graph):
     """Test that the function dependencies are correctly identified."""
     # Check that generate_response calls call_llm_api
@@ -83,6 +85,7 @@ def test_function_dependencies(dependency_graph):
         "generate_response should call call_llm_api"
 
 
+@pytest.mark.django_db
 def test_context_extraction_docstrings(dependency_graph):
     """Test that docstrings are correctly extracted from functions."""
     for func_id, func in dependency_graph.functions.items():
@@ -94,6 +97,7 @@ def test_context_extraction_docstrings(dependency_graph):
                 "Docstring not correctly extracted for call_llm_api"
 
 
+@pytest.mark.django_db
 def test_context_extraction_string_literals(dependency_graph):
     """Test that string literals are correctly extracted from functions."""
     prompts_found = False
@@ -108,6 +112,7 @@ def test_context_extraction_string_literals(dependency_graph):
     assert prompts_found, "Expected prompt string literal not found in call_llm_api function"
 
 
+@pytest.mark.django_db
 def test_context_extraction_constants(dependency_graph):
     """Test that constants are correctly extracted from functions."""
     response_template_found = False
@@ -122,6 +127,7 @@ def test_context_extraction_constants(dependency_graph):
     assert response_template_found, "RESPONSE_TEMPLATE constant not found in call_llm_api function"
 
 
+@pytest.mark.django_db
 def test_context_extraction_file_references(dependency_graph):
     """Test that file references are correctly extracted from functions."""
     file_ref_found = False
@@ -162,6 +168,7 @@ def test_context_extraction_file_references(dependency_graph):
     assert file_ref_found, f"Expected file reference to system_prompt.txt not found in main function.\nDebug info:\n{debug_message}"
 
 
+@pytest.mark.django_db
 def test_markdown_visualization(dependency_graph, output_dir):
     """Test that the markdown visualization is correctly generated."""
     output_path = output_dir / "test_markdown_visualization.md"
@@ -180,6 +187,7 @@ def test_markdown_visualization(dependency_graph, output_dir):
             assert f"### `{func.name}`" in content, f"Function {func.name} not included in visualization"
 
 
+@pytest.mark.django_db
 def test_json_visualization(dependency_graph, output_dir):
     """Test that the JSON visualization is correctly generated."""
     output_path = output_dir / "test_json_visualization.json"
@@ -200,6 +208,7 @@ def test_json_visualization(dependency_graph, output_dir):
             assert func.name in function_names, f"Function {func.name} not included in JSON visualization"
 
 
+@pytest.mark.django_db
 def test_dot_visualization(dependency_graph, output_dir):
     """Test that the DOT visualization is correctly generated."""
     output_path = output_dir / "test_dot_visualization.dot"
