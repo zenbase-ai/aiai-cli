@@ -2,7 +2,7 @@
 name = "aiai"
 version = "0.1.0"
 description = "Add your description here"
-authors = [{ name = "Amir Mehr", email = "amir.saiedmehr@gmail.com" }]
+authors = [{ name = "Amir Mehr", email = "amir@zenbase.ai" }]
 dependencies = [
     "libcst>=1.7.0",
     "django>=5.2",
