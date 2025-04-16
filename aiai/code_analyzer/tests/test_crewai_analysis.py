@@ -22,6 +22,7 @@ def crewai_entrypoint_path():
     return Path(__file__).parent.parent.parent / "examples" / "crewai" / "entrypoint.py"
 
 
+@pytest.mark.django_db
 def test_comprehensive_code_analysis(crewai_entrypoint_path):
     """
     Test a comprehensive code analysis that captures all important aspects of the codebase:

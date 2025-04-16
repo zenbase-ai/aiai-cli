@@ -31,6 +31,7 @@ def output_dir():
     return output_dir
 
 
+@pytest.mark.django_db
 def test_analyzer_basic_functionality(sample_file, output_dir):
     """Test that the code analyzer correctly identifies functions and their dependencies."""
     print(f"Analyzing file: {sample_file}")
@@ -93,6 +94,7 @@ def test_analyzer_basic_functionality(sample_file, output_dir):
     print(f"Exported graph to: {json_path}")
 
 
+@pytest.mark.django_db
 def test_visualize_graph(sample_file, output_dir):
     """Test the graph visualization functionality."""
     # Create an analyzer instance and analyze the file
@@ -109,6 +111,7 @@ def test_visualize_graph(sample_file, output_dir):
         pytest.skip(f"Could not create DOT visualization: {str(e)}")
 
 
+@pytest.mark.django_db
 def test_markdown_visualization(sample_file, output_dir):
     """Test the LLM-friendly Markdown visualization functionality."""
     # Create an analyzer instance and analyze the file

@@ -24,7 +24,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = ["django.contrib.contenttypes", "aiai.app", "aiai.code_analyzer"]
+INSTALLED_APPS = ["django.contrib.contenttypes", "aiai.app"]
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

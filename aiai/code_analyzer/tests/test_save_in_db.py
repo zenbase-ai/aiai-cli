@@ -6,6 +6,7 @@ This script tests the ability to analyze Python files and save function informat
 
 import os
 from pathlib import Path
+import pytest
 
 
 # This enables the script to be run either as a standalone or via pytest
@@ -72,6 +73,7 @@ def analyze_and_save_functions():
 
 
 # This function can be called by pytest
+@pytest.mark.django_db
 def test_function_saving():
     """
     Simple test function for pytest that analyzes files and saves to DB.
