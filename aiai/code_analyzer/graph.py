@@ -5,10 +5,10 @@ This module provides a graph structure to represent function dependencies.
 """
 
 import json
-from typing import Dict, List, Set, Optional, Any, Tuple
 import os
+from typing import Any, Dict, List, Optional, Set
+
 import networkx as nx
-from pathlib import Path
 
 from .parsers.base import Function
 
@@ -23,9 +23,9 @@ class DependencyGraph:
     def __init__(self):
         """Initialize an empty dependency graph."""
         self.functions: Dict[str, Function] = {}  # Maps function ID to Function object
-        self.dependencies: Dict[
-            str, Set[str]
-        ] = {}  # Maps caller ID to set of callee IDs
+        self.dependencies: Dict[str, Set[str]] = (
+            {}
+        )  # Maps caller ID to set of callee IDs
 
     def get_function_id(self, func: Function) -> str:
         """
