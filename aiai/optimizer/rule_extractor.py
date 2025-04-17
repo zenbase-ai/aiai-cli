@@ -23,11 +23,11 @@ cwd = Path(__file__).parent
 def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
     """
     Build a pipeline for extracting rules from logs.
-    
+
     Args:
         reward: The reward type to analyze ("success", "failure", etc.)
         **kwargs: Additional arguments to pass to the Pipeline constructor
-    
+
     Returns:
         Pipeline: A configured pipeline instance
     """
@@ -345,18 +345,18 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
 def extract_rules(logs, reward="success", model="gpt-4o"):
     """
     Extract rules from a collection of logs.
-    
+
     Args:
         logs: A collection of log objects with input_data and output_data attributes
         reward: The reward type to analyze ("success", "failure", etc.)
         model: The model to use for the analysis
-    
+
     Returns:
         dict: A dictionary containing always/never rules, tips, and an evaluation guide
     """
     # Filter and join logs into one string
     logs_str = chr(10).join(
-        "inputs:\n"  + str(log.input_data) + "\nOutputs:\n" + str(log.output_data)
+        "inputs:\n" + str(log.input_data) + "\nOutputs:\n" + str(log.output_data)
         for log in logs
         if "prompt" in log.input_data
     )
@@ -366,7 +366,7 @@ def extract_rules(logs, reward="success", model="gpt-4o"):
             "always": [],
             "never": [],
             "tips": [],
-            "evaluation_guide": "No valid logs found for analysis."
+            "evaluation_guide": "No valid logs found for analysis.",
         }
 
     # Write that to a temp JSON (single‐record) file
@@ -390,7 +390,7 @@ def extract_rules(logs, reward="success", model="gpt-4o"):
                 reward=reward,
                 datasets=datasets,
                 output=PipelineOutput(type="file", path=out_path),
-                default_model=model
+                default_model=model,
             )
             pipeline.run()
 
@@ -411,14 +411,14 @@ def extract_rules(logs, reward="success", model="gpt-4o"):
             "always": [],
             "never": [],
             "tips": [],
-            "evaluation_guide": f"Error during rule extraction: {str(e)}"
+            "evaluation_guide": f"Error during rule extraction: {str(e)}",
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setup_django()
     from aiai.app.models import OtelSpan
+
     logs = OtelSpan.objects.all()
     rules = extract_rules(logs)
     print(rules)
-
