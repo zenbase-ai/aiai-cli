@@ -5,50 +5,89 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0006_rename_agentrunlog_otelspan_and_more'),
+        ("app", "0006_rename_agentrunlog_otelspan_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DataFileInfo',
+            name="DataFileInfo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file_path', models.CharField(max_length=500, unique=True)),
-                ('file_type', models.CharField(max_length=10)),
-                ('content', models.TextField(blank=True, null=True)),
-                ('reference_contexts', models.JSONField(blank=True, default=list, null=True)),
-                ('last_analyzed', models.DateTimeField(auto_now=True)),
-                ('referenced_by', models.ManyToManyField(blank=True, to='app.functioninfo')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("file_path", models.CharField(max_length=500, unique=True)),
+                ("file_type", models.CharField(max_length=10)),
+                ("content", models.TextField(blank=True, null=True)),
+                (
+                    "reference_contexts",
+                    models.JSONField(blank=True, default=list, null=True),
+                ),
+                ("last_analyzed", models.DateTimeField(auto_now=True)),
+                (
+                    "referenced_by",
+                    models.ManyToManyField(blank=True, to="app.functioninfo"),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='DataFileAnalysis',
+            name="DataFileAnalysis",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('is_valid_reference', models.BooleanField(default=False)),
-                ('file_purpose', models.TextField(blank=True, null=True)),
-                ('content_category', models.CharField(blank=True, max_length=50, null=True)),
-                ('confidence_score', models.FloatField(default=0.0)),
-                ('analysis_date', models.DateTimeField(auto_now=True)),
-                ('data_file', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='analysis', to='app.datafileinfo')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("is_valid_reference", models.BooleanField(default=False)),
+                ("file_purpose", models.TextField(blank=True, null=True)),
+                (
+                    "content_category",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
+                ("confidence_score", models.FloatField(default=0.0)),
+                ("analysis_date", models.DateTimeField(auto_now=True)),
+                (
+                    "data_file",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="analysis",
+                        to="app.datafileinfo",
+                    ),
+                ),
             ],
         ),
         migrations.AddIndex(
-            model_name='datafileinfo',
-            index=models.Index(fields=['file_type'], name='app_datafil_file_ty_30471e_idx'),
+            model_name="datafileinfo",
+            index=models.Index(
+                fields=["file_type"], name="app_datafil_file_ty_30471e_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='datafileinfo',
-            index=models.Index(fields=['file_path'], name='app_datafil_file_pa_dec686_idx'),
+            model_name="datafileinfo",
+            index=models.Index(
+                fields=["file_path"], name="app_datafil_file_pa_dec686_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='datafileanalysis',
-            index=models.Index(fields=['is_valid_reference'], name='app_datafil_is_vali_a57352_idx'),
+            model_name="datafileanalysis",
+            index=models.Index(
+                fields=["is_valid_reference"], name="app_datafil_is_vali_a57352_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='datafileanalysis',
-            index=models.Index(fields=['content_category'], name='app_datafil_content_473bd0_idx'),
+            model_name="datafileanalysis",
+            index=models.Index(
+                fields=["content_category"], name="app_datafil_content_473bd0_idx"
+            ),
         ),
     ]

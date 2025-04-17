@@ -50,9 +50,11 @@ class DataFileInfo(models.Model):
     file_path = models.CharField(max_length=500, unique=True)
     file_type = models.CharField(max_length=10)  # "json" or "yaml"
     content = models.TextField(null=True, blank=True)  # Actual file content
-    reference_contexts = models.JSONField(default=list, null=True, blank=True)  # Store line numbers and context snippets
+    reference_contexts = models.JSONField(
+        default=list, null=True, blank=True
+    )  # Store line numbers and context snippets
     last_analyzed = models.DateTimeField(auto_now=True)
-    
+
     # Relationship with functions that reference this file
     referenced_by = models.ManyToManyField(FunctionInfo, blank=True)
 
@@ -67,18 +69,26 @@ class DataFileInfo(models.Model):
 
 
 class DataFileAnalysis(models.Model):
-    data_file = models.OneToOneField(DataFileInfo, on_delete=models.CASCADE, related_name="analysis")
-    is_valid_reference = models.BooleanField(default=False)  # True reference or false positive?
-    file_purpose = models.TextField(null=True, blank=True)  # Description of what this file is used for
-    content_category = models.CharField(max_length=50, null=True, blank=True)  # "prompt", "data", "configuration", "other"
+    data_file = models.OneToOneField(
+        DataFileInfo, on_delete=models.CASCADE, related_name="analysis"
+    )
+    is_valid_reference = models.BooleanField(
+        default=False
+    )  # True reference or false positive?
+    file_purpose = models.TextField(
+        null=True, blank=True
+    )  # Description of what this file is used for
+    content_category = models.CharField(
+        max_length=50, null=True, blank=True
+    )  # "prompt", "data", "configuration", "other"
     confidence_score = models.FloatField(default=0.0)  # Confidence level of analysis
     analysis_date = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         indexes = [
             models.Index(fields=["is_valid_reference"]),
             models.Index(fields=["content_category"]),
         ]
-    
+
     def __str__(self) -> str:
         return f"Analysis of {self.data_file.file_path} - {self.content_category or 'Uncategorized'}"
