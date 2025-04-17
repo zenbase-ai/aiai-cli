@@ -124,7 +124,10 @@ async def main(
 
     rich.print("Generating synthetic prompt...", end=" ")
     prompt = await generate_synthetic_prompt(fns)
-    rich.print(f"done.\n<prompt>\n{prompt}\n</prompt>")
+    rich.print("done.")
+    rich.print("<prompt>")
+    rich.print(prompt)
+    rich.print("</prompt>")
 
     rich.print("Generating synthetic data with config:", end=" ")
     rich.print_json(data=config, indent=None)
