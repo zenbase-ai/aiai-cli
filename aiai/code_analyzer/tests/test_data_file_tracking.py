@@ -263,17 +263,28 @@ def test_save_data_files_to_db_crewai(test_directory):
     setup_django()
 
     from aiai.code_analyzer import CodeAnalyzer
-    from aiai.app.models import FunctionInfo, DataFileInfo
+    from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
+    from aiai.app.models import FunctionInfo, DataFileInfo, DataFileAnalysis
+    import os
+    from pathlib import Path
+
+    # Calculate the project root path
+    project_root = Path(__file__).parent.parent.parent.parent
+    crewai_path = project_root / "aiai" / "examples" / "crewai"
+    
+    # Ensure path exists
+    assert crewai_path.exists(), f"CrewAI path does not exist: {crewai_path}"
 
     # Clear existing data
     FunctionInfo.objects.all().delete()
     DataFileInfo.objects.all().delete()
+    DataFileAnalysis.objects.all().delete()
 
     # Initialize the analyzer
     analyzer = CodeAnalyzer()
 
     # First, analyze the code file to populate the function database
-    code_file = "/Users/amir/workspace/aiai/aiai/examples/crewai/entrypoint.py"
+    code_file = str(crewai_path / "entrypoint.py")
     analyzer.analyze_from_file(code_file, save_to_db=True, recursive=True)
 
     # Assert functions were saved to the database
@@ -282,9 +293,7 @@ def test_save_data_files_to_db_crewai(test_directory):
     )
 
     # Now find and save data files
-    file_references = analyzer.find_and_save_data_files(
-        "/Users/amir/workspace/aiai/aiai/examples/crewai"
-    )
+    file_references = analyzer.find_and_save_data_files(str(crewai_path))
 
     # There should be 1 data file saved to the database (people_data.json)
     assert DataFileInfo.objects.count() == 1, (
@@ -308,3 +317,29 @@ def test_save_data_files_to_db_crewai(test_directory):
     # At least one reference should be in the crew.py file
     crew_references = json_file.referenced_by.filter(file_path__contains="crew.py")
     assert crew_references.exists(), "Expected references from crew.py but found none"
+    
+    # Now analyze the data files using DataFileAnalyzer
+    data_analyzer = DataFileAnalyzer(model="gpt-4o")
+    analyzed_count = data_analyzer.analyze()
+    
+    # Verify that the file was analyzed
+    assert analyzed_count == 1, f"Expected 1 data file analyzed, found {analyzed_count}"
+    
+    # Verify the analysis results were saved to the database
+    assert DataFileAnalysis.objects.count() == 1, (
+        f"Expected 1 analysis record, found {DataFileAnalysis.objects.count()}"
+    )
+    
+    # Get the analysis results
+    analysis = DataFileAnalysis.objects.first()
+    assert analysis is not None, "Analysis not found"
+    assert analysis.is_valid_reference, "File should be marked as a valid reference"
+    assert analysis.content_category == "data", (
+        f"Expected category 'data', found '{analysis.content_category}'"
+    )
+    
+    # Verify that the analysis has a file purpose
+    assert analysis.file_purpose, "Analysis should have a file purpose"
+    assert analysis.confidence_score > 0.5, (
+        f"Expected confidence score > 0.5, found {analysis.confidence_score}"
+    )
