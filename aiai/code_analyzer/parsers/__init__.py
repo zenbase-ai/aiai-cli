@@ -12,28 +12,32 @@ from .base import LanguageParser
 # Registry of parsers for different languages
 _PARSERS: Dict[str, Type[LanguageParser]] = {}
 
+
 def register_parser(language: str):
     """
     Decorator to register a language parser.
-    
+
     Args:
         language: The language identifier (e.g., "python", "javascript")
-        
+
     Returns:
         A decorator function that registers the parser class
     """
+
     def decorator(cls):
         _PARSERS[language] = cls
         return cls
+
     return decorator
+
 
 def get_parser_for_language(language: str) -> Optional[LanguageParser]:
     """
     Get a parser instance for the specified language.
-    
+
     Args:
         language: The language identifier
-        
+
     Returns:
         An instance of the appropriate language parser, or None if not supported
     """
@@ -43,10 +47,11 @@ def get_parser_for_language(language: str) -> Optional[LanguageParser]:
             importlib.import_module(f".{language}", package=__name__)
         except ImportError:
             return None
-    
+
     if language in _PARSERS:
         return _PARSERS[language]()
     return None
+
 
 # Import specific language implementations to register them
 try:

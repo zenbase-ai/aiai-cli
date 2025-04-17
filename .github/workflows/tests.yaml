@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - rc*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eifinger/setup-rye@v3
+        id: setup-rye
+        with:
+          version: '0.44.0'
+          enable-cache: true
+          cache-prefix: ${{ matrix.python-version }}
+      - name: Run lint with tests
+        working-directory: .
+        run: rye fmt --check -v
+      - name: Pin python-version ${{ matrix.python-version }}
+        run: rye pin ${{ matrix.python-version }}
+      - name: Install dependencies
+        working-directory: .
+        run: rye sync --no-lock
+      - name: Run Django migrations
+        working-directory: ./aiai
+        run: rye run python manage.py migrate
+      - name: Run Django tests
+        working-directory: ./aiai
+        env:
+          HF_DATASETS_TRUST_REMOTE_CODE: "true"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL_NAME: ${{ secrets.OPENAI_MODEL_NAME }}
+        run: rye run pytest -n 4

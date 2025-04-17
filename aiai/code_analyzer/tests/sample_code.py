@@ -1,8 +1,9 @@
 """
 Sample code for testing the code analyzer.
-This file contains several functions that call each other to demonstrate 
+This file contains several functions that call each other to demonstrate
 the function dependency analysis.
 """
+
 
 def main():
     """
@@ -32,7 +33,7 @@ def process_data(data):
     processed = []
     for item in data:
         processed.append(transform_item(item))
-    
+
     return processed
 
 

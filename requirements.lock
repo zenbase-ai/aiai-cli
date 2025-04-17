@@ -37,8 +37,6 @@ asgiref==3.8.1
     # via django
     # via django-stubs
     # via opentelemetry-instrumentation-asgi
-asteval==1.0.6
-    # via docetl
 asttokens==3.0.0
     # via stack-data
 attrs==25.3.0
@@ -111,8 +109,6 @@ deprecated==1.2.18
     # via opentelemetry-semantic-conventions
 deprecation==2.1.0
     # via lancedb
-diskcache==5.6.3
-    # via docetl
 distro==1.9.0
     # via anthropic
     # via openai
@@ -125,8 +121,6 @@ django-stubs==5.1.3
     # via aiai
 django-stubs-ext==5.1.3
     # via django-stubs
-docetl==0.2.2
-    # via aiai
 docker==7.1.0
     # via crewai-tools
 docstring-parser==0.16
@@ -147,15 +141,11 @@ filelock==3.18.0
     # via huggingface-hub
 flatbuffers==25.2.10
     # via onnxruntime
-frozendict==2.4.6
-    # via docetl
 frozenlist==1.5.0
     # via aiohttp
     # via aiosignal
 fsspec==2025.3.2
     # via huggingface-hub
-future==1.0.0
-    # via lzstring
 google-auth==2.38.0
     # via kubernetes
 googleapis-common-protos==1.69.2
@@ -163,6 +153,8 @@ googleapis-common-protos==1.69.2
     # via opentelemetry-exporter-otlp-proto-http
 gptcache==0.1.44
     # via embedchain
+greenlet==3.2.0
+    # via sqlalchemy
 grpcio==1.71.0
     # via chromadb
     # via grpcio-tools
@@ -208,8 +200,6 @@ importlib-metadata==8.4.0
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via chromadb
-iniconfig==2.1.0
-    # via pytest
 instructor==1.7.9
     # via aiai
     # via crewai
@@ -228,8 +218,6 @@ jiter==0.8.2
 jmespath==1.0.1
     # via boto3
     # via botocore
-joblib==1.4.2
-    # via scikit-learn
 json-repair==0.41.0
     # via crewai
 json5==0.12.0
@@ -243,7 +231,6 @@ jsonpointer==3.0.0
 jsonref==1.1.0
     # via crewai
 jsonschema==4.23.0
-    # via docetl
     # via litellm
 jsonschema-specifications==2024.10.1
     # via jsonschema
@@ -282,9 +269,6 @@ libcst==1.7.0
 litellm==1.60.2
     # via aiai
     # via crewai
-    # via docetl
-lzstring==1.0.4
-    # via docetl
 mako==1.3.10
     # via alembic
 markdown-it-py==3.0.0
@@ -324,8 +308,6 @@ numpy==2.2.4
     # via onnxruntime
     # via pandas
     # via qdrant-client
-    # via scikit-learn
-    # via scipy
 oauthlib==3.2.2
     # via kubernetes
     # via requests-oauthlib
@@ -408,7 +390,6 @@ packaging==24.2
     # via marshmallow
     # via onnxruntime
     # via opentelemetry-instrumentation
-    # via pytest
 pandas==2.2.3
     # via langchain-cohere
 parso==0.8.4
@@ -421,8 +402,6 @@ pexpect==4.9.0
     # via ipython
 pillow==11.1.0
     # via pdfplumber
-pluggy==1.5.0
-    # via pytest
 portalocker==2.10.1
     # via qdrant-client
 posthog==3.24.0
@@ -461,7 +440,6 @@ pydantic==2.11.3
     # via cohere
     # via crewai
     # via crewai-tools
-    # via docetl
     # via fastapi
     # via instructor
     # via lancedb
@@ -498,16 +476,10 @@ pypika==0.48.9
     # via chromadb
 pyproject-hooks==1.2.0
     # via build
-pyrate-limiter==3.7.0
-    # via docetl
 pyright==1.1.399
     # via crewai-tools
 pysbd==0.3.4
     # via embedchain
-pytest==8.3.5
-    # via pytest-django
-pytest-django==4.11.1
-    # via aiai
 python-dateutil==2.9.0.post0
     # via botocore
     # via kubernetes
@@ -520,8 +492,6 @@ python-dotenv==1.1.0
     # via litellm
     # via pydantic-settings
     # via uvicorn
-python-multipart==0.0.17
-    # via docetl
 pytube==15.0.0
     # via crewai-tools
 pytz==2024.2
@@ -540,8 +510,6 @@ pyyaml==6.0.2
     # via uvicorn
 qdrant-client==1.13.3
     # via mem0ai
-rapidfuzz==3.13.0
-    # via docetl
 referencing==0.36.2
     # via jsonschema
     # via jsonschema-specifications
@@ -572,7 +540,6 @@ requests-toolbelt==1.0.0
     # via langsmith
 rich==13.9.4
     # via chromadb
-    # via docetl
     # via embedchain
     # via instructor
     # via typer
@@ -587,10 +554,6 @@ schedule==1.2.2
     # via openlit
 schema==0.7.7
     # via embedchain
-scikit-learn==1.6.1
-    # via docetl
-scipy==1.15.2
-    # via scikit-learn
 setuptools==78.1.0
     # via grpcio-tools
 shellingham==1.5.4
@@ -627,8 +590,6 @@ tenacity==9.1.2
     # via instructor
     # via langchain-community
     # via langchain-core
-threadpoolctl==3.6.0
-    # via scikit-learn
 tiktoken==0.9.0
     # via langchain-openai
     # via litellm
@@ -642,7 +603,6 @@ tomli-w==1.2.0
     # via crewai
 tqdm==4.67.1
     # via chromadb
-    # via docetl
     # via huggingface-hub
     # via lancedb
     # via openai
@@ -653,10 +613,9 @@ tree-sitter==0.24.0
     # via aiai
 tree-sitter-python==0.23.6
     # via aiai
-typer==0.12.5
+typer==0.15.2
     # via aiai
     # via chromadb
-    # via docetl
     # via instructor
 types-pyyaml==6.0.12.20250402
     # via django-stubs
@@ -711,8 +670,7 @@ wcwidth==0.2.13
     # via prompt-toolkit
 websocket-client==1.8.0
     # via kubernetes
-websockets==13.1
-    # via docetl
+websockets==15.0.1
     # via uvicorn
 wrapt==1.17.2
     # via deprecated

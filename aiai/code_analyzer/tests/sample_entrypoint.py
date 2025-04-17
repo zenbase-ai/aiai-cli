@@ -2,12 +2,13 @@ from textwrap import dedent
 from crewai import Agent, Task, Crew, Process
 from crewai_tools import FileReadTool
 
+
 def get_crewai_agent():
-    file_read_tool = FileReadTool(file_path='people_data.json')
+    file_read_tool = FileReadTool(file_path="people_data.json")
 
     lead_extractor = Agent(
-        role='Lead Profile Extractor',
-        goal='Extract relevant details (name, company, role, specific interests/pain points) for each person from the provided data.',
+        role="Lead Profile Extractor",
+        goal="Extract relevant details (name, company, role, specific interests/pain points) for each person from the provided data.",
         backstory=dedent("""\
             You are an expert analyst specializing in identifying key information 
             from unstructured data. Your goal is to pinpoint the most relevant details 
@@ -15,12 +16,12 @@ def get_crewai_agent():
             """),
         verbose=True,
         allow_delegation=False,
-        tools=[file_read_tool]
+        tools=[file_read_tool],
     )
 
     email_crafter = Agent(
-        role='Zenbase Sales Email Crafter',
-        goal='Write a concise and compelling personalized sales email to a potential lead, highlighting how Zenbase can address their specific needs related to LLM development, prompt engineering, and model optimization.',
+        role="Zenbase Sales Email Crafter",
+        goal="Write a concise and compelling personalized sales email to a potential lead, highlighting how Zenbase can address their specific needs related to LLM development, prompt engineering, and model optimization.",
         backstory=dedent("""\
             You are a persuasive sales copywriter with deep knowledge of Zenbase. 
             Zenbase helps developers automate prompt engineering and model selection, 
@@ -31,7 +32,7 @@ def get_crewai_agent():
             improves LLM performance, reduces development time, leverages DSPy algorithms.
             """),
         verbose=True,
-        allow_delegation=False
+        allow_delegation=False,
     )
 
     extract_task = Task(
@@ -96,16 +97,17 @@ def get_crewai_agent():
             [Your Name/Zenbase Team]
             """),
         agent=email_crafter,
-        context=[extract_task]
+        context=[extract_task],
     )
 
     crew = Crew(
         agents=[lead_extractor, email_crafter],
         tasks=[extract_task, email_task],
         process=Process.sequential,
-        verbose=True
+        verbose=True,
     )
     return crew
+
 
 def main():
     print("Starting Crew execution...")

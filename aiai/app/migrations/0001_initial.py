@@ -4,29 +4,43 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='AgentRunLog',
+            name="AgentRunLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('input_data', models.JSONField()),
-                ('output_data', models.TextField()),
-                ('success', models.BooleanField(default=False)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                ("input_data", models.JSONField()),
+                ("output_data", models.TextField()),
+                ("success", models.BooleanField(default=False)),
             ],
         ),
         migrations.CreateModel(
-            name='DiscoveredRule',
+            name="DiscoveredRule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rule_text', models.TextField()),
-                ('confidence', models.DecimalField(decimal_places=2, max_digits=5)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("rule_text", models.TextField()),
+                ("confidence", models.DecimalField(decimal_places=2, max_digits=5)),
             ],
         ),
     ]

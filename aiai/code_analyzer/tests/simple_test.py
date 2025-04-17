@@ -39,4 +39,4 @@ for capture in captures:
     if isinstance(capture, tuple) and len(capture) == 2:
         node, capture_name = capture
         print(f"  Node type: {node.type}, Capture name: {capture_name}")
-        print(f"  Text: {code[node.start_byte:node.end_byte].decode('utf8')}")
+        print(f"  Text: {code[node.start_byte : node.end_byte].decode('utf8')}")

@@ -7,8 +7,7 @@ dependencies = [
     "libcst>=1.7.0",
     "django>=5.2",
     "django-stubs>=5.1.3",
-    "typer>=0.12.5",
-    "pytest-django>=4.11.1",
+    "typer>=0.15.2",
     "openlit @ git+https://github.com/ammirsm/openlit.git#egg=openlit&subdirectory=sdk/python",
     "tree-sitter>=0.24.0",
     "tree-sitter-python>=0.23.6",
@@ -18,7 +17,6 @@ dependencies = [
     "litellm==1.60.2",
     "instructor>=1.7.9",
     "pydantic>=2.11.3",
-    "docetl>=0.2.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -38,6 +36,9 @@ managed = true
 dev-dependencies = [
     "ipdb>=0.13.13",
     "ipython>=9.1.0",
+    "pytest-xdist>=3.6.1",
+    "pytest-django>=4.11.1",
+    "pytest>=8.3.5",
 ]
 
 [tool.pytest.ini_options]
@@ -49,3 +50,18 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["aiai"]
+
+[tool.ruff]
+# Enable the formatter
+target-version = "py38"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

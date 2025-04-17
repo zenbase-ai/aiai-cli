@@ -12,6 +12,11 @@ wheels/
 # sqlite
 db.sqlite3
 
+# rmeove all .json in the tests
+*/tests/*.json
+*/tests/*.md
+*/tests/*.dot
+
 output/
 
 # any json file that have output in its name
@@ -23,3 +28,6 @@ src/aiai/.env
 .env
 
 .DS_Store
+
+# make sure we include the people_data.json file in git
+!aiai/examples/people_data.json
