@@ -31,10 +31,43 @@ aiai/
 │   ├── openlit_exporters.py # Log export functionality
 │   └── test_logger.py      # Logger test suite
 ├── main.py                 # Main application entry point
-├── manage.py               # Project management script
+├── manage.py               # Project management script for Django
 ├── prompt_finder.py        # Utility for finding prompts
 └── utils.py                # General utility functions
 ```
+
+## Technology Choices
+
+The AIAI project leverages several key technologies:
+
+### Package manager and dependency management
+- **Rye**: Used for package management and dependency resolution
+
+### Testing
+- **Pytest**: Automated testing framework
+- **Pytest-django**: Integration testing for Django
+- **Pytest-xdist**: Parallelization support for Pytest
+
+### Code Analysis and Parsing
+- **LibCST**: Used for parsing and analyzing Python code through its Concrete Syntax Tree representation
+- **Tree-sitter**: Provides efficient parsing capabilities for code understanding
+- **NetworkX & pydot**: Used for creating and manipulating graph representations of code
+
+### Data Management
+- **Django ORM**: Handles database operations, schema management, and migrations
+- **SQLite**: Used in development with ability to easily switch to PostgreSQL for production
+- **Pydantic**: Provides data validation and settings management
+
+### CLI & User Interface
+- **Typer**: Powers the command-line interface with rich features and automatic help generation
+
+### LLM Integration
+- **LiteLLM**: Standardizes interactions with various LLM providers
+- **Instructor**: Facilitates structured outputs from language models
+- **CrewAI** (optional): Enables agent-based workflows
+
+### Observability
+- **OpenLLMetry (via OpenLit)**: Collects execution telemetry from LLM calls and agent executions
 
 ## Component Descriptions
 
@@ -57,8 +90,7 @@ The `llm_context` directory stores contextual information for Large Language Mod
 ### Logger
 The `logger` directory implements a logging system with:
 - `log_ingestor.py`: For ingesting and processing logs
-- `extractor.py`: For extracting data from logs
-- `openlit_exporters.py`: For exporting logs to external systems
+- `openlit_exporters.py`: For exporting logs to external systems for openlit
 - Test suite for validation
 
 ### Core Files
