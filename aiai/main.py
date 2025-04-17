@@ -24,7 +24,7 @@ def main():
     # Check if OpenAI API key is available and run the CrewAI example
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if openai_api_key:
-        from aiai.log_ingestor import run
+        from aiai.logger.log_ingestor import run
         cwd = Path(__file__).parent
         script_to_run = str(cwd / "examples/crewai_agent.py")
         typer.echo(f"Running CrewAI example: {script_to_run}")
