@@ -14,13 +14,13 @@ def main():
     
     typer.echo("Hello from aiai CLI!")
     # If you want to do any DB operations here:
-    from aiai.app.models import OtelSpan
-
-    log = OtelSpan.objects.create(
-        input_data={"example": "data"}, output_data="Sample output"
-    )
-    typer.echo(f"Created log with ID: {log.pk}")
-    
+    # from aiai.app.models import OtelSpan
+    #
+    # log = OtelSpan.objects.create(
+    #     input_data={"example": "data"}, output_data="Sample output"
+    # )
+    # typer.echo(f"Created log with ID: {log.pk}")
+    #
     # Check if OpenAI API key is available and run the CrewAI example
     openai_api_key = os.environ.get("OPENAI_API_KEY")
     if openai_api_key:
