@@ -10,11 +10,10 @@ import instructor
 import litellm
 import rich
 from aiolimiter import AsyncLimiter
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from tqdm import tqdm
 
-from aiai.utils import prepare_messages, setup_django
+from aiai.synthetic.utils import prepare_messages
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo
@@ -27,7 +26,7 @@ class SynPrompt(BaseModel):
 
 
 @dataclass
-class SynDataGenerator:
+class DataGenerator:
     min_n: int = 64
     max_concurrency: int = 24
     seed: int = 42
@@ -92,13 +91,13 @@ class SynDataGenerator:
         )
 
 
-async def _cli(
-    output: Path = Path("./synthetic_data.json"),
+async def cli(
+    output: Path,
     min_n: int = 64,
     max_concurrency: int = 24,
     seed: int = 42,
 ):
-    generator = SynDataGenerator(min_n, max_concurrency, seed)
+    generator = DataGenerator(min_n, max_concurrency, seed)
 
     rich.print("Loading function info...", end=" ")
     from aiai.app.models import FunctionInfo
@@ -122,14 +121,3 @@ async def _cli(
     with output.open("w", encoding="utf-8") as f:
         json.dump({"prompt": prompt, "data": data}, f, indent=2, ensure_ascii=False)
     rich.print(f"done.\nSaved {len(data)} synthetic examples to {output}")
-
-
-def cli(
-    output: Path = Path("./synthetic_data.json"),
-    min_n: int = 64,
-    max_concurrency: int = 24,
-    seed: int = 42,
-):
-    load_dotenv()
-    setup_django()
-    asyncio.run(_cli(output, min_n, max_concurrency, seed))

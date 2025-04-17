@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import TYPE_CHECKING
@@ -6,10 +5,9 @@ from typing import TYPE_CHECKING
 import instructor
 import litellm
 import rich
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from aiai.utils import prepare_messages, setup_django
+from aiai.synthetic.utils import prepare_messages
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo
@@ -39,7 +37,7 @@ class HeadToHeadEval(BaseModel):
 
 
 @dataclass
-class SynEvalGenerator:
+class EvalGenerator:
     prompt_model: str = "openai/o4-mini"
     sys_prompt: str = dedent(
         """\
@@ -80,8 +78,8 @@ class SynEvalGenerator:
         )
 
 
-async def _cli():
-    generator = SynEvalGenerator()
+async def cli():
+    generator = EvalGenerator()
     rich.print("Loading function info...", end=" ")
     from aiai.app.models import FunctionInfo
 
@@ -101,13 +99,3 @@ async def _cli():
     rich.print("<head-to-head>")
     rich.print_json(head_to_head.model_dump_json())
     rich.print("</head-to-head>")
-
-
-def cli():
-    load_dotenv()
-    setup_django()
-    asyncio.run(_cli())
-
-
-if __name__ == "__main__":
-    cli()
