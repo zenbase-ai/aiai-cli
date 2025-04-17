@@ -21,6 +21,16 @@ cwd = Path(__file__).parent
 
 
 def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
+    """
+    Build a pipeline for extracting rules from logs.
+    
+    Args:
+        reward: The reward type to analyze ("success", "failure", etc.)
+        **kwargs: Additional arguments to pass to the Pipeline constructor
+    
+    Returns:
+        Pipeline: A configured pipeline instance
+    """
     operations = [
         MapOp(
             name="reward_reasoning",
@@ -152,11 +162,6 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
             unnest_key="cluster_patterns",
             expand_fields=["insights"],
             output_key="insights",
-        ),
-        UnnestOp(
-            name="unnest_insight_from_insights",
-            type="unnest",
-            unnest_key="insights",
         ),
         ReduceOp(
             name="insights_to_rules",
@@ -323,7 +328,6 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                 "patterns_to_insights",
                 "unnest_patterns_from_clusters",
                 "unnest_insights_from_patterns",
-                "unnest_insight_from_insights",
                 "insights_to_rules",
                 "synthesize_rules",
             ],
@@ -338,47 +342,78 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
     )
 
 
-def extract_rules(logs, reward="success"):
-    # join your logs into one string, same as before
+def extract_rules(logs, reward="success", model="gpt-4o"):
+    """
+    Extract rules from a collection of logs.
+    
+    Args:
+        logs: A collection of log objects with input_data and output_data attributes
+        reward: The reward type to analyze ("success", "failure", etc.)
+        model: The model to use for the analysis
+    
+    Returns:
+        dict: A dictionary containing always/never rules, tips, and an evaluation guide
+    """
+    # Filter and join logs into one string
     logs_str = chr(10).join(
         "inputs:\n"  + str(log.input_data) + "\nOutputs:\n" + str(log.output_data)
         for log in logs
         if "prompt" in log.input_data
     )
 
-    # write that to a temp JSON (single‐record) file
-    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as inf:
-        json.dump([{"text": logs_str}], inf)
-        in_path = inf.name
-
-    # reserve a temp file for the pipeline output
-    out_fd, out_path = tempfile.mkstemp(suffix=".json")
-    os.close(out_fd)
-
-    try:
-        datasets = {
-            "tasks": Dataset(
-                name="tasks",
-                type="file",
-                path=in_path,
-            )
+    if not logs_str:
+        return {
+            "always": [],
+            "never": [],
+            "tips": [],
+            "evaluation_guide": "No valid logs found for analysis."
         }
-        pipeline = build_rules_pipeline(
-            reward=reward,
-            datasets=datasets,
-            output=PipelineOutput(type="file", path=out_path),
-            default_model="gpt-4o"
-        )
-        pipeline.run()
 
-        # read back your always/never/tips
-        with open(out_path) as f:
-            rules = json.load(f)
-        return rules
+    # Write that to a temp JSON (single‐record) file
+    try:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as inf:
+            json.dump([{"text": logs_str}], inf)
+            in_path = inf.name
 
-    finally:
-        os.remove(in_path)
-        os.remove(out_path)
+        # Reserve a temp file for the pipeline output
+        out_fd, out_path = tempfile.mkstemp(suffix=".json")
+        os.close(out_fd)
+
+        try:
+            datasets = {
+                "tasks": Dataset(
+                    type="file",
+                    path=in_path,
+                )
+            }
+            pipeline = build_rules_pipeline(
+                reward=reward,
+                datasets=datasets,
+                output=PipelineOutput(type="file", path=out_path),
+                default_model=model
+            )
+            pipeline.run()
+
+            # Read back your always/never/tips
+            with open(out_path) as f:
+                rules = json.load(f)
+            return rules
+
+        finally:
+            # Clean up temp files
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+    except Exception as e:
+        # Return an empty result in case of error
+        return {
+            "always": [],
+            "never": [],
+            "tips": [],
+            "evaluation_guide": f"Error during rule extraction: {str(e)}"
+        }
+
 
 if __name__ == '__main__':
     setup_django()
