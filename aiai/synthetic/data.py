@@ -1,6 +1,4 @@
-import asyncio
 import json
-import random
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -9,11 +7,9 @@ from typing import TYPE_CHECKING
 import instructor
 import litellm
 import rich
-from aiolimiter import AsyncLimiter
 from pydantic import BaseModel, Field
-from tqdm import tqdm
 
-from aiai.synthetic.utils import prepare_messages
+from aiai.synthetic.utils import get_examples, prepare_messages
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo
@@ -23,13 +19,27 @@ class SynPrompt(BaseModel):
     prompt: str = Field(
         description="A highly detailed and thoughtful prompt for generating a single synthetic datum."  # noqa: E501
     )
+    examples: list[str] = Field(
+        description="A list of examples of the synthetic data to be generated."
+    )
+
+    def __str__(self):
+        return dedent(
+            f"""\
+            <instructions>
+            {self.prompt}
+            </instructions>
+            <examples>
+            {self.examples}
+            </examples>
+            """
+        )
 
 
 @dataclass
 class DataGenerator:
-    min_n: int = 64
-    max_concurrency: int = 24
-    seed: int = 42
+    examples: int
+    seed: int
     prompt_model: str = "openai/o4-mini"
     data_model: str = "openai/gpt-4.1-mini"
     sys_prompt: str = dedent(
@@ -40,64 +50,32 @@ class DataGenerator:
         """
     )
 
-    def __post_init__(self):
-        self.lm = instructor.from_litellm(litellm.acompletion)
-        self.limiter = AsyncLimiter(self.max_concurrency)
-
     async def prompt(
         self,
         fns: list["FunctionInfo"],
         examples: list[str] | None = None,
     ) -> str:
         messages = prepare_messages(self.sys_prompt, fns, examples)
-        syn_prompt = await self.lm.create(
+        syn_prompt = await instructor.from_litellm(litellm.acompletion).create(
             model=self.prompt_model,
             response_model=SynPrompt,
             messages=messages,
         )
-        return syn_prompt.prompt
+        return str(syn_prompt)
 
-    async def _datum(self, prompt: str) -> str:
-        async with self.limiter:
-            return await self.lm.create(
-                model=self.data_model,
-                messages=[{"role": "system", "content": prompt}],
-                temperature=1,
-                seed=random.randint(0, 1_000_000),
-                response_model=str,
-            )
-
-    async def data(self, prompt: str) -> list[str]:
-        tasks = [self._datum(prompt) for _ in range(self.min_n)]
-        data = "\n".join(
-            [await t for t in tqdm(asyncio.as_completed(tasks), total=self.min_n)]
-        )
-        return await self.lm.create(
+    async def data(self, prompt: str) -> str:
+        response = await litellm.acompletion(
             model=self.data_model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": dedent(
-                        f"""\
-                        Combine the following data into a single list of data:
-                        <data>
-                        {data}
-                        </data>
-                        """
-                    ),
-                }
-            ],
-            response_model=list[str],
+            messages=[{"role": "system", "content": prompt}],
+            temperature=1,
+            n=self.examples,
+            seed=self.seed,
         )
+        return [r.message.content for r in response.choices]
 
 
-async def cli(
-    output: Path,
-    min_n: int = 64,
-    max_concurrency: int = 24,
-    seed: int = 42,
-):
-    generator = DataGenerator(min_n, max_concurrency, seed)
+async def cli(output: Path, examples: int, seed: int):
+    generator = DataGenerator(examples, seed)
 
     rich.print("Loading function info...", end=" ")
     from aiai.app.models import FunctionInfo
@@ -105,15 +83,18 @@ async def cli(
     fns = [fn async for fn in FunctionInfo.objects.all()]
     rich.print(f"{len(fns)} functions loaded.")
 
-    rich.print("Generating synthetic prompt...", end=" ")
-    prompt = await generator.prompt(fns)
+    if examples := get_examples(fns):
+        rich.print("Found examples:")
+        rich.print_json(data=examples)
+
+    rich.print("Generating synthetic data prompt...", end=" ")
+    prompt = await generator.prompt(fns, examples)
     rich.print("done.")
     rich.print("<prompt>")
     rich.print(prompt)
     rich.print("</prompt>")
 
-    rich.print("Generating synthetic data with config:", end=" ")
-    rich.print_json(vars(generator), indent=None)
+    rich.print("Generating synthetic data...", end=" ")
     data = await generator.data(prompt)
     rich.print(f"Generated {len(data)} synthetic examples.")
 
@@ -121,3 +102,5 @@ async def cli(
     with output.open("w", encoding="utf-8") as f:
         json.dump({"prompt": prompt, "data": data}, f, indent=2, ensure_ascii=False)
     rich.print(f"done.\nSaved {len(data)} synthetic examples to {output}")
+
+    return prompt, data

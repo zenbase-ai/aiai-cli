@@ -7,7 +7,7 @@ import litellm
 import rich
 from pydantic import BaseModel, Field
 
-from aiai.synthetic.utils import prepare_messages
+from aiai.synthetic.utils import get_examples, prepare_messages
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo
@@ -18,6 +18,24 @@ class RulesEval(BaseModel):
     instructions: str = Field(description="Instructions for the evaluator.")
     always: list[str] = Field(description="A good output must always do the following")
     never: list[str] = Field(description="A good output must never do the following")
+
+    def __str__(self) -> str:
+        return dedent(
+            f"""\
+            <context>
+            {self.context}
+            </context>
+            <instructions>
+            {self.instructions}
+            </instructions>
+            <always>
+            {self.always}
+            </always>
+            <never>
+            {self.never}
+            </never>\
+            """
+        )
 
 
 class HeadToHeadEval(BaseModel):
@@ -34,6 +52,21 @@ class HeadToHeadEval(BaseModel):
     context: str = Field(description="The context of the evaluation.")
     instructions: str = Field(description="Instructions for the evaluator.")
     tips: list[str] = Field(description="A list of tips for the evaluator to consider.")
+
+    def __str__(self) -> str:
+        return dedent(
+            f"""\
+            <context>
+            {self.context}
+            </context>
+            <instructions>
+            {self.instructions}
+            </instructions>
+            <tips>
+            {self.tips}
+            </tips>\
+            """
+        )
 
 
 @dataclass
@@ -86,8 +119,12 @@ async def cli():
     fns = [fn async for fn in FunctionInfo.objects.all()]
     rich.print(f"{len(fns)} functions loaded.")
 
+    if examples := get_examples(fns):
+        rich.print("Found examples:")
+        rich.print_json(data=examples)
+
     rich.print("Generating rules prompt...", end=" ")
-    rules = await generator.rules(fns)
+    rules = await generator.rules(fns, examples)
     rich.print("done.")
     rich.print("<rules>")
     rich.print_json(rules.model_dump_json())
@@ -99,3 +136,5 @@ async def cli():
     rich.print("<head-to-head>")
     rich.print_json(head_to_head.model_dump_json())
     rich.print("</head-to-head>")
+
+    return rules, head_to_head
