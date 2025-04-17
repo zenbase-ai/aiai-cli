@@ -20,7 +20,7 @@ jobs:
       - uses: eifinger/setup-rye@v3
         id: setup-rye
         with:
-          version: '0.44.0'
+          version: "0.44.0"
           enable-cache: true
           cache-prefix: ${{ matrix.python-version }}
       - name: Run lint with tests
@@ -30,7 +30,7 @@ jobs:
         run: rye pin ${{ matrix.python-version }}
       - name: Install dependencies
         working-directory: .
-        run: rye sync --no-lock
+        run: rye sync --all-features
       - name: Run Django migrations
         working-directory: ./aiai
         run: rye run python manage.py migrate
