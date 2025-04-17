@@ -30,7 +30,7 @@ jobs:
         run: rye pin ${{ matrix.python-version }}
       - name: Install dependencies
         working-directory: .
-        run: rye sync --no-lock --all-features
+        run: rye sync --all-features
       - name: Run Django migrations
         working-directory: ./aiai
         run: rye run python manage.py migrate
