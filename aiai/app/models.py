@@ -12,16 +12,6 @@ class OtelSpan(models.Model):
         return f"Run at {self.timestamp} - OtelSpan: {self.agent_run_id}"
 
 
-class DiscoveredRule(models.Model):
-    rule_text: models.TextField = models.TextField()
-    confidence: models.DecimalField = models.DecimalField(
-        max_digits=5, decimal_places=2
-    )
-
-    def __str__(self) -> str:
-        return f"Rule: {self.rule_text[:50]}... ({self.confidence}%)"
-
-
 class FunctionInfo(models.Model):
     name = models.CharField(max_length=255)
     file_path = models.CharField(max_length=512)
