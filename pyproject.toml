@@ -50,3 +50,18 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["aiai"]
+
+[tool.ruff]
+# Enable the formatter
+target-version = "py38"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
