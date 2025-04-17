@@ -200,8 +200,6 @@ importlib-metadata==8.4.0
     # via opentelemetry-api
 importlib-resources==6.5.2
     # via chromadb
-iniconfig==2.1.0
-    # via pytest
 instructor==1.7.9
     # via aiai
     # via crewai
@@ -392,7 +390,6 @@ packaging==24.2
     # via marshmallow
     # via onnxruntime
     # via opentelemetry-instrumentation
-    # via pytest
 pandas==2.2.3
     # via langchain-cohere
 parso==0.8.4
@@ -405,8 +402,6 @@ pexpect==4.9.0
     # via ipython
 pillow==11.1.0
     # via pdfplumber
-pluggy==1.5.0
-    # via pytest
 portalocker==2.10.1
     # via qdrant-client
 posthog==3.24.0
@@ -485,10 +480,6 @@ pyright==1.1.399
     # via crewai-tools
 pysbd==0.3.4
     # via embedchain
-pytest==8.3.5
-    # via pytest-django
-pytest-django==4.11.1
-    # via aiai
 python-dateutil==2.9.0.post0
     # via botocore
     # via kubernetes
