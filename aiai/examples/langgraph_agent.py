@@ -1,18 +1,17 @@
 import json
 from textwrap import dedent
-from typing import TypedDict, Annotated
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import BaseMessage, HumanMessage
+from typing import Annotated, TypedDict
 
+import openlit
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-import openlit
 
 from aiai.logger.openlit_exporters import DjangoSpanExporter
-
 
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
@@ -38,8 +37,6 @@ class AgentState(TypedDict):
 
 
 # 2. Define Node Functions
-
-
 def load_data(state: AgentState) -> AgentState:
     """Loads the raw lead text from the JSON file."""
     print("---LOADING DATA---")
