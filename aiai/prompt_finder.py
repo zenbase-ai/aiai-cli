@@ -127,7 +127,7 @@ REQUIRED OUTPUT FORMAT:
 def find_prompts(
     log_id: Optional[int] = typer.Option(
         None, help="Specific AgentRunLog ID to analyze"
-    )
+    ),
 ):
     """
     Find where prompts from AgentRunLogs are defined and constructed in code.
@@ -162,9 +162,9 @@ def find_prompts(
         if not prompt:
             continue
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"LOG ID: {log.id} | RUN ID: {log.agent_run_id or 'N/A'}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         # Show prompt snippet
         print(f"PROMPT: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")

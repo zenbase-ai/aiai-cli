@@ -9,7 +9,9 @@ load_dotenv()
 
 
 def get_crewai_agent():
-    file_read_tool = FileReadTool(file_path=BASE_DIR / "aiai" / "examples" / "people_data.json")
+    file_read_tool = FileReadTool(
+        file_path=BASE_DIR / "aiai" / "examples" / "people_data.json"
+    )
 
     lead_extractor = Agent(
         role="Lead Profile Extractor",

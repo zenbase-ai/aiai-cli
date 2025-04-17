@@ -25,7 +25,9 @@ class LogIngestor:
         self.provider = TracerProvider()
         trace.set_tracer_provider(self.provider)
         self.span_exporter = DjangoSpanExporter()
-        trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(self.span_exporter))
+        trace.get_tracer_provider().add_span_processor(
+            BatchSpanProcessor(self.span_exporter)
+        )
         openlit.init()
         self.tracer = trace.get_tracer(__name__)
 
@@ -61,7 +63,9 @@ class LogIngestor:
                     span.set_attribute("file_path", file_path)
                     span.set_attribute("agent_run_id", agent_run_id)
                     result = module.main()
-                    span.set_attribute("result", str(result)) # Keep result simple for attribute
+                    span.set_attribute(
+                        "result", str(result)
+                    )  # Keep result simple for attribute
 
             else:
                 raise AttributeError(
@@ -72,7 +76,6 @@ class LogIngestor:
             if module_name in sys.modules:
                 del sys.modules[module_name]
 
-
         # Evaluate the result after the script execution span has ended
         client = instructor.from_litellm(completion)
         success = evaluate_crew_output(result, client)
@@ -80,10 +83,15 @@ class LogIngestor:
         # Create a separate record for evaluation result linked to the run
         OtelSpan.objects.create(
             agent_run_id=agent_run_id,
-            input_data={"file_path": file_path, "raw_result": result}, # Store raw result here
-            output_data={"classification": success.classification, "reasoning": success.reasoning},
-            raw_span={}, # Not a direct span, but evaluation meta-data
+            input_data={
+                "file_path": file_path,
+                "raw_result": result,
+            },  # Store raw result here
+            output_data={
+                "classification": success.classification,
+                "reasoning": success.reasoning,
+            },
+            raw_span={},  # Not a direct span, but evaluation meta-data
         )
         print(f"Finished execution and evaluation for: {file_path}")
         print(f"Evaluation Result: {success.classification} - {success.reasoning}")
-
