@@ -31,3 +31,4 @@ src/aiai/.env
 
 # make sure we include the people_data.json file in git
 !aiai/examples/people_data.json
+!aiai/examples/crewai/people_data.json
