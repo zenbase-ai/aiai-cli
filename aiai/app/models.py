@@ -1,0 +1,46 @@
+from django.db import models
+
+
+class OtelSpan(models.Model):
+    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    agent_run_id = models.CharField(max_length=32, db_index=True, null=True, blank=True)
+    input_data: models.JSONField = models.JSONField(null=True, blank=True)
+    output_data: models.TextField = models.TextField(null=True, blank=True)
+    raw_span: models.JSONField = models.JSONField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"Run at {self.timestamp} - OtelSpan: {self.agent_run_id}"
+
+
+class DiscoveredRule(models.Model):
+    rule_text: models.TextField = models.TextField()
+    confidence: models.DecimalField = models.DecimalField(
+        max_digits=5, decimal_places=2
+    )
+
+    def __str__(self) -> str:
+        return f"Rule: {self.rule_text[:50]}... ({self.confidence}%)"
+
+
+class FunctionInfo(models.Model):
+    name = models.CharField(max_length=255)
+    file_path = models.CharField(max_length=512)
+    line_start = models.IntegerField()
+    line_end = models.IntegerField()
+    signature = models.TextField()
+    source_code = models.TextField()
+    docstring = models.TextField(null=True, blank=True)
+    comments = models.JSONField(null=True, blank=True)
+    string_literals = models.JSONField(null=True, blank=True)
+    variables = models.JSONField(null=True, blank=True)
+    constants = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("file_path", "name", "line_start")
+        indexes = [
+            models.Index(fields=["name"]),
+            models.Index(fields=["file_path"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.file_path}:{self.line_start}-{self.line_end})"

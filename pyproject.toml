@@ -2,9 +2,7 @@
 name = "aiai"
 version = "0.1.0"
 description = "Add your description here"
-authors = [
-    { name = "Amir Mehr", email = "amir.saiedmehr@gmail.com" }
-]
+authors = [{ name = "Amir Mehr", email = "amir@zenbase.ai" }]
 dependencies = [
     "libcst>=1.7.0",
     "django>=5.2",
@@ -25,10 +23,7 @@ readme = "README.md"
 requires-python = ">= 3.8"
 
 [project.optional-dependencies]
-crewai = [
-    "crewai==0.114.0",
-    "crewai-tools>=0.40.1",
-]
+crewai = ["crewai==0.114.0", "crewai-tools>=0.40.1"]
 
 [project.scripts]
 aiai = "aiai.main:main"
@@ -39,10 +34,17 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = []
+dev-dependencies = [
+    "ipdb>=0.13.13",
+    "ipython>=9.1.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "aiai.app.settings"
+python_files = ["test_*.py", "*_test.py"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/aiai"]
+packages = ["aiai"]

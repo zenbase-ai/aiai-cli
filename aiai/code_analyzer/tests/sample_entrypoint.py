@@ -1,9 +1,6 @@
-from dotenv import load_dotenv
 from textwrap import dedent
 from crewai import Agent, Task, Crew, Process
 from crewai_tools import FileReadTool
-
-load_dotenv()
 
 def get_crewai_agent():
     file_read_tool = FileReadTool(file_path='people_data.json')
@@ -113,5 +110,3 @@ def get_crewai_agent():
 def main():
     print("Starting Crew execution...")
     crew = get_crewai_agent()
-    result = crew.kickoff()
-    return result.raw

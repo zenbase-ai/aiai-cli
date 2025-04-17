@@ -4,9 +4,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class EvaluationResponse(BaseModel):
-    classification: Literal["good", "bad"] = Field(..., description="Classification of the output as either 'good' or 'bad' based on the criteria.")
-    reasoning: str = Field(..., description="A brief explanation for the classification provided.")
+    classification: Literal["good", "bad"] = Field(
+        ...,
+        description="Classification of the output as either 'good' or 'bad' based on the criteria.",
+    )
+    reasoning: str = Field(
+        ..., description="A brief explanation for the classification provided."
+    )
+
 
 def evaluate_crew_output(output_text: str, client=None) -> EvaluationResponse | None:
     system_prompt = """
@@ -36,7 +43,10 @@ def evaluate_crew_output(output_text: str, client=None) -> EvaluationResponse | 
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Please evaluate the following generated output:\n\n{output_text}"}
+                {
+                    "role": "user",
+                    "content": f"Please evaluate the following generated output:\n\n{output_text}",
+                },
             ],
             response_model=EvaluationResponse,
             temperature=0.1,

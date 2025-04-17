@@ -101,6 +101,7 @@ cryptography==44.0.2
 dataclasses-json==0.6.7
     # via langchain-community
 decorator==5.2.1
+    # via ipdb
     # via ipython
 deprecated==1.2.18
     # via opentelemetry-api
@@ -153,7 +154,7 @@ googleapis-common-protos==1.69.2
     # via opentelemetry-exporter-otlp-proto-http
 gptcache==0.1.44
     # via embedchain
-greenlet==3.1.1
+greenlet==3.2.0
     # via sqlalchemy
 grpcio==1.71.0
     # via chromadb
@@ -205,8 +206,12 @@ iniconfig==2.1.0
 instructor==1.7.9
     # via aiai
     # via crewai
-ipython==8.35.0
+ipdb==0.13.13
+ipython==9.1.0
+    # via ipdb
     # via pyvis
+ipython-pygments-lexers==1.1.1
+    # via ipython
 jedi==0.19.2
     # via ipython
 jinja2==3.1.6
@@ -468,6 +473,7 @@ pydot==3.0.4
     # via aiai
 pygments==2.19.1
     # via ipython
+    # via ipython-pygments-lexers
     # via rich
 pyjwt==2.10.1
     # via auth0-python

@@ -1,3 +1,4 @@
+import json
 import typing
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
@@ -5,7 +6,7 @@ from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from aiai.utils import setup_django
 
 
-class FileSpanExporter(SpanExporter):
+class DjangoSpanExporter(SpanExporter):
     def __init__(self, *args, **kwargs):
         setup_django()
         super().__init__(*args, **kwargs)
@@ -15,7 +16,10 @@ class FileSpanExporter(SpanExporter):
         self.agent_run_id = agent_run_id
 
     def export(self, spans: typing.Sequence[ReadableSpan]) -> SpanExportResult:
-        from aiai.db_app.models import AgentRunLog
+        from aiai.app.models import OtelSpan
+
+        objects: list[OtelSpan] = []
+
         for span in spans:
             prompt = ""
             response = ""
@@ -26,11 +30,15 @@ class FileSpanExporter(SpanExporter):
                     response = event.attributes.get("gen_ai.completion", "")
 
             if prompt or response:
-                AgentRunLog.objects.create(
-                    agent_run_id=self.agent_run_id,
-                    input_data={"prompt": prompt},
-                    output_data=response,
-                    success={"result": True},
+                objects.append(
+                    OtelSpan(
+                        agent_run_id=self.agent_run_id,
+                        input_data={"prompt": prompt},
+                        output_data=response,
+                        raw_span=json.loads(span.to_json()),
+                    )
                 )
+
+        OtelSpan.objects.bulk_create(objects)
 
         return SpanExportResult.SUCCESS

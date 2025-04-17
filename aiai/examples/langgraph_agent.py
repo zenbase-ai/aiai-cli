@@ -1,7 +1,6 @@
 import json
-import os
 from textwrap import dedent
-from typing import TypedDict, Annotated, List, Dict, Any
+from typing import TypedDict, Annotated
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
@@ -12,13 +11,13 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 import openlit
 
-from openlit_exporters import FileSpanExporter
+from aiai.logger.openlit_exporters import DjangoSpanExporter
 
 
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
 
-my_processor = BatchSpanProcessor(FileSpanExporter())
+my_processor = BatchSpanProcessor(DjangoSpanExporter())
 provider.add_span_processor(my_processor)
 
 openlit.init()
@@ -28,38 +27,42 @@ openlit.init()
 # with the structure: {"leads_text": "Text containing lead info..."}
 # Example: {"leads_text": "Amir Mehr is the CTO at Zenbase AI, focused on optimizing LLM workflows. Bob Williams, Lead Data Scientist at Data Insights Inc., faces challenges with prompt variability."}
 
+
 # 1. Define the State for the graph
 class AgentState(TypedDict):
     raw_leads_text: str | None
-    extracted_leads: List[Dict[str, str]] | None
-    generated_emails: List[str] | None
+    extracted_leads: list[dict[str, str]] | None
+    generated_emails: list[str] | None
     # Using 'messages' for potential conversation history if needed later
     messages: Annotated[list[BaseMessage], add_messages]
 
+
 # 2. Define Node Functions
+
 
 def load_data(state: AgentState) -> AgentState:
     """Loads the raw lead text from the JSON file."""
     print("---LOADING DATA---")
-    file_path = 'people_data.json' # Assumes file is in the same directory
+    file_path = "people_data.json"  # Assumes file is in the same directory
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             data = json.load(f)
-        raw_text = data.get('leads_text')
+        raw_text = data.get("leads_text")
         if not raw_text:
             raise ValueError("'leads_text' key not found or empty in people_data.json")
-        print(f"Loaded text: {raw_text[:100]}...") # Print snippet
+        print(f"Loaded text: {raw_text[:100]}...")  # Print snippet
         return {"raw_leads_text": raw_text}
     except FileNotFoundError:
         print(f"Error: {file_path} not found.")
         # Stop execution or return a specific state indicating failure
-        return {"raw_leads_text": None} # Or handle error differently
+        return {"raw_leads_text": None}  # Or handle error differently
     except json.JSONDecodeError:
         print(f"Error: Could not decode JSON from {file_path}.")
         return {"raw_leads_text": None}
     except Exception as e:
         print(f"An unexpected error occurred during data loading: {e}")
         return {"raw_leads_text": None}
+
 
 def extract_leads(state: AgentState) -> AgentState:
     """Extracts lead details using an LLM."""
@@ -69,9 +72,10 @@ def extract_leads(state: AgentState) -> AgentState:
         print("Error: No raw lead text found to process.")
         return {"extracted_leads": None}
 
-    llm = ChatOpenAI(model="gpt-4o", temperature=0) # Or another suitable model
+    llm = ChatOpenAI(model="gpt-4o", temperature=0)  # Or another suitable model
 
-    prompt = dedent(f"""
+    prompt = dedent(
+        f"""
         You are an expert analyst specializing in identifying key information from unstructured data.
         Your goal is to pinpoint the most relevant details about potential leads from the provided text.
 
@@ -99,16 +103,17 @@ def extract_leads(state: AgentState) -> AgentState:
             "key_details": "Challenges with prompt variability."
           }}
         ]
-    """)
+    """
+    )
 
     try:
         response = llm.invoke([HumanMessage(content=prompt)])
         # Clean the response content
         content_str = response.content.strip()
-        if content_str.startswith("```json"): # Check for markdown fences
-            content_str = content_str[7:-3].strip() # Remove ```json\n and ```
-        elif content_str.startswith("```"): # Check for generic fences
-             content_str = content_str[3:-3].strip() # Remove ```\n and ```
+        if content_str.startswith("```json"):  # Check for markdown fences
+            content_str = content_str[7:-3].strip()  # Remove ```json\n and ```
+        elif content_str.startswith("```"):  # Check for generic fences
+            content_str = content_str[3:-3].strip()  # Remove ```\n and ```
 
         # Attempt to parse the cleaned JSON response
         extracted_data = json.loads(content_str)
@@ -117,8 +122,8 @@ def extract_leads(state: AgentState) -> AgentState:
     except json.JSONDecodeError:
         print("Error: Failed to parse LLM response as JSON after cleaning.")
         print(f"Original LLM Response: {response.content}")
-        print(f"Cleaned String: {content_str}") # Log the cleaned string for debugging
-        return {"extracted_leads": None} # Handle error state
+        print(f"Cleaned String: {content_str}")  # Log the cleaned string for debugging
+        return {"extracted_leads": None}  # Handle error state
     except Exception as e:
         print(f"An error occurred during LLM call for extraction: {e}")
         return {"extracted_leads": None}
@@ -132,11 +137,12 @@ def craft_emails(state: AgentState) -> AgentState:
         print("Error: No extracted leads found to craft emails.")
         return {"generated_emails": None}
 
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.7) # Allow more creativity
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.7)  # Allow more creativity
 
     emails = []
     for lead in leads:
-        prompt = dedent(f"""
+        prompt = dedent(
+            f"""
             You are a persuasive sales copywriter with deep knowledge of Zenbase.
             Zenbase helps developers automate prompt engineering and model selection,
             leveraging DSPy to optimize LLM applications and improve performance.
@@ -159,14 +165,17 @@ def craft_emails(state: AgentState) -> AgentState:
             Example Subject: Subject: Optimizing LLM Workflows at [Company Name] with Zenbase
 
             --- EMAIL TEXT BELOW ---
-        """)
+        """
+        )
         try:
             response = llm.invoke([HumanMessage(content=prompt)])
             email_text = response.content
             print(f"Generated email for {lead.get('name', 'Unknown')}:{email_text}---")
             emails.append(email_text)
         except Exception as e:
-            print(f"An error occurred during LLM call for crafting email for {lead.get('name', 'Unknown')}: {e}")
+            print(
+                f"An error occurred during LLM call for crafting email for {lead.get('name', 'Unknown')}: {e}"
+            )
             # Decide whether to skip this email or stop
 
     return {"generated_emails": emails}

@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('db_app', '0002_agentrunlog_agent_run_id'),
+        ("app", "0002_agentrunlog_agent_run_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='agentrunlog',
-            name='input_data',
+            model_name="agentrunlog",
+            name="input_data",
             field=models.JSONField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='agentrunlog',
-            name='output_data',
+            model_name="agentrunlog",
+            name="output_data",
             field=models.TextField(blank=True, null=True),
         ),
     ]
