@@ -157,6 +157,7 @@ def craft_emails(state: AgentState) -> AgentState:
 
             Tailor the email based on the lead's specific role and challenges to maximize engagement.
             Highlight how Zenbase can address their specific needs related to LLM development, prompt engineering, and model optimization.
+
             Reference Zenbase's connection to DSPy and its benefits.
             Include a clear call to action (e.g., suggest a demo or provide a link to learn more).
             Sign off as 'The Zenbase Team'.
