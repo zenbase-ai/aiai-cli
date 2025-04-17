@@ -32,10 +32,10 @@ jobs:
         working-directory: .
         run: rye sync --no-lock
       - name: Run Django migrations
-        working-directory: /aiai
+        working-directory: ./aiai
         run: rye run python manage.py migrate
       - name: Run Django tests
-        working-directory: /aiai
+        working-directory: ./aiai
         env:
           HF_DATASETS_TRUST_REMOTE_CODE: "true"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
