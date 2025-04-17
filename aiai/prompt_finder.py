@@ -189,7 +189,7 @@ def find_prompts(
             for location in analysis.composite_locations:
                 print(f"• {location}")
 
-        if not analysis.fragments and not analysis.composite_locations:
+        if not (analysis.fragments or analysis.composite_locations):
             print("\nNo matches found for this prompt")
 
 

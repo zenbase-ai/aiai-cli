@@ -15,9 +15,12 @@ dependencies = [
     "networkx>=3.4.2",
     "pydot>=3.0.4",
     "python-dotenv>=1.1.0",
-    "litellm==1.60.2",
+    "litellm>=1.57.8",
     "instructor>=1.7.9",
     "pydantic>=2.11.3",
+    "tqdm>=4.67.1",
+    "aiolimiter>=1.2.1",
+    "sorcery>=0.2.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -37,6 +40,8 @@ managed = true
 dev-dependencies = [
     "ipdb>=0.13.13",
     "ipython>=9.1.0",
+    "jupyter>=1.1.1",
+    "ruff>=0.11.5",
 ]
 
 [tool.pytest.ini_options]
