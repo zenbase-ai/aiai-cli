@@ -39,5 +39,5 @@ jobs:
         env:
           HF_DATASETS_TRUST_REMOTE_CODE: "true"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_ORGANIZATION: ${{ secrets.OPENAI_MODEL_NAME }}
+          OPENAI_MODEL_NAME: ${{ secrets.OPENAI_MODEL_NAME }}
         run: rye run pytest -n 4
