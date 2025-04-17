@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from tqdm import tqdm
 
-from aiai.utils import setup_django
+from aiai.utils import prepare_messages, setup_django
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo
@@ -33,6 +33,13 @@ class SynDataGenerator:
     seed: int = 42
     prompt_model: str = "openai/o4-mini"
     data_model: str = "openai/gpt-4.1-mini"
+    sys_prompt: str = dedent(
+        """\
+        You're an expert AI engineer looking at source code for an agent.
+        Your task is to generate a highly detailed and thoughtful prompt for
+        generating synthetic data to be used for testing the agent.
+        """
+    )
 
     def __post_init__(self):
         self.lm = instructor.from_litellm(litellm.acompletion)
@@ -43,40 +50,15 @@ class SynDataGenerator:
         fns: list["FunctionInfo"],
         examples: list[str] | None = None,
     ) -> str:
-        sys_prompt = dedent(
-            """\
-            You're an expert AI engineer looking at source code for an agent.
-            Your task is to generate a highly detailed and thoughtful prompt for generating
-            synthetic data to be used for testing the agent.
-            """
-        )
-        source_code = "\n".join([fn.source_code for fn in fns])
-        source_code = dedent(
-            f"""\
-            Here is my source code:
-            <source_code>
-            {source_code}
-            </source_code>
-            """
-        )
-        examples = (
-            f"Here are some examples of my input data: <examples>\n{examples}\n</examples>"
-            if examples
-            else ""
-        )
+        messages = prepare_messages(self.sys_prompt, fns, examples)
         syn_prompt = await self.lm.create(
             model=self.prompt_model,
             response_model=SynPrompt,
-            messages=[
-                {"role": "system", "content": sys_prompt},
-                {"role": "user", "content": source_code},
-                *([{"role": "user", "content": examples}] if examples else []),
-                {"role": "system", "content": sys_prompt},
-            ],
+            messages=messages,
         )
         return syn_prompt.prompt
 
-    async def datum(self, prompt: str) -> str:
+    async def _datum(self, prompt: str) -> str:
         async with self.limiter:
             return await self.lm.create(
                 model=self.data_model,
@@ -87,7 +69,7 @@ class SynDataGenerator:
             )
 
     async def data(self, prompt: str) -> list[str]:
-        tasks = [self.datum(prompt) for _ in range(self.min_n)]
+        tasks = [self._datum(prompt) for _ in range(self.min_n)]
         data = "\n".join(
             [await t for t in tqdm(asyncio.as_completed(tasks), total=self.min_n)]
         )
