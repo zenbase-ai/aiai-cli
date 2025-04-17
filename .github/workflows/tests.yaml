@@ -20,6 +20,7 @@ jobs:
       - uses: eifinger/setup-rye@v3
         id: setup-rye
         with:
+          version: '0.44.0'
           enable-cache: true
           cache-prefix: ${{ matrix.python-version }}
       - name: Run lint with tests
