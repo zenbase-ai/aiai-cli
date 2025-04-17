@@ -44,7 +44,7 @@ def main(
     typer.echo("Capturing logs...")
     capture_logs(entrypoint)
 
-    # rules, head_to_head = asyncio.run(synthetic.evals.cli())
+    rules, head_to_head = asyncio.run(synthetic.evals.cli())
     prompt, syndata = asyncio.run(synthetic.data.cli(data, examples, seed))
 
     return 0
