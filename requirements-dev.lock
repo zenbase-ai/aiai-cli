@@ -132,6 +132,8 @@ embedchain==0.1.128
     # via crewai-tools
 et-xmlfile==2.0.0
     # via openpyxl
+execnet==2.1.1
+    # via pytest-xdist
 executing==2.2.0
     # via stack-data
 fastapi==0.115.12
@@ -493,8 +495,9 @@ pysbd==0.3.4
     # via embedchain
 pytest==8.3.5
     # via pytest-django
+    # via pytest-xdist
 pytest-django==4.11.1
-    # via aiai
+pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
     # via botocore
     # via kubernetes

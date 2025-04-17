@@ -150,10 +150,10 @@ def craft_emails(state: AgentState) -> AgentState:
             improves LLM performance, reduces development time, leverages DSPy algorithms.
 
             Write a concise (2-3 paragraphs) and compelling personalized sales email to the following lead:
-            Name: {lead.get('name', 'N/A')}
-            Company: {lead.get('company', 'N/A')}
-            Role: {lead.get('role', 'N/A')}
-            Key Details/Pain Points: {lead.get('key_details', 'N/A')}
+            Name: {lead.get("name", "N/A")}
+            Company: {lead.get("company", "N/A")}
+            Role: {lead.get("role", "N/A")}
+            Key Details/Pain Points: {lead.get("key_details", "N/A")}
 
             Tailor the email based on the lead's specific role and challenges to maximize engagement.
             Highlight how Zenbase can address their specific needs related to LLM development, prompt engineering, and model optimization.
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     if final_state.get("generated_emails"):
         print("Generated Emails:")
         for i, email in enumerate(final_state["generated_emails"]):
-            print(f"--- Email {i+1} ---")
+            print(f"--- Email {i + 1} ---")
             print(email)
             print("-" * 20)
     else:
