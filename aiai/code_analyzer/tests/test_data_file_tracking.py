@@ -271,7 +271,7 @@ def test_save_data_files_to_db_crewai(test_directory):
     # Calculate the project root path
     project_root = Path(__file__).parent.parent.parent.parent
     crewai_path = project_root / "aiai" / "examples" / "crewai"
-    
+
     # Ensure path exists
     assert crewai_path.exists(), f"CrewAI path does not exist: {crewai_path}"
 
@@ -317,19 +317,19 @@ def test_save_data_files_to_db_crewai(test_directory):
     # At least one reference should be in the crew.py file
     crew_references = json_file.referenced_by.filter(file_path__contains="crew.py")
     assert crew_references.exists(), "Expected references from crew.py but found none"
-    
+
     # Now analyze the data files using DataFileAnalyzer
     data_analyzer = DataFileAnalyzer(model="gpt-4o")
     analyzed_count = data_analyzer.analyze()
-    
+
     # Verify that the file was analyzed
     assert analyzed_count == 1, f"Expected 1 data file analyzed, found {analyzed_count}"
-    
+
     # Verify the analysis results were saved to the database
     assert DataFileAnalysis.objects.count() == 1, (
         f"Expected 1 analysis record, found {DataFileAnalysis.objects.count()}"
     )
-    
+
     # Get the analysis results
     analysis = DataFileAnalysis.objects.first()
     assert analysis is not None, "Analysis not found"
@@ -337,7 +337,7 @@ def test_save_data_files_to_db_crewai(test_directory):
     assert analysis.content_category == "data", (
         f"Expected category 'data', found '{analysis.content_category}'"
     )
-    
+
     # Verify that the analysis has a file purpose
     assert analysis.file_purpose, "Analysis should have a file purpose"
     assert analysis.confidence_score > 0.5, (
