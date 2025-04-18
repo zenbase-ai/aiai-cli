@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from docetl.api import Dataset, PipelineOutput
+from optimizer.rule_locator import RuleLocator
 
 from aiai.app.models import FunctionInfo
-from aiai.rule_locator.rule_locator import RuleLocator
 
 
 @pytest.fixture

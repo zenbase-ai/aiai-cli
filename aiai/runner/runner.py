@@ -22,7 +22,7 @@ class Runner:
             results = pool.map(self._run_datum, self.data)
         return EvalRun.objects.bulk_create(results)
 
-    def _run_datum(self, input_data: Any):
+    def _run_datum(self, input_data: Any, run_eval: bool = True):
         with ScriptTracer(self.script) as tracer:
             run_id, output_data = tracer(input_data)
             reward = self.eval(output_data)
