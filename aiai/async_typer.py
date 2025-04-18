@@ -22,9 +22,7 @@ class AsyncTyper(Typer):
 
             @wraps(f)
             def runner(*args: Any, **kwargs: Any) -> Any:
-                return asyncio.run(
-                    cast(Callable[..., Coroutine[Any, Any, Any]], f)(*args, **kwargs)
-                )
+                return asyncio.run(cast(Callable[..., Coroutine[Any, Any, Any]], f)(*args, **kwargs))
 
             return decorator(cast(CommandFunctionType, runner))
         return decorator(f)

@@ -58,16 +58,10 @@ def test_analyzer_finds_all_functions(dependency_graph):
         "main",
     }
 
-    actual_function_names = {
-        func.name for func_id, func in dependency_graph.functions.items()
-    }
+    actual_function_names = {func.name for func_id, func in dependency_graph.functions.items()}
 
-    assert len(dependency_graph.functions) == 5, (
-        f"Expected 5 functions, but found {len(dependency_graph.functions)}"
-    )
-    assert expected_function_names == actual_function_names, (
-        "Not all expected functions were found"
-    )
+    assert len(dependency_graph.functions) == 5, f"Expected 5 functions, but found {len(dependency_graph.functions)}"
+    assert expected_function_names == actual_function_names, "Not all expected functions were found"
 
 
 @pytest.mark.django_db
@@ -87,9 +81,9 @@ def test_function_dependencies(dependency_graph):
     assert call_llm_api_id is not None, "call_llm_api function not found"
 
     # Check that generate_response calls call_llm_api
-    assert call_llm_api_id in dependency_graph.dependencies.get(
-        generate_response_id, []
-    ), "generate_response should call call_llm_api"
+    assert call_llm_api_id in dependency_graph.dependencies.get(generate_response_id, []), (
+        "generate_response should call call_llm_api"
+    )
 
 
 @pytest.mark.django_db
@@ -97,9 +91,9 @@ def test_context_extraction_docstrings(dependency_graph):
     """Test that docstrings are correctly extracted from functions."""
     for func_id, func in dependency_graph.functions.items():
         if func.name == "generate_response":
-            assert (
-                "Generate a response to a question using a prompt" in func.docstring
-            ), "Docstring not correctly extracted for generate_response"
+            assert "Generate a response to a question using a prompt" in func.docstring, (
+                "Docstring not correctly extracted for generate_response"
+            )
         elif func.name == "call_llm_api":
             assert "Call an LLM API with a prompt" in func.docstring, (
                 "Docstring not correctly extracted for call_llm_api"
@@ -114,16 +108,11 @@ def test_context_extraction_string_literals(dependency_graph):
     for func_id, func in dependency_graph.functions.items():
         if func.name == "call_llm_api":
             for string_literal in func.string_literals:
-                if (
-                    "Based on your question, I would recommend"
-                    in string_literal["text"]
-                ):
+                if "Based on your question, I would recommend" in string_literal["text"]:
                     prompts_found = True
                     break
 
-    assert prompts_found, (
-        "Expected prompt string literal not found in call_llm_api function"
-    )
+    assert prompts_found, "Expected prompt string literal not found in call_llm_api function"
 
 
 @pytest.mark.django_db
@@ -138,9 +127,7 @@ def test_context_extraction_constants(dependency_graph):
                     response_template_found = True
                     break
 
-    assert response_template_found, (
-        "RESPONSE_TEMPLATE constant not found in call_llm_api function"
-    )
+    assert response_template_found, "RESPONSE_TEMPLATE constant not found in call_llm_api function"
 
 
 @pytest.mark.django_db
@@ -151,9 +138,7 @@ def test_context_extraction_file_references(dependency_graph):
 
     for func_id, func in dependency_graph.functions.items():
         if func.name == "main":
-            debug_info.append(
-                f"Checking main function with {len(func.file_references)} file references"
-            )
+            debug_info.append(f"Checking main function with {len(func.file_references)} file references")
 
             # Print all file references for debugging
             for file_ref in func.file_references:
@@ -192,36 +177,28 @@ def test_context_extraction_file_references(dependency_graph):
 def test_markdown_visualization(dependency_graph, output_dir):
     """Test that the markdown visualization is correctly generated."""
     output_path = output_dir / "test_markdown_visualization.md"
-    result = dependency_graph.visualize(format="markdown", output_path=str(output_path))
+    dependency_graph.visualize(format="markdown", output_path=str(output_path))
 
-    assert os.path.exists(output_path), (
-        f"Markdown visualization file {output_path} not created"
-    )
+    assert os.path.exists(output_path), f"Markdown visualization file {output_path} not created"
 
     # Check the contents of the markdown file
     with open(output_path, "r") as f:
         content = f.read()
-        assert "# Function Dependency Graph" in content, (
-            "Markdown visualization missing header"
-        )
+        assert "# Function Dependency Graph" in content, "Markdown visualization missing header"
         assert "```mermaid" in content, "Markdown visualization missing Mermaid diagram"
 
         # Check that all functions are included
         for func_id, func in dependency_graph.functions.items():
-            assert f"### `{func.name}`" in content, (
-                f"Function {func.name} not included in visualization"
-            )
+            assert f"### `{func.name}`" in content, f"Function {func.name} not included in visualization"
 
 
 @pytest.mark.django_db
 def test_json_visualization(dependency_graph, output_dir):
     """Test that the JSON visualization is correctly generated."""
     output_path = output_dir / "test_json_visualization.json"
-    result = dependency_graph.visualize(format="json", output_path=str(output_path))
+    dependency_graph.visualize(format="json", output_path=str(output_path))
 
-    assert os.path.exists(output_path), (
-        f"JSON visualization file {output_path} not created"
-    )
+    assert os.path.exists(output_path), f"JSON visualization file {output_path} not created"
 
     # Check the contents of the JSON file
     import json
@@ -234,20 +211,16 @@ def test_json_visualization(dependency_graph, output_dir):
         # Check that all functions are included
         function_names = [func["name"] for func in data["functions"]]
         for func_id, func in dependency_graph.functions.items():
-            assert func.name in function_names, (
-                f"Function {func.name} not included in JSON visualization"
-            )
+            assert func.name in function_names, f"Function {func.name} not included in JSON visualization"
 
 
 @pytest.mark.django_db
 def test_dot_visualization(dependency_graph, output_dir):
     """Test that the DOT visualization is correctly generated."""
     output_path = output_dir / "test_dot_visualization.dot"
-    result = dependency_graph.visualize(format="dot", output_path=str(output_path))
+    dependency_graph.visualize(format="dot", output_path=str(output_path))
 
-    assert os.path.exists(output_path), (
-        f"DOT visualization file {output_path} not created"
-    )
+    assert os.path.exists(output_path), f"DOT visualization file {output_path} not created"
 
     # Check the contents of the DOT file
     with open(output_path, "r") as f:
@@ -257,6 +230,4 @@ def test_dot_visualization(dependency_graph, output_dir):
         # Check that all functions are included
         for func_id, func in dependency_graph.functions.items():
             # The function name should be part of a node definition
-            assert func.name in content, (
-                f"Function {func.name} not included in DOT visualization"
-            )
+            assert func.name in content, f"Function {func.name} not included in DOT visualization"

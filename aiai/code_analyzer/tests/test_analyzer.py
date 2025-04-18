@@ -11,11 +11,11 @@ from pathlib import Path
 
 import pytest
 
+from aiai.code_analyzer import CodeAnalyzer
+
 # Add parent directory to path so we can import the code_analyzer package
 script_dir = Path(__file__).resolve().parent
 sys.path.insert(0, str(script_dir.parent.parent.parent))
-
-from aiai.code_analyzer import CodeAnalyzer
 
 
 @pytest.fixture
@@ -44,9 +44,7 @@ def test_analyzer_basic_functionality(sample_file, output_dir):
     graph = analyzer.analyze_from_file(sample_file)
 
     # Verify the correct number of functions were found
-    assert len(graph.functions) == 8, (
-        f"Expected 8 functions, found {len(graph.functions)}"
-    )
+    assert len(graph.functions) == 8, f"Expected 8 functions, found {len(graph.functions)}"
 
     # Check if all expected functions exist
     function_names = {func.name for func_id, func in graph.functions.items()}
@@ -60,9 +58,7 @@ def test_analyzer_basic_functionality(sample_file, output_dir):
         "display_result",
         "format_for_report",
     }
-    assert function_names == expected_functions, (
-        f"Missing functions: {expected_functions - function_names}"
-    )
+    assert function_names == expected_functions, f"Missing functions: {expected_functions - function_names}"
 
     # Get references to each function for dependency testing
     functions_by_name = {func.name: func for func_id, func in graph.functions.items()}
@@ -80,27 +76,17 @@ def test_analyzer_basic_functionality(sample_file, output_dir):
 
     # process_data should call transform_item
     process_data_func = functions_by_name["process_data"]
-    assert len(graph.get_callees(process_data_func)) == 1, (
-        "process_data should call exactly 1 function"
-    )
-    assert graph.get_callees(process_data_func)[0].name == "transform_item", (
-        "process_data should call transform_item"
-    )
+    assert len(graph.get_callees(process_data_func)) == 1, "process_data should call exactly 1 function"
+    assert graph.get_callees(process_data_func)[0].name == "transform_item", "process_data should call transform_item"
 
     # calculate_result should call apply_bonus
     calculate_result_func = functions_by_name["calculate_result"]
-    assert len(graph.get_callees(calculate_result_func)) == 1, (
-        "calculate_result should call exactly 1 function"
-    )
-    assert graph.get_callees(calculate_result_func)[0].name == "apply_bonus", (
-        "calculate_result should call apply_bonus"
-    )
+    assert len(graph.get_callees(calculate_result_func)) == 1, "calculate_result should call exactly 1 function"
+    assert graph.get_callees(calculate_result_func)[0].name == "apply_bonus", "calculate_result should call apply_bonus"
 
     # display_result should call format_for_report
     display_result_func = functions_by_name["display_result"]
-    assert len(graph.get_callees(display_result_func)) == 1, (
-        "display_result should call exactly 1 function"
-    )
+    assert len(graph.get_callees(display_result_func)) == 1, "display_result should call exactly 1 function"
     assert graph.get_callees(display_result_func)[0].name == "format_for_report", (
         "display_result should call format_for_report"
     )
@@ -108,9 +94,7 @@ def test_analyzer_basic_functionality(sample_file, output_dir):
     # transform_item, get_data, apply_bonus, and format_for_report should not call any functions
     for func_name in ["transform_item", "get_data", "apply_bonus", "format_for_report"]:
         func = functions_by_name[func_name]
-        assert len(graph.get_callees(func)) == 0, (
-            f"{func_name} should not call any functions"
-        )
+        assert len(graph.get_callees(func)) == 0, f"{func_name} should not call any functions"
 
     # Export the graph to JSON to verify it works
     json_path = os.path.join(output_dir, "function_graph.json")
@@ -131,9 +115,7 @@ def test_visualize_graph(sample_file, output_dir):
     try:
         dot_path = os.path.join(output_dir, "function_graph.dot")
         graph.visualize(format="dot", output_path=dot_path)
-        assert os.path.exists(dot_path), (
-            f"Failed to create DOT visualization at {dot_path}"
-        )
+        assert os.path.exists(dot_path), f"Failed to create DOT visualization at {dot_path}"
         print(f"Created DOT visualization: {dot_path}")
     except Exception as e:
         pytest.skip(f"Could not create DOT visualization: {str(e)}")
@@ -149,9 +131,7 @@ def test_markdown_visualization(sample_file, output_dir):
     # Test Markdown visualization
     md_path = os.path.join(output_dir, "function_graph.md")
     graph.visualize(format="markdown", output_path=md_path)
-    assert os.path.exists(md_path), (
-        f"Failed to create Markdown visualization at {md_path}"
-    )
+    assert os.path.exists(md_path), f"Failed to create Markdown visualization at {md_path}"
 
     # Verify the Markdown content
     with open(md_path, "r") as f:
