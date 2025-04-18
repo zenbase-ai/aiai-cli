@@ -4,27 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0007_syntheticdatum_syntheticeval_delete_discoveredrule'),
+        ("app", "0007_syntheticdatum_syntheticeval_delete_discoveredrule"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DiscoveredRule',
+            name="DiscoveredRule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rule_type', models.TextField()),
-                ('rule_text', models.TextField()),
-                ('function_name', models.TextField()),
-                ('file_path', models.TextField()),
-                ('target_code_section', models.TextField()),
-                ('confidence', models.DecimalField(decimal_places=2, max_digits=5)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("rule_type", models.TextField()),
+                ("rule_text", models.TextField()),
+                ("function_name", models.TextField()),
+                ("file_path", models.TextField()),
+                ("target_code_section", models.TextField()),
+                ("confidence", models.DecimalField(decimal_places=2, max_digits=5)),
             ],
         ),
         migrations.AlterField(
-            model_name='syntheticeval',
-            name='kind',
-            field=models.CharField(choices=[('rules', 'Rules'), ('head_to_head', 'Head To Head')], max_length=20),
+            model_name="syntheticeval",
+            name="kind",
+            field=models.CharField(choices=[("rules", "Rules"), ("head_to_head", "Head To Head")], max_length=20),
         ),
     ]
