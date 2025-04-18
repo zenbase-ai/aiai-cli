@@ -1,7 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import instructor
 import litellm
@@ -137,3 +137,29 @@ class EvalGenerator:
             )
 
         return rules_eval, head_to_head_eval
+
+
+class EvalResult(BaseModel):
+    reasoning: str
+    result: Literal["pass", "fail"]
+
+
+@dataclass
+class EvalRunner:
+    eval: "SyntheticEval"
+    prompt_model: str = "openai/o4-mini"
+
+    def __post_init__(self):
+        self.lm = instructor.from_litellm(litellm.acompletion)
+
+    def run(self, agent_output: str) -> EvalResult:
+        user_message = f"Here is the agent's output: <output>\n{agent_output}\n</output>"
+        result: EvalResult = self.lm.create(
+            model=self.prompt_model,
+            messages=[
+                {"role": "system", "content": self.eval.prompt},
+                {"role": "user", "content": user_message},
+            ],
+            response_model=EvalResult,
+        )
+        return result
