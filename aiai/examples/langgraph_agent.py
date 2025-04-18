@@ -11,7 +11,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from aiai.logger.openlit_exporters import DjangoSpanExporter
+from aiai.logger.otel_exporter import DjangoSpanExporter
 
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
