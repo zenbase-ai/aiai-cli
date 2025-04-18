@@ -1,12 +1,9 @@
-import json
 from dataclasses import dataclass
-from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import instructor
 import litellm
-import rich
 from pydantic import BaseModel, Field
 
 from aiai.synthesizer.utils import get_examples, prepare_messages
@@ -73,34 +70,13 @@ class DataGenerator:
         )
         return [SyntheticDatum(input_data=r.message.content) for r in response.choices]
 
+    def perform(self):
+        from aiai.app.models import FunctionInfo, SyntheticDatum
 
-def cli(output: Path, examples: int, seed: int):
-    generator = DataGenerator(examples, seed)
+        fns = list(FunctionInfo.objects.all())
+        examples = get_examples(fns)
 
-    rich.print("Loading function info...", end=" ")
-    from aiai.app.models import FunctionInfo
+        prompt = self.prompt(fns, examples)
+        data = SyntheticDatum.objects.bulk_create(self.data(prompt))
 
-    fns = list(FunctionInfo.objects.all())
-    rich.print(f"{len(fns)} functions loaded.")
-
-    if examples := get_examples(fns):
-        rich.print("Found examples:")
-        rich.print_json(data=examples)
-
-    rich.print("Generating synthetic data prompt...", end=" ")
-    prompt = generator.prompt(fns, examples)
-    rich.print("done.")
-    rich.print("<prompt>")
-    rich.print(prompt)
-    rich.print("</prompt>")
-
-    rich.print("Generating synthetic data...", end=" ")
-    data = generator.data(prompt)
-    rich.print(f"Generated {len(data)} synthetic examples.")
-
-    rich.print("Saving synthetic data...", end=" ")
-    with output.open("w", encoding="utf-8") as f:
-        json.dump({"prompt": prompt, "data": data}, f, indent=2, ensure_ascii=False)
-    rich.print(f"done.\nSaved {len(data)} synthetic examples to {output}")
-
-    return prompt, data
+        return prompt, data

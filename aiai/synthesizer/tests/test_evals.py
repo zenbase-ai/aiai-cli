@@ -1,4 +1,6 @@
-from aiai.app.models import FunctionInfo
+import pytest
+
+from aiai.app.models import FunctionInfo, SyntheticEval
 from aiai.synthesizer.evals import AbstractEval, EvalGenerator, HeadToHeadEval, RulesEval
 
 
@@ -30,3 +32,15 @@ def assert_eval_fields(eval: AbstractEval):
     assert "<always>" in str(eval)
     assert "<never>" in str(eval)
     assert "<tips>" in str(eval)
+
+
+@pytest.mark.django_db
+def test_eval_generator_perform(mock_function_info: list[FunctionInfo]):
+    FunctionInfo.objects.bulk_create(mock_function_info)
+
+    generator = EvalGenerator(prompt_model="openai/gpt-4.1-mini")
+    generator.perform()
+    evals = list(SyntheticEval.objects.all())
+    assert len(evals) == 2
+    assert any(e.kind == "rules" for e in evals)
+    assert any(e.kind == "head_to_head" for e in evals)

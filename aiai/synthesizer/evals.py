@@ -1,10 +1,10 @@
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import instructor
 import litellm
-import rich
 from pydantic import BaseModel, Field
 
 from aiai.synthesizer.utils import get_examples, prepare_messages
@@ -120,31 +120,20 @@ class EvalGenerator:
             messages=messages,
         )
 
+    def perform(self):
+        from aiai.app.models import FunctionInfo, SyntheticEval
 
-def cli():
-    generator = EvalGenerator()
-    rich.print("Loading function info...", end=" ")
-    from aiai.app.models import FunctionInfo
+        fns = list(FunctionInfo.objects.all())
+        examples = get_examples(fns)
 
-    fns = list(FunctionInfo.objects.all())
-    rich.print(f"{len(fns)} functions loaded.")
+        # Run rules and head_to_head evaluations in parallel
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [
+                pool.submit(self.rules, fns, examples),
+                pool.submit(self.head_to_head, fns, examples),
+            ]
+            rules_eval, head_to_head_eval = SyntheticEval.objects.bulk_create(
+                [f.result().to_db_model() for f in futures],
+            )
 
-    if examples := get_examples(fns):
-        rich.print("Found examples:")
-        rich.print_json(data=examples)
-
-    rich.print("Generating rules prompt...", end=" ")
-    rules = generator.rules(fns, examples)
-    rich.print("done.")
-    rich.print("<rules>")
-    rich.print_json(rules.model_dump_json())
-    rich.print("</rules>")
-
-    rich.print("Generating head-to-head prompt...", end=" ")
-    head_to_head = generator.head_to_head(fns)
-    rich.print("done.")
-    rich.print("<head-to-head>")
-    rich.print_json(head_to_head.model_dump_json())
-    rich.print("</head-to-head>")
-
-    return rules, head_to_head
+        return rules_eval, head_to_head_eval
