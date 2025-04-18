@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0007_syntheticdatum_syntheticeval_delete_discoveredrule'),
+        ("app", "0007_syntheticdatum_syntheticeval_delete_discoveredrule"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='syntheticeval',
-            name='kind',
-            field=models.CharField(choices=[('rules', 'Rules'), ('head_to_head', 'Head To Head')], max_length=20),
+            model_name="syntheticeval",
+            name="kind",
+            field=models.CharField(choices=[("rules", "Rules"), ("head_to_head", "Head To Head")], max_length=20),
         ),
     ]

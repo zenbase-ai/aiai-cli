@@ -60,12 +60,8 @@ def test_data_generator_data():
         (),
         {
             "choices": [
-                type(
-                    "Choice", (), {"message": type("Message", (), {"content": "data1"})}
-                ),
-                type(
-                    "Choice", (), {"message": type("Message", (), {"content": "data2"})}
-                ),
+                type("Choice", (), {"message": type("Message", (), {"content": "data1"})}),
+                type("Choice", (), {"message": type("Message", (), {"content": "data2"})}),
             ]
         },
     )

@@ -4,29 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0006_rename_agentrunlog_otelspan_and_more'),
+        ("app", "0006_rename_agentrunlog_otelspan_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SyntheticDatum',
+            name="SyntheticDatum",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('input_data', models.TextField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("input_data", models.TextField()),
             ],
         ),
         migrations.CreateModel(
-            name='SyntheticEval',
+            name="SyntheticEval",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('kind', models.CharField(choices=[('absolute', 'Absolute'), ('head_to_head', 'Head To Head')], max_length=20)),
-                ('prompt', models.TextField()),
-                ('fields', models.JSONField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "kind",
+                    models.CharField(
+                        choices=[("absolute", "Absolute"), ("head_to_head", "Head To Head")], max_length=20
+                    ),
+                ),
+                ("prompt", models.TextField()),
+                ("fields", models.JSONField()),
             ],
         ),
         migrations.DeleteModel(
-            name='DiscoveredRule',
+            name="DiscoveredRule",
         ),
     ]

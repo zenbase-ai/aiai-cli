@@ -51,9 +51,7 @@ def test_rules_eval_creation():
 
 
 def test_head_to_head_eval_creation():
-    eval = HeadToHeadEval(
-        context="test context", instructions="test instructions", tips=["tip1", "tip2"]
-    )
+    eval = HeadToHeadEval(context="test context", instructions="test instructions", tips=["tip1", "tip2"])
 
     assert eval.context == "test context"
     assert eval.instructions == "test instructions"

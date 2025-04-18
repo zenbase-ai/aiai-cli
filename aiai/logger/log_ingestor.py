@@ -68,9 +68,7 @@ class LogIngestor:
                     span.set_attribute("result", str(result))
 
             else:
-                raise AttributeError(
-                    f"'main' function not found or not callable in {file_path}"
-                )
+                raise AttributeError(f"'main' function not found or not callable in {file_path}")
         finally:
             # Clean up the temporarily added module from sys.modules
             if module_name in sys.modules:

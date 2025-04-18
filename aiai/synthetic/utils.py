@@ -29,11 +29,7 @@ def prepare_messages(
             </source_code>
             """
     )
-    examples = (
-        f"Here are examples of my input data: <examples>\n{examples}\n</examples>"
-        if examples
-        else ""
-    )
+    examples = f"Here are examples of my input data: <examples>\n{examples}\n</examples>" if examples else ""
     return [
         {"role": "system", "content": sys_prompt},
         {"role": "user", "content": source_code},

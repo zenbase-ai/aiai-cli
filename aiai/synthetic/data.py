@@ -19,9 +19,7 @@ class SynPrompt(BaseModel):
     prompt: str = Field(
         description="A highly detailed and thoughtful prompt for generating a single synthetic datum."  # noqa: E501
     )
-    examples: list[str] = Field(
-        description="A list of examples of the synthetic data to be generated."
-    )
+    examples: list[str] = Field(description="A list of examples of the synthetic data to be generated.")
 
     def __str__(self):
         return dedent(
