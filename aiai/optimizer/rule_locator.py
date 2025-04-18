@@ -3,14 +3,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from docetl.api import (
-    Dataset,
-    MapOp,
-    Pipeline,
-    PipelineOutput,
-    PipelineStep,
-)
-from utils import setup_django
+from docetl.api import Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep
+
+from aiai.utils import setup_django
 
 cwd = Path(__file__).parent
 
@@ -36,45 +31,45 @@ class RuleLocator:
                 type="map",
                 prompt="""
                     <instructions>
-                        You are an expert in code analysis. Your task is to identify functions that contain 
+                        You are an expert in code analysis. Your task is to identify functions that contain
                         prompts for LLMs or define LLM agents within them.
-                        
+
                         You will be given the source code of a function. Analyze it to determine if:
                         1. It contains prompt templates (strings with placeholders for LLM calls)
                         2. It defines an agent or agent system that interacts with LLMs
                         3. It creates or configures prompts that will be sent to LLMs
-                        
+
                         Look for:
                         - String literals with XML/HTML-like tags (<instructions>, <output>, etc.)
-                        - Template strings with placeholders 
+                        - Template strings with placeholders
                         ({% raw %}{{variable}}{% endraw %}, {% raw %}{variable}{% endraw %}, etc.)
                         - Variables/objects named "prompt", "template", "system_message", etc.
                         - Agent definitions or configurations
                         - LLM API calls with prompt content
                     </instructions>
-                    
+
                     <function>
                         Name: {{input.name}}
                         File Path: {{input.file_path}}
                         Signature: {{input.signature}}
-                        
+
                         Source Code:
                         {{input.source_code}}
-                        
+
                         {% if input.docstring %}
                         Docstring:
                         {{input.docstring}}
                         {% endif %}
                     </function>
-                    
+
                     <output>
                         contains_prompt: Does this function contain a prompt or define an agent? (true/false)
-                        prompt_type: What type of prompt/agent is used? 
+                        prompt_type: What type of prompt/agent is used?
                             (e.g., "instruction_prompt", "agent_definition", "chain_of_thought", etc.)
                         prompt_lines: The line numbers where the prompt is defined (e.g., "15-25")
                         prompt_segments: A list of the specific prompt segments in the function
-                        confidence: A percentage (0-100) indicating your confidence in this analysis
                         explanation: Brief explanation of why you believe this function contains a prompt/agent
+                        confidence: A percentage (0-100) indicating your confidence in this analysis
                     </output>
                 """,
                 output={
@@ -83,8 +78,8 @@ class RuleLocator:
                         "prompt_type": "string",
                         "prompt_lines": "string",
                         "prompt_segments": "list[string]",
-                        "confidence": "integer",
                         "explanation": "string",
+                        "confidence": "integer",
                     }
                 },
                 optimize=True,
@@ -122,36 +117,36 @@ class RuleLocator:
                 type="map",
                 prompt="""
                     <instructions>
-                        You are an expert in code and data analysis. Your task is to identify 
+                        You are an expert in code and data analysis. Your task is to identify
                         LLM prompts or agent definitions within JSON or YAML data files.
-                        
+
                         You will be given the content of a data file. Analyze it to determine if it contains:
                         1. Prompt templates (strings with placeholders for LLM calls)
                         2. Agent definitions or configurations
                         3. System messages, user messages, or other LLM-related content
-                        
+
                         Look for:
                         - String literals with XML/HTML-like tags (<instructions>, <o>, etc.)
-                        - Template strings with placeholders 
+                        - Template strings with placeholders
                         ({% raw %}{{variable}}{% endraw %}, {% raw %}{variable}{% endraw %}, etc.)
                         - Keys like "prompt", "template", "system_message", "user_message", etc.
                         - Agent definitions or configurations
                     </instructions>
-                    
+
                     <data_file>
                         File Path: {{input.file_path}}
                         File Type: {{input.file_type}}
                         Content:
                         {{input.content}}
                     </data_file>
-                    
+
                     <output>
                         contains_prompt: Does this file contain prompts or agent definitions? (true/false)
-                        prompt_type: What type of prompt/agent is defined? 
+                        prompt_type: What type of prompt/agent is defined?
                             (e.g., "instruction_prompt", "agent_definition", "chain_of_thought", etc.)
                         prompt_segments: A list of the specific prompt segments in the file
-                        confidence: A percentage (0-100) indicating your confidence in this analysis
                         explanation: Brief explanation of why you believe this file contains prompts/agents
+                        confidence: A percentage (0-100) indicating your confidence in this analysis
                     </output>
                 """,
                 output={
@@ -159,8 +154,8 @@ class RuleLocator:
                         "contains_prompt": "boolean",
                         "prompt_type": "string",
                         "prompt_segments": "list[string]",
-                        "confidence": "integer",
                         "explanation": "string",
+                        "confidence": "integer",
                     }
                 },
                 optimize=True,
@@ -198,53 +193,53 @@ class RuleLocator:
                 type="map",
                 prompt="""
                     <instructions>
-                        You are an expert in analyzing LLM prompts. Your task is to determine 
+                        You are an expert in analyzing LLM prompts. Your task is to determine
                         where to insert specific rules into existing prompts.
-                        
+
                         You will be given:
                         1. A rule that needs to be added to prompts (as an exact string)
                         2. Information about multiple functions that contain prompts/agents
-                        
+
                         For this rule, determine which prompt(s) it should be added to.
                         A good match is one where:
                         - The rule enhances the prompt's purpose
                         - The rule is relevant to the prompt's context
                         - The rule complements the existing instructions
-                        
+
                         IMPORTANT: You are NOT being asked to apply or implement the rule by
                         rewriting the prompt. Your task is to identify the EXACT CODE SECTION where
                         the rule should be added.
-                        
+
                         For each suitable prompt, determine:
                         1. The specific code section (could be multiple lines of code) where the rule belongs
                         2. Why this code section is the appropriate place for the rule
                         3. The confidence level (0-100%) that adding this rule will improve results
-                        
+
                         The code section should be a direct copy of the relevant lines from the source code,
                         such as a specific part of a role definition, backstory, goal, or description.
-                        
+
                         Only include placements that would meaningfully improve the system.
                     </instructions>
-                    
+
                     <rule>
                         {{input.rule_type}}: {{input.rule_text}}
                     </rule>
-                    
+
                     <prompt_sources>
                         {% for source in input.prompt_functions %}
                         <source id="{{loop.index}}">
                             Name: {{source.name}}
                             File Path: {{source.file_path}}
                             Prompt Type: {{source.prompt_type}}
-                            
+
                             Source Code:
                             {{source.source_code}}
-                            
+
                             {% if source.docstring %}
                             Docstring:
                             {{source.docstring}}
                             {% endif %}
-                            
+
                             Prompt Segments:
                             {% for segment in source.prompt_segments %}
                             ---
@@ -254,28 +249,28 @@ class RuleLocator:
                         </source>
                         {% endfor %}
                     </prompt_sources>
-                    
+
                     <output>
                         Respond **only** with a JSON object matching this exact schema (no extra keys!):
-                        
-                        placements: list[{source_id: int, source_name: str, file_path: str, 
+
+                        placements: list[{source_id: int, source_name: str, file_path: str,
                                         target_code_section: str, confidence: float, reasoning: str}]
-                        
+
                         So your entire output should look like:
-                        
+
                         ```json
                         {
-                        "placements": [
-                            {
-                            "source_id": 1,
-                            "source_name": "example_source",
-                            "file_path": "src/foo.py",
-                            "target_code_section": "…exact lines…",
-                            "confidence": 92.5,
-                            "reasoning": "This rule fits here because…"
-                            },
-                            …
-                        ]
+                            "placements": [
+                                {
+                                    "source_id": 1,
+                                    "source_name": "example_source",
+                                    "file_path": "src/foo.py",
+                                    "target_code_section": "…exact lines…",
+                                    "reasoning": "This rule fits here because…"
+                                    "confidence": 92.5,
+                                },
+                                …
+                            ]
                         }
                     </output>
                 """,

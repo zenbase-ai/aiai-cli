@@ -143,7 +143,6 @@ def test_integration_with_db():
             "always": ["Test always rule"],
             "never": ["Test never rule"],
             "tips": ["Test tip"],
-            "evaluation_guide": "Test guide",
         }
 
         # Setup mock pipeline
@@ -158,7 +157,6 @@ def test_integration_with_db():
         assert "always" in result
         assert "never" in result
         assert "tips" in result
-        assert "evaluation_guide" in result
 
         # Verify Pipeline was called correctly
         MockPipeline.assert_called_once()
