@@ -38,38 +38,12 @@ class LeadProcessingGraph:
         graph_builder.add_node("extract_leads", self.extract_leads)
         graph_builder.add_node("craft_emails", self.craft_emails)
 
-        # Define edges
-        # graph_builder.add_edge(START, "load_data") # Removed
-        # graph_builder.add_edge("load_data", "extract_leads") # Removed
         graph_builder.add_edge(START, "extract_leads") # Start directly with extraction
         graph_builder.add_edge("extract_leads", "craft_emails")
         graph_builder.add_edge("craft_emails", END)
 
         # Compile the graph
         return graph_builder.compile()
-
-    # def load_data(self, state: AgentState) -> AgentState:
-    #     """Loads the raw lead text from the JSON file."""
-    #     print("---LOADING DATA---")
-    #     file_path = "people_data.json"  # Assumes file is in the same directory
-    #     try:
-    #         with open(file_path, "r") as f:
-    #             data = json.load(f)
-    #         raw_text = data.get("leads_text")
-    #         if not raw_text:
-    #             raise ValueError("'leads_text' key not found or empty in people_data.json")
-    #         print(f"Loaded text: {raw_text[:100]}...")  # Print snippet
-    #         return {"raw_leads_text": raw_text}
-    #     except FileNotFoundError:
-    #         print(f"Error: {file_path} not found.")
-    #         # Stop execution or return a specific state indicating failure
-    #         return {"raw_leads_text": None}  # Or handle error differently
-    #     except json.JSONDecodeError:
-    #         print(f"Error: Could not decode JSON from {file_path}.")
-    #         return {"raw_leads_text": None}
-    #     except Exception as e:
-    #         print(f"An unexpected error occurred during data loading: {e}")
-    #         return {"raw_leads_text": None}
 
     def extract_leads(self, state: AgentState) -> AgentState:
         """Extracts lead details using an LLM."""
