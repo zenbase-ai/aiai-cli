@@ -6,14 +6,13 @@ focusing on analyzing the CrewAI example code to extract function dependencies,
 related files, and rich contextual information.
 """
 
-import os
 import json
+import os
 from pathlib import Path
 
 import pytest
 
 from aiai.code_analyzer.analyzer import CodeAnalyzer
-from aiai.code_analyzer.graph import DependencyGraph
 
 
 @pytest.fixture
@@ -54,7 +53,7 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
     graph.visualize(format="json", output_path=json_path)
     graph.visualize(format="dot", output_path=dot_path)
 
-    print(f"\nAnalysis outputs:")
+    print("\nAnalysis outputs:")
     print(f"- Markdown: {md_path}")
     print(f"- JSON: {json_path}")
     print(f"- DOT: {dot_path}")
@@ -198,7 +197,7 @@ def run_crewai_analysis():
     graph.visualize(format="json", output_path=json_path)
     graph.visualize(format="dot", output_path=dot_path)
 
-    print(f"\nAnalysis outputs:")
+    print("\nAnalysis outputs:")
     print(f"- Markdown: {md_path}")
     print(f"- JSON: {json_path}")
     print(f"- DOT: {dot_path}")

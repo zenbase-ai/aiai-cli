@@ -6,6 +6,7 @@ This script tests the ability to analyze Python files and save function informat
 
 import os
 from pathlib import Path
+
 import pytest
 
 
@@ -21,8 +22,8 @@ def analyze_and_save_functions():
     setup_django()
 
     # Import after Django is set up
-    from aiai.code_analyzer import CodeAnalyzer
     from aiai.app.models import FunctionInfo
+    from aiai.code_analyzer import CodeAnalyzer
 
     # Clear any existing function data for clean testing
     FunctionInfo.objects.all().delete()

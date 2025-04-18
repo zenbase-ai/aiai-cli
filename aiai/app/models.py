@@ -13,7 +13,11 @@ class OtelSpan(models.Model):
 
 
 class DiscoveredRule(models.Model):
+    rule_type: models.TextField = models.TextField()
     rule_text: models.TextField = models.TextField()
+    function_name: models.TextField = models.TextField()
+    file_path: models.TextField = models.TextField()
+    target_code_section: models.TextField = models.TextField()
     confidence: models.DecimalField = models.DecimalField(
         max_digits=5, decimal_places=2
     )

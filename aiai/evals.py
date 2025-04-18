@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
 from typing import Literal
+
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field
 
 load_dotenv()
 

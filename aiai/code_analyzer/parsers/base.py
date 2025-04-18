@@ -5,7 +5,7 @@ This module defines the abstract base class that all language-specific parsers m
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Any, Set, Optional
+from typing import Any, List, Optional, Tuple
 
 
 class Function:

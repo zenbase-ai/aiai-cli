@@ -1,5 +1,6 @@
 from textwrap import dedent
-from crewai import Agent, Task, Crew, Process
+
+from crewai import Agent, Crew, Process, Task
 from crewai_tools import FileReadTool
 
 

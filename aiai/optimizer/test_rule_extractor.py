@@ -1,6 +1,6 @@
-import json
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from aiai.app.models import OtelSpan
 from aiai.optimizer.rule_extractor import build_rules_pipeline, extract_rules
@@ -74,8 +74,9 @@ def test_extract_rules(mock_logs):
 
 def test_build_rules_pipeline():
     # Mock the necessary parameters
-    from docetl.api import Dataset, PipelineOutput
     import tempfile
+
+    from docetl.api import Dataset, PipelineOutput
 
     # Create a temp file for output
     with tempfile.NamedTemporaryFile(suffix=".json") as tmp_file:

@@ -1,16 +1,15 @@
-import uuid
-import sys
 import importlib.util
 import os
-from pathlib import Path
+import sys
+import uuid
 
-from dotenv import load_dotenv
 import instructor
+import openlit
+from dotenv import load_dotenv
 from litellm import completion
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-import openlit
 
 from aiai.app.models import OtelSpan
 from aiai.evals import evaluate_crew_output

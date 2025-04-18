@@ -1,7 +1,8 @@
-from dotenv import load_dotenv
 from textwrap import dedent
-from crewai import Agent, Task, Crew, Process
+
+from crewai import Agent, Crew, Process, Task
 from crewai_tools import FileReadTool
+from dotenv import load_dotenv
 
 from aiai.app.settings import BASE_DIR
 

@@ -4,11 +4,11 @@ CodeAnalyzer class implementation.
 This is the main entry point for analyzing code and generating function dependency graphs.
 """
 
-import os
 import logging
+import os
 
-from aiai.code_analyzer.parsers import get_parser_for_language
 from aiai.code_analyzer.graph import DependencyGraph
+from aiai.code_analyzer.parsers import get_parser_for_language
 from aiai.utils import setup_django
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,6 @@ import json
 import os
 import tempfile
 from pathlib import Path
-import re
 
 from docetl.api import (
     Dataset,
@@ -16,17 +15,13 @@ from utils import setup_django
 cwd = Path(__file__).parent
 
 
-def build_rule_locator_pipeline(**kwargs) -> Pipeline:
+def build_prompt_finder_pipeline(**kwargs) -> Pipeline:
     """
-    Build a pipeline for locating where rules should be placed in prompts.
-    
-    The pipeline has two steps:
-    1. Identify functions that create agents or contain prompts
-    2. For each rule, determine where and how to integrate it into those prompts
-    
+    Build a pipeline for identifying functions that contain prompts or define agents.
+
     Args:
         **kwargs: Additional arguments to pass to the Pipeline constructor
-    
+
     Returns:
         Pipeline: A configured pipeline instance
     """
@@ -36,25 +31,20 @@ def build_rule_locator_pipeline(**kwargs) -> Pipeline:
             type="map",
             prompt="""
                 <instructions>
-                    You are an expert in code analysis focusing on LLM applications. Your task is to identify 
-                    functions that either create LLM agents or contain prompts for LLM calls.
+                    You are an expert in code analysis. Your task is to identify functions that contain 
+                    prompts for LLMs or define LLM agents within them.
                     
-                    Analyze the provided function to determine if it:
-                    1. Creates an AI agent or assistant
-                    2. Contains a prompt used for LLM calls
-                    3. Builds or configures a prompt template
+                    You will be given the source code of a function. Analyze it to determine if:
+                    1. It contains prompt templates (strings with placeholders for LLM calls)
+                    2. It defines an agent or agent system that interacts with LLMs
+                    3. It creates or configures prompts that will be sent to LLMs
                     
-                    Look for indicators such as:
-                    - String literals containing templating syntax (e.g., {{variable}})
-                    - XML-like tags in strings (e.g., <instructions>, <output>)
-                    - Function calls to LLM APIs (e.g., OpenAI, Anthropic)
-                    - Agent or assistant creation/configuration
-                    - Pipeline or prompt building
-                    
-                    If the function does contain a prompt or create an agent, identify:
-                    - The specific location(s) of the prompt within the function
-                    - The purpose of the prompt (what it's asking the LLM to do)
-                    - Any specific sections where rules could be integrated (e.g., instructions, constraints)
+                    Look for:
+                    - String literals with XML/HTML-like tags (<instructions>, <output>, etc.)
+                    - Template strings with placeholders ({% raw %}{{variable}}{% endraw %}, {% raw %}{variable}{% endraw %}, etc.)
+                    - Variables/objects named "prompt", "template", "system_message", etc.
+                    - Agent definitions or configurations
+                    - LLM API calls with prompt content
                 </instructions>
                 
                 <function>
@@ -73,94 +63,22 @@ def build_rule_locator_pipeline(**kwargs) -> Pipeline:
                 </function>
                 
                 <output>
-                    contains_prompt: Whether this function contains a prompt or creates an agent (true/false)
-                    prompt_locations: If contains_prompt is true, a list of prompt locations, each containing:
-                      - line_start: The starting line number of the prompt
-                      - line_end: The ending line number of the prompt
-                      - prompt_type: The type of prompt (e.g., "instruction", "chat", "agent_config")
-                      - prompt_purpose: A brief description of what the prompt is for
-                      - integration_points: List of sections where rules could be integrated (e.g., "instructions", "constraints")
-                    reasoning: Your reasoning for this determination
+                    contains_prompt: Does this function contain a prompt or define an agent? (true/false)
+                    prompt_type: What type of prompt/agent is used? (e.g., "instruction_prompt", "agent_definition", "chain_of_thought", etc.)
+                    prompt_lines: The line numbers where the prompt is defined (e.g., "15-25")
+                    prompt_segments: A list of the specific prompt segments in the function
+                    confidence: A percentage (0-100) indicating your confidence in this analysis
+                    explanation: Brief explanation of why you believe this function contains a prompt/agent
                 </output>
             """,
             output={
                 "schema": {
                     "contains_prompt": "boolean",
-                    "prompt_locations": "list[object]",
-                    "reasoning": "string",
-                }
-            },
-            optimize=True,
-        ),
-        MapOp(
-            name="place_rule_in_prompt",
-            type="map",
-            prompt="""
-                <instructions>
-                    You are an expert in improving LLM prompts by integrating rules. Your task is to determine 
-                    how to integrate a specific rule into a function that contains prompts.
-                    
-                    You will be given:
-                    1. A rule that needs to be integrated
-                    2. Information about a function containing prompts
-                    3. Analysis of where prompts are located in the function
-                    
-                    For each prompt location in the function, determine:
-                    1. Is this rule relevant to this prompt?
-                    2. If relevant, where in the prompt should the rule be integrated?
-                    3. How should the rule be worded to fit with the existing prompt?
-                    4. What is the confidence level (0-100%) that this integration will improve the prompt?
-                    
-                    Only make changes that would improve the prompt's effectiveness for its purpose.
-                </instructions>
-                
-                <rule>
-                    Type: {{input.rule_type}}
-                    Text: {{input.rule_text}}
-                </rule>
-                
-                <function>
-                    Name: {{input.function_name}}
-                    File Path: {{input.function_file_path}}
-                    Line Range: {{input.function_line_start}}-{{input.function_line_end}}
-                    Signature: {{input.function_signature}}
-                    
-                    Source Code:
-                    {{input.function_source_code}}
-                    
-                    {% if input.function_docstring %}
-                    Docstring:
-                    {{input.function_docstring}}
-                    {% endif %}
-                </function>
-                
-                <prompt_analysis>
-                    {% for location in input.prompt_locations %}
-                    <prompt_location id="{{loop.index}}">
-                        Line Range: {{location.line_start}}-{{location.line_end}}
-                        Type: {{location.prompt_type}}
-                        Purpose: {{location.prompt_purpose}}
-                        Integration Points: {{location.integration_points|join(', ')}}
-                    </prompt_location>
-                    {% endfor %}
-                </prompt_analysis>
-                
-                <output>
-                    prompt_updates: A list of update objects, each containing:
-                      - prompt_location_id: The ID of the prompt location (from the input prompt_analysis)
-                      - line_start: The exact line where the update should start
-                      - line_end: The exact line where the update should end
-                      - section_to_update: The section being updated (e.g., "instructions", "validation")
-                      - original_text: The exact text to be replaced or modified
-                      - updated_text: The new text with the rule integrated
-                      - integration_method: How to integrate (e.g., "append", "replace", "insert_after")
-                      - confidence: A percentage (0-100) indicating your confidence in this update
-                      - reasoning: Your reasoning for this update
-                </output>
-            """,
-            output={
-                "schema": {
-                    "prompt_updates": "list[object]",
+                    "prompt_type": "string",
+                    "prompt_lines": "string",
+                    "prompt_segments": "list[string]",
+                    "confidence": "integer",
+                    "explanation": "string",
                 }
             },
             optimize=True,
@@ -169,14 +87,132 @@ def build_rule_locator_pipeline(**kwargs) -> Pipeline:
 
     steps = [
         PipelineStep(
-            name="identify_prompts",
+            name="function_analysis",
             input="functions",
             operations=["identify_prompt_functions"],
         ),
+    ]
+
+    return Pipeline(
+        name="prompt-finder-pipeline",
+        operations=operations,
+        steps=steps,
+        **kwargs,
+    )
+
+
+def build_rule_locator_pipeline(**kwargs) -> Pipeline:
+    """
+    Build a pipeline for locating where rules should be placed in prompts.
+
+    Args:
+        **kwargs: Additional arguments to pass to the Pipeline constructor
+
+    Returns:
+        Pipeline: A configured pipeline instance
+    """
+    operations = [
+        MapOp(
+            name="locate_rule_placement",
+            type="map",
+            prompt="""
+                <instructions>
+                    You are an expert in analyzing LLM prompts. Your task is to determine 
+                    where to insert specific rules into existing prompts.
+                    
+                    You will be given:
+                    1. A rule that needs to be added to prompts (as an exact string)
+                    2. Information about multiple functions that contain prompts/agents
+                    
+                    For this rule, determine which prompt(s) it should be added to.
+                    A good match is one where:
+                    - The rule enhances the prompt's purpose
+                    - The rule is relevant to the prompt's context
+                    - The rule complements the existing instructions
+                    
+                    IMPORTANT: You are NOT being asked to apply or implement the rule by
+                    rewriting the prompt. Your task is to identify the EXACT CODE SECTION where
+                    the rule should be added.
+                    
+                    For each suitable prompt, determine:
+                    1. The specific code section (could be multiple lines of code) where the rule belongs
+                    2. Why this code section is the appropriate place for the rule
+                    3. The confidence level (0-100%) that adding this rule will improve results
+                    
+                    The code section should be a direct copy of the relevant lines from the source code,
+                    such as a specific part of a role definition, backstory, goal, or description.
+                    
+                    Only include placements that would meaningfully improve the system.
+                </instructions>
+                
+                <rule>
+                    {{input.rule_type}}: {{input.rule_text}}
+                </rule>
+                
+                <prompt_functions>
+                    {% for function in input.prompt_functions %}
+                    <function id="{{loop.index}}">
+                        Name: {{function.name}}
+                        File Path: {{function.file_path}}
+                        Line Range: {{function.line_start}}-{{function.line_end}}
+                        Prompt Type: {{function.prompt_type}}
+                        Prompt Lines: {{function.prompt_lines}}
+                        
+                        Source Code:
+                        {{function.source_code}}
+                        
+                        {% if function.docstring %}
+                        Docstring:
+                        {{function.docstring}}
+                        {% endif %}
+                        
+                        Prompt Segments:
+                        {% for segment in function.prompt_segments %}
+                        ---
+                        {{segment}}
+                        ---
+                        {% endfor %}
+                    </function>
+                    {% endfor %}
+                </prompt_functions>
+                
+                <output>
+                    Respond **only** with a JSON object matching this exact schema (no extra keys!):
+                    
+                    placements: list[{function_id: int, function_name: str, file_path: str, target_code_section: str, confidence: float, reasoning: str}]
+                    
+                    So your entire output should look like:
+                    
+                    ```json
+                    {
+                      "placements": [
+                        {
+                          "function_id": 1,
+                          "function_name": "example_function",
+                          "file_path": "src/foo.py",
+                          "target_code_section": "…exact lines…",
+                          "confidence": 92.5,
+                          "reasoning": "This rule fits here because…"
+                        },
+                        …
+                      ]
+                    }
+                </output>
+            """,
+            output={
+                "schema": {
+                    "placements": "list[{function_id: int, function_name: str, file_path: str, target_code_section: str, confidence: float, reasoning: str}]"
+                }
+            },
+            optimize=True,
+        ),
+    ]
+
+    steps = [
         PipelineStep(
-            name="place_rules",
+            name="rule_placement",
             input="rules_with_prompt_functions",
-            operations=["place_rule_in_prompt"],
+            operations=["locate_rule_placement"],
         ),
     ]
 
@@ -188,297 +224,240 @@ def build_rule_locator_pipeline(**kwargs) -> Pipeline:
     )
 
 
-def locate_rules(rules, functions, model="gpt-4o"):
+def find_prompt_functions(functions, model="gpt-4o"):
     """
-    Locate which prompts in functions should be updated with rules.
-    
+    Identify functions that contain prompts or define agents.
+
     Args:
-        rules: Dictionary containing 'always', 'never', and 'tips' rules
-        functions: List of FunctionInfo objects representing the codebase
+        functions: List of FunctionInfo objects
         model: The model to use for the analysis
-    
+
     Returns:
-        list: List of prompt update recommendations
+        list: List of functions that contain prompts, with detailed analysis
     """
+    # Format functions data
+    functions_data = [
+        {
+            "name": function.name,
+            "file_path": function.file_path,
+            "line_start": function.line_start,
+            "line_end": function.line_end,
+            "signature": function.signature,
+            "source_code": function.source_code,
+            "docstring": function.docstring,
+        }
+        for function in functions
+    ]
+
+    if not functions_data:
+        return []
+
+    # Write functions to a temp JSON file
     try:
-        # Step 1: Identify functions with prompts
-        functions_data = [
-            {
-                "name": function.name,
-                "file_path": function.file_path,
-                "line_start": function.line_start,
-                "line_end": function.line_end,
-                "signature": function.signature,
-                "source_code": function.source_code,
-                "docstring": function.docstring,
-            }
-            for function in functions
-        ]
-        
-        # Write functions to a temp JSON file
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as inf:
             json.dump(functions_data, inf)
-            functions_path = inf.name
+            in_path = inf.name
 
-        # Create temp file for the intermediate results
-        prompt_functions_fd, prompt_functions_path = tempfile.mkstemp(suffix=".json")
-        os.close(prompt_functions_fd)
-        
-        # Create temp file for the final results
-        final_results_fd, final_results_path = tempfile.mkstemp(suffix=".json")
-        os.close(final_results_fd)
-        
+        # Reserve a temp file for the pipeline output
+        out_fd, out_path = tempfile.mkstemp(suffix=".json")
+        os.close(out_fd)
+
         try:
-            # Run step 1: Identify functions with prompts
-            step1_datasets = {
+            datasets = {
                 "functions": Dataset(
                     type="file",
-                    path=functions_path,
+                    path=in_path,
                 )
             }
-            step1_pipeline = Pipeline(
-                name="identify-prompts-pipeline",
-                operations=[op for op in build_rule_locator_pipeline().operations if op.name == "identify_prompt_functions"],
-                steps=[
-                    PipelineStep(
-                        name="identify_prompts",
-                        input="functions",
-                        operations=["identify_prompt_functions"],
-                    ),
-                ],
-                datasets=step1_datasets,
-                output=PipelineOutput(type="file", path=prompt_functions_path),
-                default_model=model
+            pipeline = build_prompt_finder_pipeline(
+                datasets=datasets,
+                output=PipelineOutput(type="file", path=out_path),
+                default_model=model,
             )
-            step1_pipeline.run()
-            
-            # Read the prompt functions results
-            with open(prompt_functions_path) as f:
-                prompt_functions_results = json.load(f)
-            
-            # Filter to functions that contain prompts
+            pipeline.run()
+
+            # Read back the results
+            with open(out_path) as f:
+                all_functions = json.load(f)
+
+            # Filter to only functions that contain prompts with high confidence
             prompt_functions = [
-                {**func_data, **result}
-                for func_data, result in zip(functions_data, prompt_functions_results)
-                if result.get("contains_prompt", False)
+                f
+                for f in all_functions
+                if f.get("contains_prompt", False) and f.get("confidence", 0) >= 70
             ]
-            
-            if not prompt_functions:
-                print("No functions containing prompts were found")
-                return []
-                
-            print(f"Found {len(prompt_functions)} functions containing prompts")
-            
-            # Step 2: For each rule, check where to place it
-            rules_with_functions = []
-            
-            # Process each type of rule
-            for rule_type in ["always", "never", "tips"]:
-                for rule_text in rules.get(rule_type, []):
-                    # For each rule, pair it with every function that has prompts
-                    for prompt_function in prompt_functions:
-                        rules_with_functions.append({
-                            "rule_type": rule_type,
-                            "rule_text": rule_text,
-                            "function_name": prompt_function["name"],
-                            "function_file_path": prompt_function["file_path"],
-                            "function_line_start": prompt_function["line_start"],
-                            "function_line_end": prompt_function["line_end"],
-                            "function_signature": prompt_function["signature"],
-                            "function_source_code": prompt_function["source_code"],
-                            "function_docstring": prompt_function.get("docstring", ""),
-                            "prompt_locations": prompt_function.get("prompt_locations", []),
-                        })
-            
-            if not rules_with_functions:
-                return []
-                
-            # Write rule-function pairs to a temp JSON file
-            with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as inf:
-                json.dump(rules_with_functions, inf)
-                rules_with_functions_path = inf.name
-                
-            # Run step 2: Place rules in prompts
-            step2_datasets = {
-                "rules_with_prompt_functions": Dataset(
-                    type="file",
-                    path=rules_with_functions_path,
-                )
-            }
-            step2_pipeline = Pipeline(
-                name="place-rules-pipeline",
-                operations=[op for op in build_rule_locator_pipeline().operations if op.name == "place_rule_in_prompt"],
-                steps=[
-                    PipelineStep(
-                        name="place_rules",
-                        input="rules_with_prompt_functions",
-                        operations=["place_rule_in_prompt"],
-                    ),
-                ],
-                datasets=step2_datasets,
-                output=PipelineOutput(type="file", path=final_results_path),
-                default_model=model
-            )
-            step2_pipeline.run()
-            
-            # Read the final results
-            with open(final_results_path) as f:
-                rule_placement_results = json.load(f)
-                
-            # Flatten updates from all rules
-            all_updates = []
-            for idx, result in enumerate(rule_placement_results):
-                rule_info = rules_with_functions[idx]
-                updates = result.get("prompt_updates", [])
-                # Add rule and function info to each update
-                for update in updates:
-                    update["rule_type"] = rule_info["rule_type"]
-                    update["rule_text"] = rule_info["rule_text"]
-                    update["function_name"] = rule_info["function_name"]
-                    update["file_path"] = rule_info["function_file_path"]
-                all_updates.extend(updates)
-            
-            return all_updates
-            
+
+            # Add the original source code and other details back to the results
+            for pf in prompt_functions:
+                for f in functions_data:
+                    if f["name"] == pf["name"] and f["file_path"] == pf["file_path"]:
+                        pf.update(f)
+                        break
+
+            return prompt_functions
+
         finally:
             # Clean up temp files
-            for path in [functions_path, prompt_functions_path, final_results_path]:
-                if os.path.exists(path):
-                    os.remove(path)
-                    
-            # Clean up any extra temp files that may have been created
-            if 'rules_with_functions_path' in locals() and os.path.exists(rules_with_functions_path):
-                os.remove(rules_with_functions_path)
-                
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
     except Exception as e:
-        print(f"Error in locate_rules: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        print(f"Error in find_prompt_functions: {str(e)}")
         return []
 
 
-def save_prompt_updates(updates):
+def locate_rules(rules, prompt_functions, model="gpt-4o"):
     """
-    Save prompt update recommendations to the database.
-    
+    Locate which prompts should be updated with which rules.
+
     Args:
-        updates: List of prompt update recommendations
+        rules: Dictionary containing 'always', 'never', and 'tips' rules
+        prompt_functions: List of functions that contain prompts (from find_prompt_functions)
+        model: The model to use for the analysis
+
+    Returns:
+        list: List of rule placement recommendations
+    """
+    if not prompt_functions:
+        print("No functions with prompts found")
+        return []
+
+    # Prepare data for pipeline - one entry per rule
+    rules_with_prompt_functions = []
+
+    # Process each type of rule
+    for rule in rules:
+        for rule_type in ["always", "never", "tips"]:
+            for rule_text in rule.get(rule_type, []):
+                # Create entry with the rule and all prompt functions
+                rules_with_prompt_functions.append(
+                    {
+                        "rule_type": rule_type,
+                        "rule_text": rule_text,
+                        "prompt_functions": prompt_functions,
+                    }
+                )
+
+    if not rules_with_prompt_functions:
+        return []
+
+    # Write rule data to a temp JSON file
+    try:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as inf:
+            json.dump(rules_with_prompt_functions, inf)
+            in_path = inf.name
+
+        # Reserve a temp file for the pipeline output
+        out_fd, out_path = tempfile.mkstemp(suffix=".json")
+        os.close(out_fd)
+
+        try:
+            datasets = {
+                "rules_with_prompt_functions": Dataset(
+                    type="file",
+                    path=in_path,
+                )
+            }
+            pipeline = build_rule_locator_pipeline(
+                datasets=datasets,
+                output=PipelineOutput(type="file", path=out_path),
+                default_model=model,
+            )
+            pipeline.run()
+
+            # Read back the results
+            with open(out_path) as f:
+                results = json.load(f)
+
+            # Flatten placements from all rules
+            all_placements = []
+            for result in results:
+                placements = result.get("placements", [])
+                for placement in placements:
+                    placement["rule_type"] = result.get("rule_type")
+                    placement["rule_text"] = result.get("rule_text")
+                all_placements.extend(placements)
+
+            return all_placements
+
+        finally:
+            # Clean up temp files
+            if os.path.exists(in_path):
+                os.remove(in_path)
+            if os.path.exists(out_path):
+                os.remove(out_path)
+    except Exception as e:
+        print(f"Error in locate_rules: {str(e)}")
+        return []
+
+
+def save_rule_placements(placements):
+    """
+    Save rule placement recommendations to the database.
+
+    Args:
+        placements: List of rule placement recommendations
     """
     from aiai.app.models import DiscoveredRule
-    
-    for update in updates:
-        # Only process high confidence updates
-        if update.get("confidence", 0) >= 70:
+
+    for placement in placements:
+        # Only process high confidence placements
+        if placement.get("confidence", 0) >= 70:
             # Create or update rule record
-            rule_text = f"{update.get('rule_type', 'rule')}: {update.get('rule_text', '')}"
-            prompt_info = f"For {update.get('function_name')} - {update.get('section_to_update')}"
-            
+            rule_text = f"{placement.get('rule_type', 'rule')}: {placement.get('rule_text', '')}"
+            prompt_info = f"For {placement.get('function_name')} - {placement.get('section_to_update')}"
+
             # Get or create the rule
             rule, created = DiscoveredRule.objects.get_or_create(
                 rule_text=rule_text,
-                defaults={"confidence": update.get("confidence", 0)}
+                defaults={"confidence": placement.get("confidence", 0)},
             )
-            
+
             # Update confidence if not created
-            if not created and update.get("confidence", 0) > rule.confidence:
-                rule.confidence = update.get("confidence", 0)
+            if not created and placement.get("confidence", 0) > rule.confidence:
+                rule.confidence = placement.get("confidence", 0)
                 rule.save()
 
 
-def apply_prompt_updates(updates, dry_run=True):
-    """
-    Apply the recommended prompt updates to the codebase.
-    
-    Args:
-        updates: List of prompt update recommendations
-        dry_run: If True, only print changes without applying them
-    
-    Returns:
-        list: Summary of changes applied or that would be applied
-    """
-    changes_summary = []
-    
-    for update in updates:
-        if update.get("confidence", 0) < 70:
-            continue
-            
-        file_path = update.get("file_path")
-        start_line = update.get("line_start")
-        end_line = update.get("line_end")
-        original = update.get("original_text")
-        updated = update.get("updated_text")
-        
-        if not all([file_path, start_line, end_line, original, updated]):
-            continue
-        
-        try:
-            with open(file_path, 'r') as f:
-                lines = f.readlines()
-                
-            # Convert to 0-indexed
-            start_idx = start_line - 1
-            end_idx = end_line - 1
-            
-            # Extract the code segment to update
-            code_segment = ''.join(lines[start_idx:end_idx+1])
-            
-            # Check if original text is found
-            if original not in code_segment:
-                print(f"Warning: Original text not found in {file_path} lines {start_line}-{end_line}")
-                continue
-                
-            # Replace the text
-            new_segment = code_segment.replace(original, updated)
-            
-            # Create updated file content
-            new_lines = lines[:start_idx] + [new_segment] + lines[end_idx+1:]
-            
-            change = {
-                "file": file_path,
-                "function": update.get("function_name"),
-                "lines": f"{start_line}-{end_line}",
-                "integration": update.get("integration_method"),
-                "applied": not dry_run
-            }
-            changes_summary.append(change)
-            
-            if not dry_run:
-                with open(file_path, 'w') as f:
-                    f.writelines(new_lines)
-                    
-        except Exception as e:
-            print(f"Error applying update to {file_path}: {str(e)}")
-    
-    return changes_summary
-
-
-if __name__ == '__main__':
+def main():
     setup_django()
-    from aiai.app.models import DiscoveredRule, FunctionInfo
+    from aiai.app.models import FunctionInfo
     from aiai.optimizer.rule_extractor import extract_rules
-    
+
     # Get all functions from the database
     functions = FunctionInfo.objects.all()
-    
-    # Get rules (example: could also load from database if already extracted)
+
+    # Step 1: Identify functions that contain prompts
+    print("Identifying functions with prompts...")
+    prompt_functions = find_prompt_functions(functions)
+    print(f"Found {len(prompt_functions)} functions with prompts")
+
+    # Get rules
     from aiai.app.models import OtelSpan
+
     logs = OtelSpan.objects.all()
     rules = extract_rules(logs)
-    
-    # Locate prompts to update with rules
-    updates = locate_rules(rules, functions)
-    
-    # Save prompt updates
-    save_prompt_updates(updates)
-    
-    # Dry run of applying updates
-    changes = apply_prompt_updates(updates, dry_run=True)
-    
-    # Print summary
-    print(f"Found {len(updates)} relevant prompt updates")
-    for u in updates:
-        print(f"Rule: {u.get('rule_type')} - {u.get('rule_text')[:50]}...")
-        print(f"Function: {u.get('function_name')} ({u.get('file_path')}:{u.get('line_start')}-{u.get('line_end')})")
-        print(f"Update section: {u.get('section_to_update')} ({u.get('integration_method')})")
-        print(f"Confidence: {u.get('confidence')}%")
-        print("-" * 80) 
+
+    # Step 2: For each rule, determine which prompt it should be placed in
+    print("Locating optimal rule placements...")
+    placements = locate_rules(rules, prompt_functions)
+    return placements
+
+
+if __name__ == "__main__":
+    placements = main()
+    from aiai.app.models import DiscoveredRule
+
+    objects = [
+        DiscoveredRule(
+            rule_type=p.get("rule_type", ""),
+            rule_text=p.get("rule_text", ""),
+            function_name=p.get("function_name", ""),
+            file_path=p.get("file_path", ""),
+            target_code_section=p.get("target_code_section", ""),
+            confidence=p.get("confidence", 0),
+        )
+        for p in placements
+    ]
+    DiscoveredRule.objects.bulk_create(objects)

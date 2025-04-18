@@ -1,8 +1,8 @@
-from pathlib import Path
-import typer
 import os
-from dotenv import load_dotenv
+from pathlib import Path
 
+import typer
+from dotenv import load_dotenv
 
 from aiai.utils import setup_django
 
@@ -23,6 +23,7 @@ def main():
 
     # Check if OpenAI API key is available and run the CrewAI example
     openai_api_key = os.environ.get("OPENAI_API_KEY")
+    script_to_run = ""
     if openai_api_key:
         from aiai.logger.log_ingestor import LogIngestor
 
@@ -44,7 +45,7 @@ def main():
     analyzer = CodeAnalyzer()
 
     # Analyze code starting from an entrypoint file without following imports
-    graph = analyzer.analyze_from_file(sample_file, save_to_db=True)
+    graph = analyzer.analyze_from_file(script_to_run, save_to_db=True)
     typer.echo(f"Code analysis complete! Found {len(graph.functions)} functions.")
 
     return 0

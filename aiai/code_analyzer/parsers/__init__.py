@@ -4,8 +4,8 @@ Language parsers for code analysis.
 This module provides the interface and implementations for parsing different programming languages.
 """
 
-from typing import Dict, Type, Optional
 import importlib
+from typing import Dict, Optional, Type
 
 from .base import LanguageParser
 

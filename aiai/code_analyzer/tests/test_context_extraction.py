@@ -4,14 +4,14 @@ Pytest tests for the enhanced code analyzer with context extraction.
 
 import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add the parent directory to the path if needed for direct test execution
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from aiai.code_analyzer.analyzer import CodeAnalyzer
-from aiai.code_analyzer.parsers.base import Function
 
 
 @pytest.fixture

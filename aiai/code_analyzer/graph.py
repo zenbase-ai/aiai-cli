@@ -5,10 +5,10 @@ This module provides a graph structure to represent function dependencies.
 """
 
 import json
-from typing import Dict, List, Set, Optional, Any, Tuple
 import os
+from typing import Any, Dict, List, Optional, Set
+
 import networkx as nx
-from pathlib import Path
 
 from .parsers.base import Function
 

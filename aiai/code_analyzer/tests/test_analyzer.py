@@ -7,8 +7,9 @@ dependency graph from a Python file.
 
 import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add parent directory to path so we can import the code_analyzer package
 script_dir = Path(__file__).resolve().parent

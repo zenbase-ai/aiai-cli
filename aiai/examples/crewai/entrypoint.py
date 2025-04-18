@@ -9,10 +9,11 @@ except ImportError:
 
     sys.exit(1)
 
+import json
 import os
 import sys
-import json
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 
