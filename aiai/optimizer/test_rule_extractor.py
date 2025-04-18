@@ -25,10 +25,10 @@ def test_extract_rules(mock_logs):
         patch("aiai.optimizer.rule_extractor.Pipeline") as MockPipeline,
         patch("tempfile.NamedTemporaryFile") as mock_tempfile,
         patch("tempfile.mkstemp") as mock_mkstemp,
-        patch("json.dump") as mock_json_dump,
+        patch("json.dump") as _,
         patch("builtins.open", create=True) as mock_open,
         patch("json.load") as mock_json_load,
-        patch("os.remove") as mock_remove,
+        patch("os.remove") as _,
     ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
@@ -110,11 +110,11 @@ def test_build_rules_pipeline():
 @pytest.mark.django_db
 def test_integration_with_db():
     # Create some test spans
-    span1 = OtelSpan.objects.create(
+    _ = OtelSpan.objects.create(
         input_data={"prompt": "Test prompt 1"},
         output_data={"response": "Test response 1"},
     )
-    span2 = OtelSpan.objects.create(
+    _ = OtelSpan.objects.create(
         input_data={"prompt": "Test prompt 2"},
         output_data={"response": "Test response 2"},
     )
@@ -126,10 +126,10 @@ def test_integration_with_db():
         patch("aiai.optimizer.rule_extractor.Pipeline") as MockPipeline,
         patch("tempfile.NamedTemporaryFile") as mock_tempfile,
         patch("tempfile.mkstemp") as mock_mkstemp,
-        patch("json.dump") as mock_json_dump,
+        patch("json.dump") as _,
         patch("builtins.open", create=True) as mock_open,
         patch("json.load") as mock_json_load,
-        patch("os.remove") as mock_remove,
+        patch("os.remove") as _,
     ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"

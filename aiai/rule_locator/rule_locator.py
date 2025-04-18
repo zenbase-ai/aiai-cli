@@ -41,7 +41,8 @@ def build_prompt_finder_pipeline(**kwargs) -> Pipeline:
                     
                     Look for:
                     - String literals with XML/HTML-like tags (<instructions>, <output>, etc.)
-                    - Template strings with placeholders ({% raw %}{{variable}}{% endraw %}, {% raw %}{variable}{% endraw %}, etc.)
+                    - Template strings with placeholders 
+                      ({% raw %}{{variable}}{% endraw %}, {% raw %}{variable}{% endraw %}, etc.)
                     - Variables/objects named "prompt", "template", "system_message", etc.
                     - Agent definitions or configurations
                     - LLM API calls with prompt content
@@ -64,7 +65,8 @@ def build_prompt_finder_pipeline(**kwargs) -> Pipeline:
                 
                 <output>
                     contains_prompt: Does this function contain a prompt or define an agent? (true/false)
-                    prompt_type: What type of prompt/agent is used? (e.g., "instruction_prompt", "agent_definition", "chain_of_thought", etc.)
+                    prompt_type: What type of prompt/agent is used? 
+                        (e.g., "instruction_prompt", "agent_definition", "chain_of_thought", etc.)
                     prompt_lines: The line numbers where the prompt is defined (e.g., "15-25")
                     prompt_segments: A list of the specific prompt segments in the function
                     confidence: A percentage (0-100) indicating your confidence in this analysis
@@ -179,7 +181,8 @@ def build_rule_locator_pipeline(**kwargs) -> Pipeline:
                 <output>
                     Respond **only** with a JSON object matching this exact schema (no extra keys!):
                     
-                    placements: list[{function_id: int, function_name: str, file_path: str, target_code_section: str, confidence: float, reasoning: str}]
+                    placements: list[{function_id: int, function_name: str, file_path: str, 
+                                     target_code_section: str, confidence: float, reasoning: str}]
                     
                     So your entire output should look like:
                     
@@ -201,7 +204,8 @@ def build_rule_locator_pipeline(**kwargs) -> Pipeline:
             """,
             output={
                 "schema": {
-                    "placements": "list[{function_id: int, function_name: str, file_path: str, target_code_section: str, confidence: float, reasoning: str}]"
+                    "placements": "list[{function_id: int, function_name: str, file_path: str, "
+                                  "target_code_section: str, confidence: float, reasoning: str}]"
                 }
             },
             optimize=True,
@@ -404,7 +408,6 @@ def save_rule_placements(placements):
         if placement.get("confidence", 0) >= 70:
             # Create or update rule record
             rule_text = f"{placement.get('rule_type', 'rule')}: {placement.get('rule_text', '')}"
-            prompt_info = f"For {placement.get('function_name')} - {placement.get('section_to_update')}"
 
             # Get or create the rule
             rule, created = DiscoveredRule.objects.get_or_create(

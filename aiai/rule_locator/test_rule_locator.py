@@ -114,11 +114,11 @@ def test_find_prompt_functions(mock_functions):
         patch("aiai.rule_locator.rule_locator.build_prompt_finder_pipeline") as mock_build_pipeline,
         patch("aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
         patch("aiai.rule_locator.rule_locator.tempfile.mkstemp") as mock_mkstemp,
-        patch("aiai.rule_locator.rule_locator.json.dump") as mock_json_dump,
+        patch("aiai.rule_locator.rule_locator.json.dump") as _,
         patch("aiai.rule_locator.rule_locator.open", create=True) as mock_open,
         patch("aiai.rule_locator.rule_locator.json.load") as mock_json_load,
-        patch("aiai.rule_locator.rule_locator.os.remove") as mock_remove,
-        patch("aiai.rule_locator.rule_locator.os.close") as mock_close,
+        patch("aiai.rule_locator.rule_locator.os.remove") as _,
+        patch("aiai.rule_locator.rule_locator.os.close") as _,
         patch("aiai.rule_locator.rule_locator.os.path.exists") as mock_exists,
     ):
         # Setup mock temporary files
@@ -173,11 +173,11 @@ def test_locate_rules(mock_prompt_functions, mock_rules):
         patch("aiai.rule_locator.rule_locator.build_rule_locator_pipeline") as mock_build_pipeline,
         patch("aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
         patch("aiai.rule_locator.rule_locator.tempfile.mkstemp") as mock_mkstemp,
-        patch("aiai.rule_locator.rule_locator.json.dump") as mock_json_dump,
+        patch("aiai.rule_locator.rule_locator.json.dump") as _,
         patch("aiai.rule_locator.rule_locator.open", create=True) as mock_open,
         patch("aiai.rule_locator.rule_locator.json.load") as mock_json_load,
-        patch("aiai.rule_locator.rule_locator.os.remove") as mock_remove,
-        patch("aiai.rule_locator.rule_locator.os.close") as mock_close,
+        patch("aiai.rule_locator.rule_locator.os.remove") as _,
+        patch("aiai.rule_locator.rule_locator.os.close") as _,
         patch("aiai.rule_locator.rule_locator.os.path.exists") as mock_exists,
     ):
         # Setup mock temporary files
@@ -269,7 +269,7 @@ def test_save_rule_placements():
 @pytest.mark.django_db
 def test_integration_with_db():
     # Create some test functions
-    function1 = FunctionInfo.objects.create(
+    _ = FunctionInfo.objects.create(
         name="test_function1",
         file_path="test/path1.py",
         line_start=1,
@@ -294,7 +294,7 @@ def test_integration_with_db():
     with (
         patch("aiai.rule_locator.rule_locator.find_prompt_functions") as mock_find_prompt,
         patch("aiai.rule_locator.rule_locator.locate_rules") as mock_locate_rules,
-        patch("aiai.rule_locator.rule_locator.setup_django") as mock_setup_django,
+        patch("aiai.rule_locator.rule_locator.setup_django") as _,
         patch("aiai.optimizer.rule_extractor.extract_rules") as mock_extract_rules,
     ):
         # Setup mock return values
