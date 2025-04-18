@@ -9,6 +9,16 @@
     "**/.ruby-lsp": true,
     ".venv/": true,
     ".idea/": true,
-    "**/__pycache__": true
+    "**/__pycache__": true,
+    ".pytest_cache/": true,
+    ".ruff_cache/": true
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
   }
 }

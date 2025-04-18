@@ -1,19 +1,17 @@
 import importlib.util
-import os
 import sys
 import uuid
+from pathlib import Path
 
-import instructor
 import openlit
 from dotenv import load_dotenv
-from litellm import completion
 from opentelemetry import trace
+from opentelemetry._events import NoOpEventLogger
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from aiai.app.models import OtelSpan
-from aiai.evals import evaluate_crew_output
-from aiai.logger.openlit_exporters import DjangoSpanExporter
+from aiai.logger.otel_exporter import DjangoSpanExporter
 from aiai.utils import setup_django
 
 
@@ -22,13 +20,18 @@ class LogIngestor:
         setup_django()
         load_dotenv()
         self.provider = TracerProvider()
-        trace.set_tracer_provider(self.provider)
+        self.tracer = self.provider.get_tracer(__name__)
         self.span_exporter = DjangoSpanExporter()
-        trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(self.span_exporter))
-        openlit.init()
-        self.tracer = trace.get_tracer(__name__)
+        self.provider.add_span_processor(BatchSpanProcessor(self.span_exporter))
+        trace.set_tracer_provider(self.provider)
+        openlit.init(
+            environment="dev",
+            tracer=self.tracer,
+            event_logger=NoOpEventLogger(name="noop"),
+            disable_metrics=True,
+        )
 
-    def run_script(self, file_path: str):
+    def run_script(self, file_path: Path):
         """
         Runs a Python script, captures its execution trace with OpenTelemetry,
         evaluates the output, and stores the results.
@@ -39,10 +42,11 @@ class LogIngestor:
         """
         print(f"Starting execution of: {file_path}...")
         agent_run_id = str(uuid.uuid4())
+        module_name = file_path.stem
         self.span_exporter.set_agent_run_id(agent_run_id)
 
         # Dynamically import and run the main function from the file_path
-        module_name = os.path.splitext(os.path.basename(file_path))[0]
+        file_path = str(file_path)
         spec = importlib.util.spec_from_file_location(module_name, file_path)
         if spec is None or spec.loader is None:
             raise ImportError(f"Could not load spec for module from file: {file_path}")
@@ -57,10 +61,11 @@ class LogIngestor:
             if hasattr(module, "main") and callable(module.main):
                 # Execute the main function within a span
                 with self.tracer.start_as_current_span("script_execution") as span:
-                    span.set_attribute("file_path", file_path)
+                    span.set_attribute("file_path", str(file_path))
                     span.set_attribute("agent_run_id", agent_run_id)
                     result = module.main()
-                    span.set_attribute("result", str(result))  # Keep result simple for attribute
+                    # Keep result simple for attribute
+                    span.set_attribute("result", str(result))
 
             else:
                 raise AttributeError(f"'main' function not found or not callable in {file_path}")
@@ -70,21 +75,17 @@ class LogIngestor:
                 del sys.modules[module_name]
 
         # Evaluate the result after the script execution span has ended
-        client = instructor.from_litellm(completion)
-        success = evaluate_crew_output(result, client)
+        # success = evaluate_crew_output(result, client)
 
         # Create a separate record for evaluation result linked to the run
         OtelSpan.objects.create(
             agent_run_id=agent_run_id,
             input_data={
-                "file_path": file_path,
+                "file_path": str(file_path),
                 "raw_result": result,
             },  # Store raw result here
-            output_data={
-                "classification": success.classification,
-                "reasoning": success.reasoning,
-            },
+            output_data={},  # TODO: Add evaluation result here
             raw_span={},  # Not a direct span, but evaluation meta-data
         )
         print(f"Finished execution and evaluation for: {file_path}")
-        print(f"Evaluation Result: {success.classification} - {success.reasoning}")
+        # print(f"Evaluation Result: {success.classification} - {success.reasoning}")

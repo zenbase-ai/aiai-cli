@@ -20,8 +20,21 @@ class DiscoveredRule(models.Model):
     target_code_section: models.TextField = models.TextField()
     confidence: models.DecimalField = models.DecimalField(max_digits=5, decimal_places=2)
 
+class SyntheticEval(models.Model):
+    class Kinds(models.TextChoices):
+        RULES = "rules"
+        HEAD_TO_HEAD = "head_to_head"
+
+    kind = models.CharField(max_length=20, choices=Kinds.choices)
+    prompt = models.TextField(null=False, blank=False)
+    fields = models.JSONField(null=False, blank=False)
+
     def __str__(self) -> str:
-        return f"Rule: {self.rule_text[:50]}... ({self.confidence}%)"
+        return f"{self.id} - {self.kind}"
+
+
+class SyntheticDatum(models.Model):
+    input_data = models.TextField(null=False, blank=False)
 
 
 class FunctionInfo(models.Model):

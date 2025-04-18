@@ -69,7 +69,7 @@ ASSIGNMENT_QUERY = """
   assignment
   left: [
     (identifier) @variable.name
-    (tuple_pattern 
+    (tuple_pattern
       (identifier) @variable.tuple_item)
   ]
   right: (_) @variable.value
@@ -78,11 +78,11 @@ ASSIGNMENT_QUERY = """
 
 FILE_REF_QUERY = """
 [
-  (call 
+  (call
     function: [
       (identifier) @file_func
-      (attribute 
-        object: (_) 
+      (attribute
+        object: (_)
         attribute: (identifier) @file_method)
     ]
     arguments: (argument_list
@@ -209,7 +209,7 @@ class PythonParser(LanguageParser):
         Returns:
             A list of (caller, callee) tuples representing function calls
         """
-        tree, content, file_path = parsed_data
+        tree, content, _file_path = parsed_data
 
         # Create a map of function name to function object for quick lookup
         function_map: Dict[str, List[Function]] = {}
@@ -335,7 +335,7 @@ class PythonParser(LanguageParser):
                         logger.info(f"Found relative import: {rel_specifier}{module_name} -> {module_path}")
 
             # Special case: Handle the CrewAI-specific import for this example
-            if "crewai" in file_path:
+            if "crewai" in str(file_path):
                 # Look for imports in the same directory
                 for candidate in ["crew.py", "agents.py", "tasks.py"]:
                     candidate_path = os.path.join(os.path.dirname(file_path), candidate)

@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # AIAI Project Structure Overview
 
 This document provides an overview of the AIAI project's directory structure and the purpose of each component.
@@ -90,7 +95,7 @@ The `llm_context` directory stores contextual information for Large Language Mod
 ### Logger
 The `logger` directory implements a logging system with:
 - `log_ingestor.py`: For ingesting and processing logs
-- `openlit_exporters.py`: For exporting logs to external systems for openlit
+- `otel_exporters.py`: For exporting logs to external systems for openlit
 - Test suite for validation
 
 ### Core Files
