@@ -602,7 +602,7 @@ class RuleLocator:
             DiscoveredRule(
                 rule_type=p.get("rule_type", ""),
                 rule_text=p.get("rule_text", ""),
-                function_name=p.get("function_name", ""),
+                function_name=p.get("source_name", ""),
                 file_path=p.get("file_path", ""),
                 target_code_section=p.get("target_code_section", ""),
                 confidence=p.get("confidence", 0),
