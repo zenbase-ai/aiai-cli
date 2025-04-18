@@ -1,7 +1,7 @@
 [project]
 name = "aiai"
 version = "0.1.0"
-description = "Add your description here"
+description = "An AI Agent that automates AI Engineering"
 authors = [{ name = "Amir Mehr", email = "amir@zenbase.ai" }]
 dependencies = [
     "libcst>=1.7.0",
@@ -28,9 +28,7 @@ requires-python = ">= 3.8"
 
 [project.optional-dependencies]
 crewai = ["crewai==0.114.0", "crewai-tools>=0.40.1"]
-langgraph = [
-    "langgraph>=0.3.31",
-]
+langgraph = ["langgraph>=0.3.31"]
 
 [project.scripts]
 aiai = "aiai.main:main"
@@ -69,6 +67,10 @@ line-length = 120
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = []
+
+# Ignore line length errors for files that start with file_
+[tool.ruff.lint.per-file-ignores]
+"**/file_*.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"

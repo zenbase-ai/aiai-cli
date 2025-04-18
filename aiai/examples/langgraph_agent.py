@@ -11,7 +11,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from aiai.logger.openlit_exporters import DjangoSpanExporter
+from aiai.logger.otel_exporter import DjangoSpanExporter
 
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
@@ -21,10 +21,11 @@ provider.add_span_processor(my_processor)
 
 openlit.init()
 
-# Ensure the OpenAI API key is set (consider a more secure method in production) Make sure you have a
-# 'people_data.json' file in the same directory with the structure: {"leads_text": "Text containing lead info..."}
-# Example: {"leads_text": "Amir Mehr is the CTO at Zenbase AI, focused on optimizing LLM workflows. Bob Williams,
-# Lead Data Scientist at Data Insights Inc., faces challenges with prompt variability."}
+# Ensure the OpenAI API key is set (consider a more secure method in production)
+# Make sure you have a 'people_data.json' file in the same directory
+# with the structure: {"leads_text": "Text containing lead info..."}
+# Example: {"leads_text": "Amir Mehr is the CTO at Zenbase AI, focused on optimizing LLM workflows.
+# Bob Williams, Lead Data Scientist at Data Insights Inc., faces challenges with prompt variability."}
 
 
 # 1. Define the State for the graph
@@ -37,8 +38,6 @@ class AgentState(TypedDict):
 
 
 # 2. Define Node Functions
-
-
 def load_data(state: AgentState) -> AgentState:
     """Loads the raw lead text from the JSON file."""
     print("---LOADING DATA---")
@@ -83,11 +82,11 @@ def extract_leads(state: AgentState) -> AgentState:
         {raw_text}
         ---
 
-        Parse this text to identify and extract the key details (name, company, role, specific details indicating 
+        Parse this text to identify and extract the key details (name, company, role, specific details indicating
         needs/interests related to LLM optimization or development efficiency) for each person mentioned.
 
-        Respond ONLY with a JSON list of objects, where each object represents a lead and has the keys: 'name', 
-        'company', 'role', 'key_details'.
+        Respond ONLY with a JSON list of objects, where each object represents a lead and has the keys:
+        'name', 'company', 'role', 'key_details'.
 
         Example JSON Output:
         [
@@ -156,10 +155,13 @@ def craft_emails(state: AgentState) -> AgentState:
             Role: {lead.get("role", "N/A")}
             Key Details/Pain Points: {lead.get("key_details", "N/A")}
 
-            Tailor the email based on the lead's specific role and challenges to maximize engagement. Highlight how 
-            Zenbase can address their specific needs related to LLM development, prompt engineering, 
-            and model optimization. Reference Zenbase's connection to DSPy and its benefits. Include a clear call to 
-            action (e.g., suggest a demo or provide a link to learn more). Sign off as 'The Zenbase Team'.
+            Tailor the email based on the lead's specific role and challenges to maximize engagement.
+            Highlight how Zenbase can address their specific needs related to LLM development, prompt engineering,
+            and model optimization.
+
+            Reference Zenbase's connection to DSPy and its benefits.
+            Include a clear call to action (e.g., suggest a demo or provide a link to learn more).
+            Sign off as 'The Zenbase Team'.
 
             Format the output as a single email text block. Start directly with the subject line.
             Example Subject: Subject: Optimizing LLM Workflows at [Company Name] with Zenbase
