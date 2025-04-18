@@ -102,39 +102,39 @@ class EvalGenerator:
     )
 
     def __post_init__(self):
-        self.lm = instructor.from_litellm(litellm.acompletion)
+        self.lm = instructor.from_litellm(litellm.completion)
 
-    async def rules(
+    def rules(
         self,
         fns: list["FunctionInfo"],
         examples: list[str] | None = None,
     ) -> RulesEval:
         messages = prepare_messages(self.sys_prompt, fns, examples)
-        return await self.lm.create(
+        return self.lm.create(
             model=self.prompt_model,
             response_model=RulesEval,
             messages=messages,
         )
 
-    async def head_to_head(
+    def head_to_head(
         self,
         fns: list["FunctionInfo"],
         examples: list[str] | None = None,
     ) -> HeadToHeadEval:
         messages = prepare_messages(self.sys_prompt, fns, examples)
-        return await self.lm.create(
+        return self.lm.create(
             model=self.prompt_model,
             response_model=HeadToHeadEval,
             messages=messages,
         )
 
 
-async def cli():
+def cli():
     generator = EvalGenerator()
     rich.print("Loading function info...", end=" ")
     from aiai.app.models import FunctionInfo
 
-    fns = [fn async for fn in FunctionInfo.objects.all()]
+    fns = list(FunctionInfo.objects.all())
     rich.print(f"{len(fns)} functions loaded.")
 
     if examples := get_examples(fns):
@@ -142,14 +142,14 @@ async def cli():
         rich.print_json(data=examples)
 
     rich.print("Generating rules prompt...", end=" ")
-    rules = await generator.rules(fns, examples)
+    rules = generator.rules(fns, examples)
     rich.print("done.")
     rich.print("<rules>")
     rich.print_json(rules.model_dump_json())
     rich.print("</rules>")
 
     rich.print("Generating head-to-head prompt...", end=" ")
-    head_to_head = await generator.head_to_head(fns)
+    head_to_head = generator.head_to_head(fns)
     rich.print("done.")
     rich.print("<head-to-head>")
     rich.print_json(head_to_head.model_dump_json())

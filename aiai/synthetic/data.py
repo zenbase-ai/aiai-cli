@@ -50,23 +50,23 @@ class DataGenerator:
         """
     )
 
-    async def prompt(
+    def prompt(
         self,
         fns: list["FunctionInfo"],
         examples: list[str] | None = None,
     ) -> str:
         messages = prepare_messages(self.sys_prompt, fns, examples)
-        syn_prompt = await instructor.from_litellm(litellm.acompletion).create(
+        syn_prompt = instructor.from_litellm(litellm.completion).create(
             model=self.prompt_model,
             response_model=SynPrompt,
             messages=messages,
         )
         return str(syn_prompt)
 
-    async def data(self, prompt: str) -> list["SyntheticDatum"]:
+    def data(self, prompt: str) -> list["SyntheticDatum"]:
         from aiai.app.models import SyntheticDatum
 
-        response = await litellm.acompletion(
+        response = litellm.completion(
             model=self.data_model,
             messages=[{"role": "system", "content": prompt}],
             temperature=1,
@@ -76,13 +76,13 @@ class DataGenerator:
         return [SyntheticDatum(input_data=r.message.content) for r in response.choices]
 
 
-async def cli(output: Path, examples: int, seed: int):
+def cli(output: Path, examples: int, seed: int):
     generator = DataGenerator(examples, seed)
 
     rich.print("Loading function info...", end=" ")
     from aiai.app.models import FunctionInfo
 
-    fns = [fn async for fn in FunctionInfo.objects.all()]
+    fns = list(FunctionInfo.objects.all())
     rich.print(f"{len(fns)} functions loaded.")
 
     if examples := get_examples(fns):
@@ -90,14 +90,14 @@ async def cli(output: Path, examples: int, seed: int):
         rich.print_json(data=examples)
 
     rich.print("Generating synthetic data prompt...", end=" ")
-    prompt = await generator.prompt(fns, examples)
+    prompt = generator.prompt(fns, examples)
     rich.print("done.")
     rich.print("<prompt>")
     rich.print(prompt)
     rich.print("</prompt>")
 
     rich.print("Generating synthetic data...", end=" ")
-    data = await generator.data(prompt)
+    data = generator.data(prompt)
     rich.print(f"Generated {len(data)} synthetic examples.")
 
     rich.print("Saving synthetic data...", end=" ")
