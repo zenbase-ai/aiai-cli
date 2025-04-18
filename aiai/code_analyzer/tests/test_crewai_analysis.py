@@ -16,13 +16,13 @@ from aiai.code_analyzer.analyzer import CodeAnalyzer
 
 
 @pytest.fixture
-def crewai_entrypoint_path():
+def crewai_entrypoint():
     """Fixture providing the path to the CrewAI entrypoint file."""
     return Path(__file__).parent.parent.parent / "examples" / "crewai_agent.py"
 
 
 @pytest.mark.django_db
-def test_comprehensive_code_analysis(crewai_entrypoint_path):
+def test_comprehensive_code_analysis(crewai_entrypoint: Path):
     """
     Test a comprehensive code analysis that captures all important aspects of the codebase:
     - Related files through imports
@@ -34,7 +34,7 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
     analyzer = CodeAnalyzer(language="python")
 
     # Get the entrypoint path
-    entrypoint_path = str(crewai_entrypoint_path)
+    entrypoint_path = str(crewai_entrypoint)
 
     # Set up output directory
     output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")

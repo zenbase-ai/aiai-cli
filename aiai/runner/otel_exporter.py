@@ -8,13 +8,10 @@ from aiai.utils import setup_django
 
 
 class DjangoSpanExporter(SpanExporter):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, run_id: str, *args, **kwargs):
         setup_django()
+        self.run_id = run_id
         super().__init__(*args, **kwargs)
-        self.agent_run_id = None
-
-    def set_agent_run_id(self, agent_run_id: str):
-        self.agent_run_id = agent_run_id
 
     def export(self, spans: typing.Sequence[ReadableSpan]) -> SpanExportResult:
         from aiai.app.models import OtelSpan
@@ -33,7 +30,7 @@ class DjangoSpanExporter(SpanExporter):
             if prompt or response:
                 objects.append(
                     OtelSpan(
-                        agent_run_id=self.agent_run_id,
+                        agent_run_id=self.run_id,
                         input_data={"prompt": prompt},
                         output_data=response,
                         raw_span=json.loads(span.to_json()),

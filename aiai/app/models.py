@@ -38,6 +38,15 @@ class SyntheticDatum(models.Model):
     input_data = models.TextField(null=False, blank=False)
 
 
+class EvalRun(models.Model):
+    agent_run_id: models.CharField = models.CharField(max_length=32, db_index=True, null=False, blank=False)
+    eval: models.ForeignKey = models.ForeignKey(SyntheticEval, on_delete=models.CASCADE, null=True)
+    input_data: models.TextField = models.TextField(null=False, blank=False)
+    output_data: models.TextField = models.TextField(null=False, blank=False)
+    reward: models.TextField = models.TextField(null=False, blank=False)
+    created: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+
+
 class FunctionInfo(models.Model):
     name = models.CharField(max_length=255)
     file_path = models.CharField(max_length=512)

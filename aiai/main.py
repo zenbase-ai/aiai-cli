@@ -15,7 +15,7 @@ def analyze_code(file: Path):
 
 
 def capture_logs(file: Path):
-    from aiai.logger.runner import Runner
+    from aiai.runner.script_tracer import Runner
 
     Runner().run_script(file)
 

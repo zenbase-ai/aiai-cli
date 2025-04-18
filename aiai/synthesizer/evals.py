@@ -1,11 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 import instructor
 import litellm
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from aiai.synthesizer.utils import get_examples, prepare_messages
 
@@ -48,6 +48,14 @@ class RulesEval(AbstractEval):
     a single agent and pass/fail based on the rules.
     """
 
+    class Result(BaseModel):
+        reasoning: str
+        result: Literal["pass", "fail"]
+
+        @computed_field
+        def reward(self) -> float:
+            return 1 if self.result == "pass" else 0
+
     def to_db_model(self) -> "SyntheticEval":
         from aiai.app.models import SyntheticEval
 
@@ -68,6 +76,14 @@ class HeadToHeadEval(AbstractEval):
     0.5 (outputs are tied for quality)
     1 (second output is better)
     """
+
+    class Result(BaseModel):
+        reasoning: str
+        result: Literal["0", "0.5", "1"]
+
+        @computed_field
+        def reward(self) -> float:
+            return float(self.result)
 
     def to_db_model(self) -> "SyntheticEval":
         from aiai.app.models import SyntheticEval
@@ -139,27 +155,33 @@ class EvalGenerator:
         return rules_eval, head_to_head_eval
 
 
-class EvalResult(BaseModel):
-    reasoning: str
-    result: Literal["pass", "fail"]
+class EvalResult(TypedDict, total=False):
+    reward: float
 
 
 @dataclass
-class EvalRunner:
+class SyntheticEvalRunner:
     eval: "SyntheticEval"
     prompt_model: str = "openai/o4-mini"
 
     def __post_init__(self):
         self.lm = instructor.from_litellm(litellm.acompletion)
 
-    def run(self, agent_output: str) -> EvalResult:
+        if self.eval.kind == "rules":
+            self.result_model = RulesEval.Result
+        elif self.eval.kind == "head_to_head":
+            self.result_model = HeadToHeadEval.Result
+        else:
+            raise ValueError(f"Unknown eval kind: {self.eval.kind}")
+
+    def __call__(self, agent_output: str) -> EvalResult:
         user_message = f"Here is the agent's output: <output>\n{agent_output}\n</output>"
-        result: EvalResult = self.lm.create(
+        result: RulesEval.Result | HeadToHeadEval.Result = self.lm.create(
             model=self.prompt_model,
             messages=[
                 {"role": "system", "content": self.eval.prompt},
                 {"role": "user", "content": user_message},
             ],
-            response_model=EvalResult,
+            response_model=self.result_model,
         )
-        return result
+        return result.model_dump()
