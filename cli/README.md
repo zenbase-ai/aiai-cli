@@ -12,7 +12,7 @@
 3.  The CLI starts and asks the user: "Welcome to `aiai`! Would you like to optimize:\n (1) The built-in demo agent\n (2) Your own agent via an entrypoint file?"
 4.  **If Demo (1):**
     *   The CLI asks for permission: "The demo agent requires API keys (like OpenAI). Can I access keys stored in your `.env` file? (y/n)"
-    *   If 'y', it prepares to use a pre-configured `entrypoint.py`.
+    *   If 'y', it prepares to use a pre-configured `entrypoint.py` from the crewai example in `aiai/examples/crewai_agent.py`.
     *   If 'n', it explains API keys are needed and exits.
 5.  **If User Agent (2):**
     *   The CLI prompts: "Please provide the path to your agent's entrypoint file (e.g., `src/my_agent_main.py`). This file must have a `main()` function that runs your agent."
