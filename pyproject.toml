@@ -1,7 +1,7 @@
 [project]
 name = "aiai"
 version = "0.1.0"
-description = "Add your description here"
+description = "An AI Agent that automates AI Engineering"
 authors = [{ name = "Amir Mehr", email = "amir@zenbase.ai" }]
 dependencies = [
     "libcst>=1.7.0",
