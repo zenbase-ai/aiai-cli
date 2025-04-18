@@ -282,9 +282,7 @@ def find_prompt_functions(functions, model="gpt-4o"):
 
             # Filter to only functions that contain prompts with high confidence
             prompt_functions = [
-                f
-                for f in all_functions
-                if f.get("contains_prompt", False) and f.get("confidence", 0) >= 70
+                f for f in all_functions if f.get("contains_prompt", False) and f.get("confidence", 0) >= 70
             ]
 
             # Add the original source code and other details back to the results

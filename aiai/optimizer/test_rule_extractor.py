@@ -21,13 +21,15 @@ def mock_logs():
 
 @pytest.mark.django_db
 def test_extract_rules(mock_logs):
-    with patch("aiai.optimizer.rule_extractor.Pipeline") as MockPipeline, patch(
-        "tempfile.NamedTemporaryFile"
-    ) as mock_tempfile, patch("tempfile.mkstemp") as mock_mkstemp, patch(
-        "json.dump"
-    ) as mock_json_dump, patch("builtins.open", create=True) as mock_open, patch(
-        "json.load"
-    ) as mock_json_load, patch("os.remove") as mock_remove:
+    with (
+        patch("aiai.optimizer.rule_extractor.Pipeline") as MockPipeline,
+        patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+        patch("tempfile.mkstemp") as mock_mkstemp,
+        patch("json.dump") as mock_json_dump,
+        patch("builtins.open", create=True) as mock_open,
+        patch("json.load") as mock_json_load,
+        patch("os.remove") as mock_remove,
+    ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
         mock_mkstemp.return_value = (5, "/tmp/mock_output.json")
@@ -85,9 +87,7 @@ def test_build_rules_pipeline():
         output = PipelineOutput(type="file", path=tmp_file.name)
 
         # Test that the pipeline is built correctly with all required kwargs
-        pipeline = build_rules_pipeline(
-            reward="success", datasets=datasets, output=output, default_model="gpt-4o"
-        )
+        pipeline = build_rules_pipeline(reward="success", datasets=datasets, output=output, default_model="gpt-4o")
 
         # Basic assertions about the pipeline structure
         assert pipeline.name == "rule-extractor-pipeline"
@@ -122,13 +122,15 @@ def test_integration_with_db():
     # Get all spans
     logs = OtelSpan.objects.all()
 
-    with patch("aiai.optimizer.rule_extractor.Pipeline") as MockPipeline, patch(
-        "tempfile.NamedTemporaryFile"
-    ) as mock_tempfile, patch("tempfile.mkstemp") as mock_mkstemp, patch(
-        "json.dump"
-    ) as mock_json_dump, patch("builtins.open", create=True) as mock_open, patch(
-        "json.load"
-    ) as mock_json_load, patch("os.remove") as mock_remove:
+    with (
+        patch("aiai.optimizer.rule_extractor.Pipeline") as MockPipeline,
+        patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+        patch("tempfile.mkstemp") as mock_mkstemp,
+        patch("json.dump") as mock_json_dump,
+        patch("builtins.open", create=True) as mock_open,
+        patch("json.load") as mock_json_load,
+        patch("os.remove") as mock_remove,
+    ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
         mock_mkstemp.return_value = (5, "/tmp/mock_output.json")

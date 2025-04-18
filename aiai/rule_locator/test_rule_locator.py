@@ -22,9 +22,7 @@ def mock_functions():
     function1.line_start = 1
     function1.line_end = 10
     function1.signature = "def test_function1():"
-    function1.source_code = (
-        "def test_function1():\n    prompt = 'Test prompt'\n    return prompt"
-    )
+    function1.source_code = "def test_function1():\n    prompt = 'Test prompt'\n    return prompt"
     function1.docstring = "Test docstring"
 
     function2 = MagicMock()
@@ -78,9 +76,7 @@ def test_build_prompt_finder_pipeline():
         output = PipelineOutput(type="file", path=tmp_file.name)
 
         # Test that the pipeline is built correctly with required parameters
-        pipeline = build_prompt_finder_pipeline(
-            datasets=datasets, output=output, default_model="gpt-4o"
-        )
+        pipeline = build_prompt_finder_pipeline(datasets=datasets, output=output, default_model="gpt-4o")
 
         # Basic assertions about the pipeline structure
         assert pipeline.name == "prompt-finder-pipeline"
@@ -96,15 +92,11 @@ def test_build_rule_locator_pipeline():
     # Create a temp file for input/output
     with tempfile.NamedTemporaryFile(suffix=".json") as tmp_file:
         # Create test datasets and output
-        datasets = {
-            "rules_with_prompt_functions": Dataset(type="file", path=tmp_file.name)
-        }
+        datasets = {"rules_with_prompt_functions": Dataset(type="file", path=tmp_file.name)}
         output = PipelineOutput(type="file", path=tmp_file.name)
 
         # Test that the pipeline is built correctly with required parameters
-        pipeline = build_rule_locator_pipeline(
-            datasets=datasets, output=output, default_model="gpt-4o"
-        )
+        pipeline = build_rule_locator_pipeline(datasets=datasets, output=output, default_model="gpt-4o")
 
         # Basic assertions about the pipeline structure
         assert pipeline.name == "rule-locator-pipeline"
@@ -118,25 +110,17 @@ def test_build_rule_locator_pipeline():
 
 @pytest.mark.django_db
 def test_find_prompt_functions(mock_functions):
-    with patch(
-        "aiai.rule_locator.rule_locator.build_prompt_finder_pipeline"
-    ) as mock_build_pipeline, patch(
-        "aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile"
-    ) as mock_tempfile, patch(
-        "aiai.rule_locator.rule_locator.tempfile.mkstemp"
-    ) as mock_mkstemp, patch(
-        "aiai.rule_locator.rule_locator.json.dump"
-    ) as mock_json_dump, patch(
-        "aiai.rule_locator.rule_locator.open", create=True
-    ) as mock_open, patch(
-        "aiai.rule_locator.rule_locator.json.load"
-    ) as mock_json_load, patch(
-        "aiai.rule_locator.rule_locator.os.remove"
-    ) as mock_remove, patch(
-        "aiai.rule_locator.rule_locator.os.close"
-    ) as mock_close, patch(
-        "aiai.rule_locator.rule_locator.os.path.exists"
-    ) as mock_exists:
+    with (
+        patch("aiai.rule_locator.rule_locator.build_prompt_finder_pipeline") as mock_build_pipeline,
+        patch("aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
+        patch("aiai.rule_locator.rule_locator.tempfile.mkstemp") as mock_mkstemp,
+        patch("aiai.rule_locator.rule_locator.json.dump") as mock_json_dump,
+        patch("aiai.rule_locator.rule_locator.open", create=True) as mock_open,
+        patch("aiai.rule_locator.rule_locator.json.load") as mock_json_load,
+        patch("aiai.rule_locator.rule_locator.os.remove") as mock_remove,
+        patch("aiai.rule_locator.rule_locator.os.close") as mock_close,
+        patch("aiai.rule_locator.rule_locator.os.path.exists") as mock_exists,
+    ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
         mock_mkstemp.return_value = (5, "/tmp/mock_output.json")
@@ -185,25 +169,17 @@ def test_find_prompt_functions(mock_functions):
 
 @pytest.mark.django_db
 def test_locate_rules(mock_prompt_functions, mock_rules):
-    with patch(
-        "aiai.rule_locator.rule_locator.build_rule_locator_pipeline"
-    ) as mock_build_pipeline, patch(
-        "aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile"
-    ) as mock_tempfile, patch(
-        "aiai.rule_locator.rule_locator.tempfile.mkstemp"
-    ) as mock_mkstemp, patch(
-        "aiai.rule_locator.rule_locator.json.dump"
-    ) as mock_json_dump, patch(
-        "aiai.rule_locator.rule_locator.open", create=True
-    ) as mock_open, patch(
-        "aiai.rule_locator.rule_locator.json.load"
-    ) as mock_json_load, patch(
-        "aiai.rule_locator.rule_locator.os.remove"
-    ) as mock_remove, patch(
-        "aiai.rule_locator.rule_locator.os.close"
-    ) as mock_close, patch(
-        "aiai.rule_locator.rule_locator.os.path.exists"
-    ) as mock_exists:
+    with (
+        patch("aiai.rule_locator.rule_locator.build_rule_locator_pipeline") as mock_build_pipeline,
+        patch("aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
+        patch("aiai.rule_locator.rule_locator.tempfile.mkstemp") as mock_mkstemp,
+        patch("aiai.rule_locator.rule_locator.json.dump") as mock_json_dump,
+        patch("aiai.rule_locator.rule_locator.open", create=True) as mock_open,
+        patch("aiai.rule_locator.rule_locator.json.load") as mock_json_load,
+        patch("aiai.rule_locator.rule_locator.os.remove") as mock_remove,
+        patch("aiai.rule_locator.rule_locator.os.close") as mock_close,
+        patch("aiai.rule_locator.rule_locator.os.path.exists") as mock_exists,
+    ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
         mock_mkstemp.return_value = (5, "/tmp/mock_output.json")
@@ -252,9 +228,7 @@ def test_locate_rules(mock_prompt_functions, mock_rules):
 
 @pytest.mark.django_db
 def test_save_rule_placements():
-    with patch(
-        "aiai.app.models.DiscoveredRule.objects.get_or_create"
-    ) as mock_get_or_create:
+    with patch("aiai.app.models.DiscoveredRule.objects.get_or_create") as mock_get_or_create:
         # Setup the mock
         mock_get_or_create.return_value = (MagicMock(), True)
 
@@ -317,15 +291,12 @@ def test_integration_with_db():
     # Use this to properly mock the main function
     from aiai.rule_locator.rule_locator import main
 
-    with patch(
-        "aiai.rule_locator.rule_locator.find_prompt_functions"
-    ) as mock_find_prompt, patch(
-        "aiai.rule_locator.rule_locator.locate_rules"
-    ) as mock_locate_rules, patch(
-        "aiai.rule_locator.rule_locator.setup_django"
-    ) as mock_setup_django, patch(
-        "aiai.optimizer.rule_extractor.extract_rules"
-    ) as mock_extract_rules:
+    with (
+        patch("aiai.rule_locator.rule_locator.find_prompt_functions") as mock_find_prompt,
+        patch("aiai.rule_locator.rule_locator.locate_rules") as mock_locate_rules,
+        patch("aiai.rule_locator.rule_locator.setup_django") as mock_setup_django,
+        patch("aiai.optimizer.rule_extractor.extract_rules") as mock_extract_rules,
+    ):
         # Setup mock return values
         prompt_functions = [
             {

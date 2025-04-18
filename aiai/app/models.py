@@ -18,9 +18,7 @@ class DiscoveredRule(models.Model):
     function_name: models.TextField = models.TextField()
     file_path: models.TextField = models.TextField()
     target_code_section: models.TextField = models.TextField()
-    confidence: models.DecimalField = models.DecimalField(
-        max_digits=5, decimal_places=2
-    )
+    confidence: models.DecimalField = models.DecimalField(max_digits=5, decimal_places=2)
 
     def __str__(self) -> str:
         return f"Rule: {self.rule_text[:50]}... ({self.confidence}%)"
