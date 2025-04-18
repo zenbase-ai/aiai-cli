@@ -72,6 +72,7 @@ ignore = []
 # Ignore line length errors for files that start with file_
 [tool.ruff.lint.per-file-ignores]
 "**/file_*.py" = ["E501"]
+"aiai/app/migrations/*.py" = ["E", "F", "I"]
 
 [tool.ruff.format]
 quote-style = "double"

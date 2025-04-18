@@ -4,20 +4,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0011_alter_evalrun_result_alter_evalrun_reward'),
+        ("app", "0011_alter_evalrun_result_alter_evalrun_reward"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='evalrun',
-            old_name='datum',
-            new_name='input_data',
+            model_name="evalrun",
+            old_name="datum",
+            new_name="input_data",
         ),
         migrations.RenameField(
-            model_name='evalrun',
-            old_name='result',
-            new_name='output_data',
+            model_name="evalrun",
+            old_name="result",
+            new_name="output_data",
         ),
     ]

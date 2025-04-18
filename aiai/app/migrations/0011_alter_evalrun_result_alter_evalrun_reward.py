@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0010_alter_evalrun_datum'),
+        ("app", "0010_alter_evalrun_datum"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='evalrun',
-            name='result',
+            model_name="evalrun",
+            name="result",
             field=models.TextField(),
         ),
         migrations.AlterField(
-            model_name='evalrun',
-            name='reward',
+            model_name="evalrun",
+            name="reward",
             field=models.TextField(),
         ),
     ]

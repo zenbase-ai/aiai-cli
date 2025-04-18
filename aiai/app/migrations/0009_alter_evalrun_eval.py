@@ -5,15 +5,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0008_evalrun'),
+        ("app", "0008_evalrun"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='evalrun',
-            name='eval',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='app.syntheticeval'),
+            model_name="evalrun",
+            name="eval",
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to="app.syntheticeval"),
         ),
     ]
