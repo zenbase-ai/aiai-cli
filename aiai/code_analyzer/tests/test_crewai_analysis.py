@@ -6,14 +6,13 @@ focusing on analyzing the CrewAI example code to extract function dependencies,
 related files, and rich contextual information.
 """
 
-import os
 import json
+import os
 from pathlib import Path
 
 import pytest
 
 from aiai.code_analyzer.analyzer import CodeAnalyzer
-from aiai.code_analyzer.graph import DependencyGraph
 
 
 @pytest.fixture
@@ -54,7 +53,7 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
     graph.visualize(format="json", output_path=json_path)
     graph.visualize(format="dot", output_path=dot_path)
 
-    print(f"\nAnalysis outputs:")
+    print("\nAnalysis outputs:")
     print(f"- Markdown: {md_path}")
     print(f"- JSON: {json_path}")
     print(f"- DOT: {dot_path}")
@@ -71,9 +70,7 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
 
     # 2. Check for functions found
     all_functions = list(graph.functions.values())
-    assert len(all_functions) >= 6, (
-        f"Expected at least 6 functions to be found, got {len(all_functions)}"
-    )
+    assert len(all_functions) >= 6, f"Expected at least 6 functions to be found, got {len(all_functions)}"
 
     print(f"\nFunctions found: {len(all_functions)}")
     for func in all_functions:
@@ -93,9 +90,7 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
         if func.name in crew_function_names:
             found_crew_functions.append(func.name)
 
-    assert len(found_crew_functions) >= 3, (
-        f"Expected at least 3 crew functions, got {len(found_crew_functions)}"
-    )
+    assert len(found_crew_functions) >= 3, f"Expected at least 3 crew functions, got {len(found_crew_functions)}"
     print(f"\nCrew functions found: {found_crew_functions}")
 
     # 4. Check for contextual information
@@ -109,9 +104,7 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
 
     # Check main function has source code and contextual information
     assert main_function.source_code, "Main function missing source code"
-    assert len(main_function.string_literals) > 0, (
-        "Main function should have string literals"
-    )
+    assert len(main_function.string_literals) > 0, "Main function should have string literals"
 
     print("\nContextual information in main function:")
     print(f"- String literals: {len(main_function.string_literals)}")
@@ -158,7 +151,7 @@ def test_comprehensive_code_analysis(crewai_entrypoint_path):
 
     # Store the analysis summary for potential use but don't return it (avoids pytest warning)
     # Return values from test functions are not recommended in pytest
-    stored_analysis_summary = analysis_summary
+    analysis_summary
 
 
 def run_crewai_analysis():
@@ -171,9 +164,7 @@ def run_crewai_analysis():
     Returns:
         A dictionary with analysis results.
     """
-    entrypoint_path = (
-        Path(__file__).parent.parent.parent / "examples" / "crewai" / "entrypoint.py"
-    )
+    entrypoint_path = Path(__file__).parent.parent.parent / "examples" / "crewai" / "entrypoint.py"
 
     # Set up the analyzer
     analyzer = CodeAnalyzer(language="python")
@@ -198,7 +189,7 @@ def run_crewai_analysis():
     graph.visualize(format="json", output_path=json_path)
     graph.visualize(format="dot", output_path=dot_path)
 
-    print(f"\nAnalysis outputs:")
+    print("\nAnalysis outputs:")
     print(f"- Markdown: {md_path}")
     print(f"- JSON: {json_path}")
     print(f"- DOT: {dot_path}")
@@ -240,17 +231,11 @@ def run_crewai_analysis():
         "total_functions": len(all_functions),
         "crew_functions": found_crew_functions,
         "main_function_info": {
-            "source_code_length": len(main_function.source_code)
-            if main_function
-            else 0,
-            "string_literals_count": len(main_function.string_literals)
-            if main_function
-            else 0,
+            "source_code_length": len(main_function.source_code) if main_function else 0,
+            "string_literals_count": len(main_function.string_literals) if main_function else 0,
             "comments_count": len(main_function.comments) if main_function else 0,
             "variables_count": len(main_function.variables) if main_function else 0,
-            "file_references": [ref["path"] for ref in main_function.file_references]
-            if main_function
-            else [],
+            "file_references": [ref["path"] for ref in main_function.file_references] if main_function else [],
         },
         "execution_flow": [
             "1. main() in entrypoint.py loads environment and creates data",

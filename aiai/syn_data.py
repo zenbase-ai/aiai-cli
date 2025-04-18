@@ -14,17 +14,15 @@ from pydantic import BaseModel, Field
 from sorcery import dict_of
 from tqdm import tqdm
 
-from aiai.utils import setup_django
 from aiai.async_typer import AsyncTyper
+from aiai.utils import setup_django
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo
 
 
 class SynPrompt(BaseModel):
-    prompt: str = Field(
-        description="A highly detailed and thoughtful prompt for generating a single synthetic datum."
-    )
+    prompt: str = Field(description="A highly detailed and thoughtful prompt for generating a single synthetic datum.")
 
 
 async def generate_synthetic_prompt(
@@ -39,7 +37,9 @@ async def generate_synthetic_prompt(
         messages=[
             {
                 "role": "system",
-                "content": "You're an expert AI engineer looking at source code for an agent. Your task is to generate a highly detailed and thoughtful prompt for generating synthetic data to be used for testing the agent.",
+                "content": "You're an expert AI engineer looking at source code for an agent. Your task is to "
+                "generate a highly detailed and thoughtful prompt for generating synthetic data to be used "
+                "for testing the agent.",
             },
             {
                 "role": "user",
@@ -57,7 +57,9 @@ async def generate_synthetic_prompt(
             ),
             {
                 "role": "system",
-                "content": "You're an expert AI engineer looking at source code for an agent. Your task is to generate a highly detailed and thoughtful prompt for generating synthetic data to be used for testing the agent.",
+                "content": "You're an expert AI engineer looking at source code for an agent. Your task is to "
+                "generate a highly detailed and thoughtful prompt for generating synthetic data to be used "
+                "for testing the agent.",
             },
         ],
     )

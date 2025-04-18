@@ -1,16 +1,15 @@
-import uuid
-import sys
 import importlib.util
 import os
-from pathlib import Path
+import sys
+import uuid
 
-from dotenv import load_dotenv
 import instructor
+import openlit
+from dotenv import load_dotenv
 from litellm import completion
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-import openlit
 
 from aiai.app.models import OtelSpan
 from aiai.evals import evaluate_crew_output
@@ -25,9 +24,7 @@ class LogIngestor:
         self.provider = TracerProvider()
         trace.set_tracer_provider(self.provider)
         self.span_exporter = DjangoSpanExporter()
-        trace.get_tracer_provider().add_span_processor(
-            BatchSpanProcessor(self.span_exporter)
-        )
+        trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(self.span_exporter))
         openlit.init()
         self.tracer = trace.get_tracer(__name__)
 
@@ -63,14 +60,10 @@ class LogIngestor:
                     span.set_attribute("file_path", file_path)
                     span.set_attribute("agent_run_id", agent_run_id)
                     result = module.main()
-                    span.set_attribute(
-                        "result", str(result)
-                    )  # Keep result simple for attribute
+                    span.set_attribute("result", str(result))  # Keep result simple for attribute
 
             else:
-                raise AttributeError(
-                    f"'main' function not found or not callable in {file_path}"
-                )
+                raise AttributeError(f"'main' function not found or not callable in {file_path}")
         finally:
             # Clean up the temporarily added module from sys.modules
             if module_name in sys.modules:

@@ -1,18 +1,17 @@
 import json
 from textwrap import dedent
-from typing import TypedDict, Annotated
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import BaseMessage, HumanMessage
+from typing import Annotated, TypedDict
 
+import openlit
+from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-import openlit
 
 from aiai.logger.openlit_exporters import DjangoSpanExporter
-
 
 provider = TracerProvider()
 trace.set_tracer_provider(provider)
@@ -22,10 +21,10 @@ provider.add_span_processor(my_processor)
 
 openlit.init()
 
-# Ensure the OpenAI API key is set (consider a more secure method in production)
-# Make sure you have a 'people_data.json' file in the same directory
-# with the structure: {"leads_text": "Text containing lead info..."}
-# Example: {"leads_text": "Amir Mehr is the CTO at Zenbase AI, focused on optimizing LLM workflows. Bob Williams, Lead Data Scientist at Data Insights Inc., faces challenges with prompt variability."}
+# Ensure the OpenAI API key is set (consider a more secure method in production) Make sure you have a
+# 'people_data.json' file in the same directory with the structure: {"leads_text": "Text containing lead info..."}
+# Example: {"leads_text": "Amir Mehr is the CTO at Zenbase AI, focused on optimizing LLM workflows. Bob Williams,
+# Lead Data Scientist at Data Insights Inc., faces challenges with prompt variability."}
 
 
 # 1. Define the State for the graph
@@ -84,9 +83,11 @@ def extract_leads(state: AgentState) -> AgentState:
         {raw_text}
         ---
 
-        Parse this text to identify and extract the key details (name, company, role, specific details indicating needs/interests related to LLM optimization or development efficiency) for each person mentioned.
+        Parse this text to identify and extract the key details (name, company, role, specific details indicating 
+        needs/interests related to LLM optimization or development efficiency) for each person mentioned.
 
-        Respond ONLY with a JSON list of objects, where each object represents a lead and has the keys: 'name', 'company', 'role', 'key_details'.
+        Respond ONLY with a JSON list of objects, where each object represents a lead and has the keys: 'name', 
+        'company', 'role', 'key_details'.
 
         Example JSON Output:
         [
@@ -155,11 +156,10 @@ def craft_emails(state: AgentState) -> AgentState:
             Role: {lead.get("role", "N/A")}
             Key Details/Pain Points: {lead.get("key_details", "N/A")}
 
-            Tailor the email based on the lead's specific role and challenges to maximize engagement.
-            Highlight how Zenbase can address their specific needs related to LLM development, prompt engineering, and model optimization.
-            Reference Zenbase's connection to DSPy and its benefits.
-            Include a clear call to action (e.g., suggest a demo or provide a link to learn more).
-            Sign off as 'The Zenbase Team'.
+            Tailor the email based on the lead's specific role and challenges to maximize engagement. Highlight how 
+            Zenbase can address their specific needs related to LLM development, prompt engineering, 
+            and model optimization. Reference Zenbase's connection to DSPy and its benefits. Include a clear call to 
+            action (e.g., suggest a demo or provide a link to learn more). Sign off as 'The Zenbase Team'.
 
             Format the output as a single email text block. Start directly with the subject line.
             Example Subject: Subject: Optimizing LLM Workflows at [Company Name] with Zenbase
@@ -173,9 +173,7 @@ def craft_emails(state: AgentState) -> AgentState:
             print(f"Generated email for {lead.get('name', 'Unknown')}:{email_text}---")
             emails.append(email_text)
         except Exception as e:
-            print(
-                f"An error occurred during LLM call for crafting email for {lead.get('name', 'Unknown')}: {e}"
-            )
+            print(f"An error occurred during LLM call for crafting email for {lead.get('name', 'Unknown')}: {e}")
             # Decide whether to skip this email or stop
 
     return {"generated_emails": emails}

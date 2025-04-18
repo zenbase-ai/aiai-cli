@@ -4,11 +4,11 @@ CodeAnalyzer class implementation.
 This is the main entry point for analyzing code and generating function dependency graphs.
 """
 
-import os
 import logging
+import os
 
-from aiai.code_analyzer.parsers import get_parser_for_language
 from aiai.code_analyzer.graph import DependencyGraph
+from aiai.code_analyzer.parsers import get_parser_for_language
 from aiai.utils import setup_django
 
 logger = logging.getLogger(__name__)
@@ -119,9 +119,7 @@ class CodeAnalyzer:
                         self.save_function_to_db(func)
 
                 except Exception as e:
-                    logger.warning(
-                        f"Error extracting context from function {func.name}: {str(e)}"
-                    )
+                    logger.warning(f"Error extracting context from function {func.name}: {str(e)}")
 
             # Extract function calls and add edges to the graph
             function_calls = self.parser.identify_function_calls(parsed_data, functions)
@@ -136,13 +134,8 @@ class CodeAnalyzer:
                 logger.info(f"Found {len(imports)} imports in {file_path}")
                 for imported_file in imports:
                     # Check if the imported file exists and has not been visited yet
-                    if (
-                        os.path.exists(imported_file)
-                        and imported_file not in self.visited_files
-                    ):
-                        logger.info(
-                            f"Recursively analyzing imported file: {imported_file}"
-                        )
+                    if os.path.exists(imported_file) and imported_file not in self.visited_files:
+                        logger.info(f"Recursively analyzing imported file: {imported_file}")
                         self._analyze_file(
                             imported_file,
                             recursive=recursive,
@@ -154,9 +147,7 @@ class CodeAnalyzer:
             else:
                 for imported_file in imports:
                     if os.path.exists(imported_file):
-                        logger.debug(
-                            f"Found import: {imported_file} (not analyzing recursively)"
-                        )
+                        logger.debug(f"Found import: {imported_file} (not analyzing recursively)")
 
         except Exception as e:
             logger.error(f"Error analyzing file {file_path}: {str(e)}")
@@ -189,13 +180,9 @@ class CodeAnalyzer:
             )
 
             if created:
-                logger.info(
-                    f"Added function to database: {func.name} in {func.file_path}"
-                )
+                logger.info(f"Added function to database: {func.name} in {func.file_path}")
             else:
-                logger.info(
-                    f"Updated function in database: {func.name} in {func.file_path}"
-                )
+                logger.info(f"Updated function in database: {func.name} in {func.file_path}")
 
         except Exception as e:
             logger.error(f"Error saving function {func.name} to database: {str(e)}")

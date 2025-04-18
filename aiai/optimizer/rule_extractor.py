@@ -53,20 +53,17 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                     4. The context of the task and what might be expected
                     5. Any specific success or failure patterns
 
-                    First, consider what might be important for this task. Think about what the model might be optimizing for.
-                    Then, formulate a hypothetical reasoning trace.
-                    Finally, ensure that the reasoning trace's conclusion is that the result should be classified as {reward}.
+                    First, consider what might be important for this task. Think about what the model might be 
+                    optimizing for. Then, formulate a hypothetical reasoning trace. Finally, ensure that the 
+                    reasoning trace's conclusion is that the result should be classified as {reward}.
                 </instructions>
 
                 <task_log>
                     {{input.text}}
                 </task_log>
 
-                <output>
-                    reward_reasoning_iterations: Iterate on the reward reasoning until you are confident that the reasoning is correct.
-                    reward_reasoning: The final reward reasoning.
-                </output>
-                """
+                <output> reward_reasoning_iterations: Iterate on the reward reasoning until you are confident that 
+                the reasoning is correct. reward_reasoning: The final reward reasoning. </output>"""
             ),
             output={
                 "schema": {
@@ -97,11 +94,9 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                     - Technical correctness and completeness
                     - Overall user value of the result
 
-                    Make sure the patterns you identify are specific and detailed. We will then be clustering these patterns to identify groups and then formulate rules to improve outcomes.
-                </instructions>
-                <task_log>
-                    {{input.text}}
-                </task_log>
+                    Make sure the patterns you identify are specific and detailed. We will then be clustering these 
+                    patterns to identify groups and then formulate rules to improve outcomes. </instructions> 
+                    <task_log> {{input.text}} </task_log>
 
                 <reward>
                     <hypothetical_reasoning>{{input.reward_reasoning}}</hypothetical_reasoning>
@@ -126,7 +121,8 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
             summary_prompt=dedent(
                 f"""\
                 <instructions>
-                    We've identified patterns in task results that have been classified as {reward}. Now, your job is to analyze and derive insights from these patterns to inform future task execution.
+                    We've identified patterns in task results that have been classified as {reward}. Now, your job is 
+                    to analyze and derive insights from these patterns to inform future task execution.
 
                     Focus on identifying what makes results successful or unsuccessful for this specific task type.
                 </instructions>
@@ -140,10 +136,8 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                     {% endfor %}
                 </patterns>
 
-                <output>
-                    Insights MUST BE be a list of strings. Each insight should be specific and detailed. If no insight is found, return an empty list.
-                </output>
-                """
+                <output> Insights MUST BE be a list of strings. Each insight should be specific and detailed. If no 
+                insight is found, return an empty list. </output>"""
             ),
             summary_schema={
                 "analysis": "string",
@@ -168,17 +162,19 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
             type="reduce",
             reduce_key="insights",
             prompt=dedent(
-                f"""\
-                <instructions>
-                    You are an expert in analyzing model outputs and task performance. We have analyzed a set of task logs that have been classified as {reward} and have derived insights from the patterns in these logs.
+                f"""\ <instructions> You are an expert in analyzing model outputs and task performance. We have 
+                analyzed a set of task logs that have been classified as {reward} and have derived insights from the 
+                patterns in these logs.
 
-                    Your job is to generate evaluation criteria that can help improve future task performance. These criteria should be specific, actionable, and focused on what makes this task successful.
+                    Your job is to generate evaluation criteria that can help improve future task performance. These 
+                    criteria should be specific, actionable, and focused on what makes this task successful.
 
-                    Generate both rules (in always/never format) and tips for evaluation. The rules should be strict requirements, while the tips should be positive factors that contribute to success.
+                    Generate both rules (in always/never format) and tips for evaluation. The rules should be strict 
+                    requirements, while the tips should be positive factors that contribute to success.
 
-                    IMPORTANT: Only include rules in the "always" or "never" sections if they are absolutely clear-cut, binary requirements. If a rule is not a strict ALWAYS or NEVER requirement, or if it's more nuanced, place it in the "tips" section instead.
-                </instructions>
-                """
+                    IMPORTANT: Only include rules in the "always" or "never" sections if they are absolutely 
+                    clear-cut, binary requirements. If a rule is not a strict ALWAYS or NEVER requirement, 
+                    or if it's more nuanced, place it in the "tips" section instead. </instructions>"""
                 + """\
                 <insights>
                     {% for input in inputs %}
@@ -191,11 +187,13 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                 <output>
                     Return both rules and tips for evaluating task results:
 
-                    1. Rules (in always/never format):
-                    • Always: ONLY include rules that are absolutely clear-cut requirements (format as direct actions: "Include complete information")
-                    • Never: ONLY include rules that are absolutely clear-cut prohibitions (format as direct actions, NOT as avoidance statements: "Return incorrect information" NOT "Avoid returning incorrect information")
+                    1. Rules (in always/never format): • Always: ONLY include rules that are absolutely clear-cut 
+                    requirements (format as direct actions: "Include complete information") • Never: ONLY include 
+                    rules that are absolutely clear-cut prohibitions (format as direct actions, NOT as avoidance 
+                    statements: "Return incorrect information" NOT "Avoid returning incorrect information")
 
-                    IMPORTANT: Format "never" rules as positive statements of what not to do, NOT negative avoidance statements.
+                    IMPORTANT: Format "never" rules as positive statements of what not to do, NOT negative avoidance 
+                    statements.
 
                     CORRECT FORMAT for "never" rules:
                     - "Return invalid results" 
@@ -242,20 +240,23 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                 }
             },
             prompt=dedent(
-                f"""\
-                <instructions>
-                    You are an expert in task analysis and performance evaluation. We have analyzed a set of task logs that have been classified as {reward} and have derived insights from the patterns in these logs, and now we have a set of evaluation criteria.
+                f"""\ <instructions> You are an expert in task analysis and performance evaluation. We have analyzed 
+                a set of task logs that have been classified as {reward} and have derived insights from the patterns 
+                in these logs, and now we have a set of evaluation criteria.
 
-                    Your job is to synthesize these criteria into a concise set of the most important evaluation rules and tips. Identify the most valuable criteria and combine them into a single set.
+                    Your job is to synthesize these criteria into a concise set of the most important evaluation 
+                    rules and tips. Identify the most valuable criteria and combine them into a single set.
 
                     For rules, limit to no more than 3 "always" rules and 3 "never" rules.
                     For tips, limit to no more than 5 tips.
 
-                    IMPORTANT: Only include rules in the "always" or "never" sections if they are absolutely clear-cut, binary requirements. If a rule is not a strict ALWAYS or NEVER requirement, or if it's more nuanced, place it in the "tips" section instead.
+                    IMPORTANT: Only include rules in the "always" or "never" sections if they are absolutely 
+                    clear-cut, binary requirements. If a rule is not a strict ALWAYS or NEVER requirement, 
+                    or if it's more nuanced, place it in the "tips" section instead.
 
-                    Additionally, create a brief evaluation guide that explains how to use these rules and tips together to evaluate task results. The guide should suggest a scoring approach where tasks can partially meet criteria rather than requiring all rules to be met.
-                </instructions>
-                """
+                    Additionally, create a brief evaluation guide that explains how to use these rules and tips 
+                    together to evaluate task results. The guide should suggest a scoring approach where tasks can 
+                    partially meet criteria rather than requiring all rules to be met. </instructions>"""
                 + """\
                 <always>
                     {% for input in inputs %}
@@ -281,13 +282,13 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                     {% endfor %}
                 </tips>
 
-                <output>
-                    Return:
-                    1. Rules (in always/never format):
-                    • Always: ONLY include rules that are absolutely clear-cut requirements (format as direct actions: "Provide complete information")
-                    • Never: ONLY include rules that are absolutely clear-cut prohibitions (format as direct actions, NOT as avoidance statements: "Return invalid results" NOT "Avoid returning invalid results")
+                <output> Return: 1. Rules (in always/never format): • Always: ONLY include rules that are absolutely 
+                clear-cut requirements (format as direct actions: "Provide complete information") • Never: ONLY 
+                include rules that are absolutely clear-cut prohibitions (format as direct actions, NOT as avoidance 
+                statements: "Return invalid results" NOT "Avoid returning invalid results")
 
-                    IMPORTANT: Format "never" rules as positive statements of what not to do, NOT negative avoidance statements.
+                    IMPORTANT: Format "never" rules as positive statements of what not to do, NOT negative avoidance 
+                    statements.
 
                     CORRECT FORMAT for "never" rules:
                     - "Return invalid results" 
@@ -310,10 +311,9 @@ def build_rules_pipeline(reward: str, **kwargs) -> Pipeline:
                     - "Consider edge cases in the input"
                     - "Balance completeness with conciseness"
 
-                    3. Evaluation Guide:
-                    Provide a brief guide on how to use these rules and tips together to evaluate task results. Suggest a scoring approach where results can partially meet criteria rather than requiring all rules to be met.
-                </output>
-                """
+                    3. Evaluation Guide: Provide a brief guide on how to use these rules and tips together to 
+                    evaluate task results. Suggest a scoring approach where results can partially meet criteria 
+                    rather than requiring all rules to be met. </output>"""
             ),
         ),
     ]

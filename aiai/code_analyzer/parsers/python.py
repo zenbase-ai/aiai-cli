@@ -4,17 +4,17 @@ Python language parser implementation using Tree-sitter.
 This module provides a parser for analyzing Python code and extracting function dependencies.
 """
 
-import os
-from typing import List, Tuple, Dict, Any, Set, Optional
 import logging
-from pathlib import Path
+import os
+from typing import Any, Dict, List, Optional, Tuple
 
-# Import tree-sitter and tree-sitter-python
-from tree_sitter import Parser, Language
 import tree_sitter_python
 
-from .base import LanguageParser, Function
+# Import tree-sitter and tree-sitter-python
+from tree_sitter import Language, Parser
+
 from . import register_parser
+from .base import Function, LanguageParser
 
 logger = logging.getLogger(__name__)
 
@@ -161,10 +161,7 @@ class PythonParser(LanguageParser):
 
             # Find the function name node
             for name_node in function_names:
-                if (
-                    name_node.start_byte >= func_def_node.start_byte
-                    and name_node.end_byte <= func_def_node.end_byte
-                ):
+                if name_node.start_byte >= func_def_node.start_byte and name_node.end_byte <= func_def_node.end_byte:
                     break
 
             # Find the parameters node
@@ -176,16 +173,12 @@ class PythonParser(LanguageParser):
                     break
 
             if name_node:
-                function_name = content[
-                    name_node.start_byte : name_node.end_byte
-                ].decode("utf-8")
+                function_name = content[name_node.start_byte : name_node.end_byte].decode("utf-8")
 
                 # Build function signature
                 params = ""
                 if params_node:
-                    params = content[
-                        params_node.start_byte : params_node.end_byte
-                    ].decode("utf-8")
+                    params = content[params_node.start_byte : params_node.end_byte].decode("utf-8")
                 signature = f"{function_name}{params}"
 
                 line_start = func_def_node.start_point[0] + 1  # 1-indexed
@@ -238,9 +231,7 @@ class PythonParser(LanguageParser):
         call_names = captures.get("function.call_name", [])
 
         for call_name_node in call_names:
-            function_name = content[
-                call_name_node.start_byte : call_name_node.end_byte
-            ].decode("utf-8")
+            function_name = content[call_name_node.start_byte : call_name_node.end_byte].decode("utf-8")
 
             # Find which function contains this call
             containing_function = self._find_containing_function(
@@ -311,9 +302,7 @@ class PythonParser(LanguageParser):
             # Process regular imports
             for node in import_nodes.get("import.name", []):
                 module_name = content[node.start_byte : node.end_byte].decode("utf-8")
-                module_path = self._resolve_import_to_file_path(
-                    module_name, current_dir, is_relative=False
-                )
+                module_path = self._resolve_import_to_file_path(module_name, current_dir, is_relative=False)
                 if module_path:
                     imported_files.append(module_path)
                     logger.info(f"Found import: {module_name} -> {module_path}")
@@ -321,9 +310,7 @@ class PythonParser(LanguageParser):
             # Process from imports
             for node in import_nodes.get("import.from_name", []):
                 module_name = content[node.start_byte : node.end_byte].decode("utf-8")
-                module_path = self._resolve_import_to_file_path(
-                    module_name, current_dir, is_relative=False
-                )
+                module_path = self._resolve_import_to_file_path(module_name, current_dir, is_relative=False)
                 if module_path:
                     imported_files.append(module_path)
                     logger.info(f"Found from import: {module_name} -> {module_path}")
@@ -335,12 +322,8 @@ class PythonParser(LanguageParser):
             for i, node in enumerate(rel_names):
                 if i < len(rel_imports):
                     rel_node = rel_imports[i]
-                    rel_specifier = content[
-                        rel_node.start_byte : rel_node.end_byte
-                    ].decode("utf-8")
-                    module_name = content[node.start_byte : node.end_byte].decode(
-                        "utf-8"
-                    )
+                    rel_specifier = content[rel_node.start_byte : rel_node.end_byte].decode("utf-8")
+                    module_name = content[node.start_byte : node.end_byte].decode("utf-8")
                     level = rel_specifier.count(".")
 
                     # Handle relative import
@@ -349,19 +332,14 @@ class PythonParser(LanguageParser):
                     )
                     if module_path:
                         imported_files.append(module_path)
-                        logger.info(
-                            f"Found relative import: {rel_specifier}{module_name} -> {module_path}"
-                        )
+                        logger.info(f"Found relative import: {rel_specifier}{module_name} -> {module_path}")
 
             # Special case: Handle the CrewAI-specific import for this example
             if "crewai" in file_path:
                 # Look for imports in the same directory
                 for candidate in ["crew.py", "agents.py", "tasks.py"]:
                     candidate_path = os.path.join(os.path.dirname(file_path), candidate)
-                    if (
-                        os.path.exists(candidate_path)
-                        and candidate_path not in imported_files
-                    ):
+                    if os.path.exists(candidate_path) and candidate_path not in imported_files:
                         logger.info(f"Adding special CrewAI import: {candidate_path}")
                         imported_files.append(candidate_path)
 
@@ -451,12 +429,8 @@ class PythonParser(LanguageParser):
             if os.path.basename(crewai_dir) == "crewai":
                 # Look for the module in the crewai directory
                 if module_name:
-                    potential_paths.append(
-                        os.path.join(crewai_dir, f"{module_name}.py")
-                    )
-                    potential_paths.append(
-                        os.path.join(crewai_dir, module_name, "__init__.py")
-                    )
+                    potential_paths.append(os.path.join(crewai_dir, f"{module_name}.py"))
+                    potential_paths.append(os.path.join(crewai_dir, module_name, "__init__.py"))
 
         # Try each potential path
         for path in potential_paths:
@@ -544,15 +518,11 @@ class PythonParser(LanguageParser):
                 function_node = visit_node(cursor)
 
                 if not function_node:
-                    print(
-                        f"Could not find function node for {function.name} at line {function.line_start}"
-                    )
+                    print(f"Could not find function node for {function.name} at line {function.line_start}")
                     return
 
             # Extract the full source code of the function
-            function.source_code = content[
-                function_node.start_byte : function_node.end_byte
-            ].decode("utf-8")
+            function.source_code = content[function_node.start_byte : function_node.end_byte].decode("utf-8")
 
             # Extract docstring
             body_node = None
@@ -566,28 +536,19 @@ class PythonParser(LanguageParser):
                 if first_stmt.type == "expression_statement" and first_stmt.children:
                     expr = first_stmt.children[0]
                     if expr.type == "string":
-                        function.docstring = content[
-                            expr.start_byte : expr.end_byte
-                        ].decode("utf-8")
+                        function.docstring = content[expr.start_byte : expr.end_byte].decode("utf-8")
                         # Remove quotes and indentation from docstring
                         function.docstring = function.docstring.strip("'\"").strip()
 
             # Handle string literals by walking the tree
             def process_string_nodes(node):
                 if node.type == "string":
-                    if (
-                        node.start_point[0] >= start_line
-                        and node.end_point[0] <= end_line
-                    ):
-                        string_text = content[node.start_byte : node.end_byte].decode(
-                            "utf-8"
-                        )
+                    if node.start_point[0] >= start_line and node.end_point[0] <= end_line:
+                        string_text = content[node.start_byte : node.end_byte].decode("utf-8")
                         # Remove quotes
                         if string_text.startswith(("'", '"')):
                             string_text = string_text[1:-1]
-                        function.add_string_literal(
-                            string_text, node.start_point[0] + 1
-                        )
+                        function.add_string_literal(string_text, node.start_point[0] + 1)
 
                 # Process children
                 for child in node.children:
@@ -599,13 +560,8 @@ class PythonParser(LanguageParser):
             # Handle comments by walking the tree
             def process_comment_nodes(node):
                 if node.type == "comment":
-                    if (
-                        node.start_point[0] >= start_line
-                        and node.end_point[0] <= end_line
-                    ):
-                        comment_text = content[node.start_byte : node.end_byte].decode(
-                            "utf-8"
-                        )
+                    if node.start_point[0] >= start_line and node.end_point[0] <= end_line:
+                        comment_text = content[node.start_byte : node.end_byte].decode("utf-8")
                         # Remove # and whitespace
                         comment_text = comment_text.lstrip("#").strip()
                         function.add_comment(comment_text, node.start_point[0] + 1)
@@ -626,41 +582,27 @@ class PythonParser(LanguageParser):
                     for i, child in enumerate(node.children):
                         if i == 0:  # Left side of assignment
                             left_node = child
-                        elif (
-                            i == 2
-                        ):  # Right side of assignment (index 1 is usually '=')
+                        elif i == 2:  # Right side of assignment (index 1 is usually '=')
                             right_node = child
 
                     if left_node and right_node:
                         # Handle simple variable assignment
                         if left_node.type == "identifier":
-                            var_name = content[
-                                left_node.start_byte : left_node.end_byte
-                            ].decode("utf-8")
-                            var_value = content[
-                                right_node.start_byte : right_node.end_byte
-                            ].decode("utf-8")
+                            var_name = content[left_node.start_byte : left_node.end_byte].decode("utf-8")
+                            var_value = content[right_node.start_byte : right_node.end_byte].decode("utf-8")
 
                             if var_name.isupper():
-                                function.add_constant(
-                                    var_name, var_value, left_node.start_point[0] + 1
-                                )
+                                function.add_constant(var_name, var_value, left_node.start_point[0] + 1)
                             else:
-                                function.add_variable(
-                                    var_name, var_value, left_node.start_point[0] + 1
-                                )
+                                function.add_variable(var_name, var_value, left_node.start_point[0] + 1)
 
                         # Handle tuple assignment (more complex)
                         elif left_node.type == "tuple":
                             # For simplicity, we'll just record the variable names
                             for tup_child in left_node.children:
                                 if tup_child.type == "identifier":
-                                    var_name = content[
-                                        tup_child.start_byte : tup_child.end_byte
-                                    ].decode("utf-8")
-                                    function.add_variable(
-                                        var_name, None, tup_child.start_point[0] + 1
-                                    )
+                                    var_name = content[tup_child.start_byte : tup_child.end_byte].decode("utf-8")
+                                    function.add_variable(var_name, None, tup_child.start_point[0] + 1)
 
                 # Process children for nested assignments
                 for child in node.children:
@@ -686,19 +628,12 @@ class PythonParser(LanguageParser):
                         # Get function name
                         func_name = None
                         if func_node.type == "identifier":
-                            func_name = content[
-                                func_node.start_byte : func_node.end_byte
-                            ].decode("utf-8")
+                            func_name = content[func_node.start_byte : func_node.end_byte].decode("utf-8")
                         elif func_node.type == "attribute":
                             # For method calls (e.g., obj.method())
                             for attr_child in func_node.children:
-                                if (
-                                    attr_child.type == "identifier"
-                                    and attr_child.parent.type == "attribute"
-                                ):
-                                    func_name = content[
-                                        attr_child.start_byte : attr_child.end_byte
-                                    ].decode("utf-8")
+                                if attr_child.type == "identifier" and attr_child.parent.type == "attribute":
+                                    func_name = content[attr_child.start_byte : attr_child.end_byte].decode("utf-8")
                                     break
 
                         # Check if this is a file operation
@@ -721,15 +656,11 @@ class PythonParser(LanguageParser):
                             # Look for string arguments that might be file paths
                             for arg_child in args_node.children:
                                 if arg_child.type == "string":
-                                    path_text = content[
-                                        arg_child.start_byte : arg_child.end_byte
-                                    ].decode("utf-8")
+                                    path_text = content[arg_child.start_byte : arg_child.end_byte].decode("utf-8")
                                     # Remove quotes
                                     if path_text.startswith(("'", '"')):
                                         path_text = path_text[1:-1]
-                                    function.add_file_reference(
-                                        path_text, arg_child.start_point[0] + 1
-                                    )
+                                    function.add_file_reference(path_text, arg_child.start_point[0] + 1)
 
                 # Process children for nested calls
                 for child in node.children:
@@ -741,7 +672,5 @@ class PythonParser(LanguageParser):
         except Exception as e:
             import traceback
 
-            print(
-                f"Detailed error in extract_function_context for {function.name}: {str(e)}"
-            )
+            print(f"Detailed error in extract_function_context for {function.name}: {str(e)}")
             print(traceback.format_exc())

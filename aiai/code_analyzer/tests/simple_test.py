@@ -2,8 +2,8 @@
 Simple test to understand how the tree-sitter-python library works.
 """
 
-from tree_sitter import Parser, Language
 import tree_sitter_python
+from tree_sitter import Language, Parser
 
 # Create a parser
 parser = Parser()
