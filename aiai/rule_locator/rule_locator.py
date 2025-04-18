@@ -205,7 +205,7 @@ def build_rule_locator_pipeline(**kwargs) -> Pipeline:
             output={
                 "schema": {
                     "placements": "list[{function_id: int, function_name: str, file_path: str, "
-                                  "target_code_section: str, confidence: float, reasoning: str}]"
+                    "target_code_section: str, confidence: float, reasoning: str}]"
                 }
             },
             optimize=True,
