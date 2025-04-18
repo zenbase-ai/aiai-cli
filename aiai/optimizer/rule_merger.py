@@ -1,3 +1,5 @@
+import json
+
 import instructor
 import litellm
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -15,7 +17,13 @@ class Rules(BaseModel):
         return [item.replace("{{", "").replace("}}", "") for item in v]
 
 
-def merge_rules(before: Rules, after: Rules, lm: str = instructor.from_litellm(litellm.completion)) -> Rules:
+def merge_rules(
+    before: Rules | dict,
+    after: Rules | dict,
+    lm=instructor.from_litellm(litellm.completion),
+) -> Rules:
+    before_str = before.model_dump_json() if isinstance(before, Rules) else json.dumps(before)
+    after_str = after.model_dump_json() if isinstance(after, Rules) else json.dumps(after)
     rules: Rules = lm.create(
         response_model=Rules,
         model="openai/o4-mini",
@@ -34,7 +42,7 @@ def merge_rules(before: Rules, after: Rules, lm: str = instructor.from_litellm(l
             },
             {
                 "role": "user",
-                "content": f"<old-rules>{before}</old-rules>\n<new-rules>{after}</new-rules>",
+                "content": f"<old-rules>{before_str}</old-rules>\n<new-rules>{after_str}</new-rules>",
             },
         ],
     )
