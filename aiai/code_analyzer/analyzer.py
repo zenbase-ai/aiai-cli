@@ -39,7 +39,7 @@ class CodeAnalyzer:
     def analyze_from_file(
         self,
         entrypoint_file: str,
-        recursive: bool = False,
+        recursive: bool = True,
         max_depth: int = 3,
         save_to_db: bool = False,
     ) -> DependencyGraph:
@@ -211,6 +211,8 @@ class CodeAnalyzer:
             "env",
             "node_modules",
             "migrations",
+            ".venv",
+            ".env",
         }
 
         for root, dirs, files in os.walk(base_directory):

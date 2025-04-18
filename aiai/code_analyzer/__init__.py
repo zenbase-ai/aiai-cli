@@ -6,5 +6,6 @@ and their relationships.
 """
 
 from .analyzer import CodeAnalyzer
+from .data_file_analyzer import DataFileAnalyzer
 
-__all__ = ["CodeAnalyzer"]
+__all__ = ["CodeAnalyzer", "DataFileAnalyzer"]

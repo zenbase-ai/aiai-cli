@@ -25,7 +25,10 @@ def main():
     script_dir = Path(__file__).resolve().parent
 
     # Create sample data file if it doesn't exist
+    agents_yaml_path = script_dir / "config_file_examples" / "agents.yaml"
     people_data_path = script_dir / "people_data.json"
+    if agents_yaml_path:
+        print(agents_yaml_path)
     if not people_data_path.exists():
         sample_data = {
             "leads_text": "Amir Mehr is the CTO of Zenbase AI with a focus on optimizing LLM workflows. "
