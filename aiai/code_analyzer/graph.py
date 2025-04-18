@@ -6,7 +6,7 @@ This module provides a graph structure to represent function dependencies.
 
 import json
 import os
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import networkx as nx
 
@@ -22,10 +22,10 @@ class DependencyGraph:
 
     def __init__(self):
         """Initialize an empty dependency graph."""
-        self.functions: Dict[str, Function] = {}  # Maps function ID to Function object
-        self.dependencies: Dict[str, Set[str]] = (
-            {}
-        )  # Maps caller ID to set of callee IDs
+        self.functions: dict[str, Function] = {}  # Maps function ID to Function object
+        self.dependencies: dict[
+            str, set[str]
+        ] = {}  # Maps caller ID to set of callee IDs
 
     def get_function_id(self, func: Function) -> str:
         """
@@ -73,7 +73,7 @@ class DependencyGraph:
             self.dependencies[caller_id] = set()
         self.dependencies[caller_id].add(callee_id)
 
-    def get_callers(self, func: Function) -> List[Function]:
+    def get_callers(self, func: Function) -> list[Function]:
         """
         Get all functions that call the given function.
 
@@ -90,7 +90,7 @@ class DependencyGraph:
                 callers.append(self.functions[caller_id])
         return callers
 
-    def get_callees(self, func: Function) -> List[Function]:
+    def get_callees(self, func: Function) -> list[Function]:
         """
         Get all functions called by the given function.
 
@@ -106,7 +106,7 @@ class DependencyGraph:
 
         return [self.functions[callee_id] for callee_id in self.dependencies[func_id]]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert the graph to a dictionary representation.
 
@@ -270,7 +270,7 @@ class DependencyGraph:
                     "**Docstring**:\n```\n" + func.docstring + "\n```\n\n"
                 )
 
-            # List functions that this function calls
+            # list functions that this function calls
             callees = self.get_callees(func)
             if callees:
                 markdown_content += "**Calls**:\n"
@@ -280,7 +280,7 @@ class DependencyGraph:
             else:
                 markdown_content += "**Calls**: *No functions*\n\n"
 
-            # List functions that call this function
+            # list functions that call this function
             callers = self.get_callers(func)
             if callers:
                 markdown_content += "**Called by**:\n"
