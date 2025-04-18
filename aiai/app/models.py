@@ -12,6 +12,15 @@ class OtelSpan(models.Model):
         return f"Run at {self.timestamp} - OtelSpan: {self.agent_run_id}"
 
 
+class DiscoveredRule(models.Model):
+    rule_type: models.TextField = models.TextField(default="")
+    rule_text: models.TextField = models.TextField(default="")
+    function_name: models.TextField = models.TextField(default="")
+    file_path: models.TextField = models.TextField(default="")
+    target_code_section: models.TextField = models.TextField(default="")
+    confidence: models.DecimalField = models.DecimalField(max_digits=5, decimal_places=2)
+
+
 class SyntheticEval(models.Model):
     class Kinds(models.TextChoices):
         RULES = "rules"
