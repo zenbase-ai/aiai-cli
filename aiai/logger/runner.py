@@ -15,7 +15,7 @@ from aiai.logger.otel_exporter import DjangoSpanExporter
 from aiai.utils import setup_django
 
 
-class LogIngestor:
+class Runner:
     def __init__(self):
         setup_django()
         load_dotenv()
@@ -31,7 +31,7 @@ class LogIngestor:
             disable_metrics=True,
         )
 
-    def run_script(self, file_path: Path):
+    def run_script(self, file_path: Path, input_data=None):
         """
         Runs a Python script, captures its execution trace with OpenTelemetry,
         evaluates the output, and stores the results.
@@ -63,7 +63,7 @@ class LogIngestor:
                 with self.tracer.start_as_current_span("script_execution") as span:
                     span.set_attribute("file_path", str(file_path))
                     span.set_attribute("agent_run_id", agent_run_id)
-                    result = module.main()
+                    result = module.main(input_data)
                     # Keep result simple for attribute
                     span.set_attribute("result", str(result))
 

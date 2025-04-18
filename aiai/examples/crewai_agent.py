@@ -83,11 +83,11 @@ def get_crewai_agent():
     return crew
 
 
-def main():
+def main(example=None):
     load_dotenv()
     print("Starting Crew execution...")
     crew = get_crewai_agent()
-    example = dedent(
+    example = example or dedent(
         """\
         Jessica Collins, CTO at FinOptima, a mid-sized fintech startup, struggles
         with balancing model selection trade-offs, managing complex versioning of

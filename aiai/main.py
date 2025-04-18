@@ -1,10 +1,8 @@
-import asyncio
 from pathlib import Path
 
 import typer
 from dotenv import load_dotenv
 
-from aiai import synthetic
 from aiai.utils import reset_db, setup_django
 
 
@@ -17,9 +15,9 @@ def analyze_code(file: Path):
 
 
 def capture_logs(file: Path):
-    from aiai.logger.log_ingestor import LogIngestor
+    from aiai.logger.runner import Runner
 
-    LogIngestor().run_script(file)
+    Runner().run_script(file)
 
 
 cli = typer.Typer()
@@ -43,9 +41,6 @@ def main(
 
     typer.echo("Capturing logs...")
     capture_logs(entrypoint)
-
-    rules, head_to_head = asyncio.run(synthetic.evals.cli())
-    prompt, syndata = asyncio.run(synthetic.data.cli(data, examples, seed))
 
     return 0
 
