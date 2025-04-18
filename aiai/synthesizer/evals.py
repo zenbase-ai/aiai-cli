@@ -7,17 +7,18 @@ import litellm
 import rich
 from pydantic import BaseModel, Field
 
-from aiai.synthetic.utils import get_examples, prepare_messages
+from aiai.synthesizer.utils import get_examples, prepare_messages
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo, SyntheticEval
 
 
-class RulesEval(BaseModel):
+class AbstractEval(BaseModel):
     context: str = Field(description="The context of the evaluation.")
     instructions: str = Field(description="Instructions for the evaluator.")
     always: list[str] = Field(description="A good output must always do the following")
     never: list[str] = Field(description="A good output must never do the following")
+    tips: list[str] = Field(description="A list of tips for the evaluator to consider.")
 
     def __str__(self) -> str:
         return dedent(
@@ -33,9 +34,19 @@ class RulesEval(BaseModel):
             </always>
             <never>
             {self.never}
-            </never>\
+            </never>
+            <tips>
+            {self.tips}
+            </tips>\
             """
         )
+
+
+class RulesEval(AbstractEval):
+    """
+    A prompt for an LLM judge to evaluate the outputs of
+    a single agent and pass/fail based on the rules.
+    """
 
     def to_db_model(self) -> "SyntheticEval":
         from aiai.app.models import SyntheticEval
@@ -47,7 +58,7 @@ class RulesEval(BaseModel):
         )
 
 
-class HeadToHeadEval(BaseModel):
+class HeadToHeadEval(AbstractEval):
     """
     A prompt for the head-to-head evaluation of the outputs
     of two agents to determine which has the better output.
@@ -57,25 +68,6 @@ class HeadToHeadEval(BaseModel):
     0.5 (outputs are tied for quality)
     1 (second output is better)
     """
-
-    context: str = Field(description="The context of the evaluation.")
-    instructions: str = Field(description="Instructions for the evaluator.")
-    tips: list[str] = Field(description="A list of tips for the evaluator to consider.")
-
-    def __str__(self) -> str:
-        return dedent(
-            f"""\
-            <context>
-            {self.context}
-            </context>
-            <instructions>
-            {self.instructions}
-            </instructions>
-            <tips>
-            {self.tips}
-            </tips>\
-            """
-        )
 
     def to_db_model(self) -> "SyntheticEval":
         from aiai.app.models import SyntheticEval

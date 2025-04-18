@@ -68,6 +68,10 @@ line-length = 120
 select = ["E", "F", "I"]
 ignore = []
 
+# Ignore line length errors for files that start with file_
+[tool.ruff.lint.per-file-ignores]
+"**/file_*.py" = ["E501"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

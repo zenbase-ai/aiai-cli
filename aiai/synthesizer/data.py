@@ -9,7 +9,7 @@ import litellm
 import rich
 from pydantic import BaseModel, Field
 
-from aiai.synthetic.utils import get_examples, prepare_messages
+from aiai.synthesizer.utils import get_examples, prepare_messages
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo, SyntheticDatum
