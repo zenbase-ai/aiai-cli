@@ -4,13 +4,13 @@ Test script for the comprehensive project analysis functionality.
 This tests the analyze_project method which handles both code and data file analysis.
 """
 
-import os
 import json
-import yaml
-from pathlib import Path
-import tempfile
+import os
 import shutil
+import tempfile
+
 import pytest
+import yaml
 
 
 @pytest.fixture
@@ -111,8 +111,8 @@ def test_analyze_project(test_project_directory):
 
     setup_django()
 
+    from aiai.app.models import DataFileInfo, FunctionInfo
     from aiai.code_analyzer import CodeAnalyzer
-    from aiai.app.models import FunctionInfo, DataFileInfo
 
     # Clear existing data
     FunctionInfo.objects.all().delete()
@@ -133,9 +133,7 @@ def test_analyze_project(test_project_directory):
 
     # Check if functions were found and saved
     code_graph = results["code_graph"]
-    assert len(code_graph.functions) >= 4, (
-        f"Expected at least 4 functions, found {len(code_graph.functions)}"
-    )
+    assert len(code_graph.functions) >= 4, f"Expected at least 4 functions, found {len(code_graph.functions)}"
 
     # Check function database records
     assert FunctionInfo.objects.count() >= 4, (
@@ -150,9 +148,7 @@ def test_analyze_project(test_project_directory):
 
     # Check if data files were found and saved
     data_files = results["data_files"]
-    assert len(data_files) >= 2, (
-        f"Expected at least 2 data files, found {len(data_files)}"
-    )
+    assert len(data_files) >= 2, f"Expected at least 2 data files, found {len(data_files)}"
 
     # Check data file database records
     assert DataFileInfo.objects.count() >= 2, (
@@ -188,9 +184,5 @@ def test_analyze_project(test_project_directory):
     assert load_config_func is not None, "load_config function not found in database"
 
     # Verify that the correct functions reference the data files
-    assert load_prompt_func in json_file.referenced_by.all(), (
-        "JSON file should be referenced by load_prompt"
-    )
-    assert load_config_func in yaml_file.referenced_by.all(), (
-        "YAML file should be referenced by load_config"
-    )
+    assert load_prompt_func in json_file.referenced_by.all(), "JSON file should be referenced by load_prompt"
+    assert load_config_func in yaml_file.referenced_by.all(), "YAML file should be referenced by load_config"

@@ -4,13 +4,13 @@ Test script for the data file tracking functionality.
 This script tests the ability to find JSON/YAML files and track their references in code.
 """
 
-import os
 import json
-import yaml
-from pathlib import Path
-import tempfile
+import os
 import shutil
+import tempfile
+
 import pytest
+import yaml
 
 
 @pytest.fixture
@@ -99,8 +99,8 @@ def test_find_file_references(test_directory):
 
     setup_django()
 
-    from aiai.code_analyzer import CodeAnalyzer
     from aiai.app.models import FunctionInfo
+    from aiai.code_analyzer import CodeAnalyzer
 
     # Clear existing function data
     FunctionInfo.objects.all().delete()
@@ -113,18 +113,14 @@ def test_find_file_references(test_directory):
     analyzer.analyze_from_file(code_file, save_to_db=True)
 
     # Check if functions were saved to the database
-    assert FunctionInfo.objects.count() == 3, (
-        f"Expected 3 functions, found {FunctionInfo.objects.count()}"
-    )
+    assert FunctionInfo.objects.count() == 3, f"Expected 3 functions, found {FunctionInfo.objects.count()}"
 
     # Now find references to the JSON file
     json_file = os.path.join(test_directory, "prompt_template.json")
     json_references = analyzer.find_file_references_in_code(json_file)
 
     # There should be 1 reference to the JSON file in the load_prompt function
-    assert len(json_references) == 1, (
-        f"Expected 1 reference to JSON file, found {len(json_references)}"
-    )
+    assert len(json_references) == 1, f"Expected 1 reference to JSON file, found {len(json_references)}"
     assert json_references[0]["function"].name == "load_prompt", (
         f"Expected reference in load_prompt, found in {json_references[0]['function'].name}"
     )
@@ -134,9 +130,7 @@ def test_find_file_references(test_directory):
     yaml_references = analyzer.find_file_references_in_code(yaml_file)
 
     # There should be 1 reference to the YAML file in the process_config function
-    assert len(yaml_references) == 1, (
-        f"Expected 1 reference to YAML file, found {len(yaml_references)}"
-    )
+    assert len(yaml_references) == 1, f"Expected 1 reference to YAML file, found {len(yaml_references)}"
     assert yaml_references[0]["function"].name == "process_config", (
         f"Expected reference in process_config, found in {yaml_references[0]['function'].name}"
     )
@@ -150,8 +144,8 @@ def test_save_data_files_to_db(test_directory):
 
     setup_django()
 
+    from aiai.app.models import DataFileInfo, FunctionInfo
     from aiai.code_analyzer import CodeAnalyzer
-    from aiai.app.models import FunctionInfo, DataFileInfo
 
     # Clear existing data
     FunctionInfo.objects.all().delete()
@@ -165,19 +159,15 @@ def test_save_data_files_to_db(test_directory):
     analyzer.analyze_from_file(code_file, save_to_db=True)
 
     # Now find and save data files
-    file_references = analyzer.find_and_save_data_files(test_directory)
+    analyzer.find_and_save_data_files(test_directory)
 
     # There should be 2 data files saved to the database
-    assert DataFileInfo.objects.count() == 2, (
-        f"Expected 2 data files, found {DataFileInfo.objects.count()}"
-    )
+    assert DataFileInfo.objects.count() == 2, f"Expected 2 data files, found {DataFileInfo.objects.count()}"
 
     # Check if the JSON file was saved correctly
     json_file = DataFileInfo.objects.filter(file_type="json").first()
     assert json_file is not None, "JSON file not found in database"
-    assert json_file.file_path.endswith("prompt_template.json"), (
-        f"Unexpected JSON file path: {json_file.file_path}"
-    )
+    assert json_file.file_path.endswith("prompt_template.json"), f"Unexpected JSON file path: {json_file.file_path}"
     assert json_file.referenced_by.count() == 1, (
         f"Expected 1 reference to JSON file, found {json_file.referenced_by.count()}"
     )
@@ -188,9 +178,7 @@ def test_save_data_files_to_db(test_directory):
     # Check if the YAML file was saved correctly
     yaml_file = DataFileInfo.objects.filter(file_type="yaml").first()
     assert yaml_file is not None, "YAML file not found in database"
-    assert yaml_file.file_path.endswith("config.yaml"), (
-        f"Unexpected YAML file path: {yaml_file.file_path}"
-    )
+    assert yaml_file.file_path.endswith("config.yaml"), f"Unexpected YAML file path: {yaml_file.file_path}"
     assert yaml_file.referenced_by.count() == 1, (
         f"Expected 1 reference to YAML file, found {yaml_file.referenced_by.count()}"
     )
@@ -207,9 +195,9 @@ def test_data_file_analyzer(test_directory):
 
     setup_django()
 
+    from aiai.app.models import DataFileAnalysis, DataFileInfo, FunctionInfo
     from aiai.code_analyzer import CodeAnalyzer
     from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
-    from aiai.app.models import FunctionInfo, DataFileInfo, DataFileAnalysis
 
     # Clear existing data
     FunctionInfo.objects.all().delete()
@@ -230,9 +218,7 @@ def test_data_file_analyzer(test_directory):
     analyzed_count = data_analyzer.analyze()
 
     # There should be 2 data files analyzed
-    assert analyzed_count == 2, (
-        f"Expected 2 data files analyzed, found {analyzed_count}"
-    )
+    assert analyzed_count == 2, f"Expected 2 data files analyzed, found {analyzed_count}"
 
     # Check if analysis records were created
     assert DataFileAnalysis.objects.count() == 2, (
@@ -242,16 +228,12 @@ def test_data_file_analyzer(test_directory):
     # Check the JSON file analysis
     json_analysis = DataFileAnalysis.objects.filter(data_file__file_type="json").first()
     assert json_analysis is not None, "JSON file analysis not found"
-    assert json_analysis.is_valid_reference, (
-        "JSON file should be marked as a valid reference"
-    )
+    assert json_analysis.is_valid_reference, "JSON file should be marked as a valid reference"
 
     # Check the YAML file analysis
     yaml_analysis = DataFileAnalysis.objects.filter(data_file__file_type="yaml").first()
     assert yaml_analysis is not None, "YAML file analysis not found"
-    assert yaml_analysis.is_valid_reference, (
-        "YAML file should be marked as a valid reference"
-    )
+    assert yaml_analysis.is_valid_reference, "YAML file should be marked as a valid reference"
 
 
 @pytest.mark.django_db
@@ -262,11 +244,11 @@ def test_save_data_files_to_db_crewai(test_directory):
 
     setup_django()
 
+    from pathlib import Path
+
+    from aiai.app.models import DataFileAnalysis, DataFileInfo, FunctionInfo
     from aiai.code_analyzer import CodeAnalyzer
     from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
-    from aiai.app.models import FunctionInfo, DataFileInfo, DataFileAnalysis
-    import os
-    from pathlib import Path
 
     # Calculate the project root path
     project_root = Path(__file__).parent.parent.parent.parent
@@ -288,31 +270,23 @@ def test_save_data_files_to_db_crewai(test_directory):
     analyzer.analyze_from_file(code_file, save_to_db=True, recursive=True)
 
     # Assert functions were saved to the database
-    assert FunctionInfo.objects.count() == 6, (
-        f"Expected 6 functions, found {FunctionInfo.objects.count()}"
-    )
+    assert FunctionInfo.objects.count() == 6, f"Expected 6 functions, found {FunctionInfo.objects.count()}"
 
     # Now find and save data files
-    file_references = analyzer.find_and_save_data_files(str(crewai_path))
+    analyzer.find_and_save_data_files(str(crewai_path))
 
     # There should be 1 data file saved to the database (people_data.json)
-    assert DataFileInfo.objects.count() == 1, (
-        f"Expected 1 data file, found {DataFileInfo.objects.count()}"
-    )
+    assert DataFileInfo.objects.count() == 1, f"Expected 1 data file, found {DataFileInfo.objects.count()}"
 
     # Check if the JSON file was saved correctly
     json_file = DataFileInfo.objects.filter(file_type="json").first()
     assert json_file is not None, "JSON file not found in database"
-    assert json_file.file_path.endswith("people_data.json"), (
-        f"Unexpected JSON file path: {json_file.file_path}"
-    )
+    assert json_file.file_path.endswith("people_data.json"), f"Unexpected JSON file path: {json_file.file_path}"
 
     # Check references to the JSON file
     # The file is referenced in extract_lead_profiles_task and at module level with file_read_tool
     reference_count = json_file.referenced_by.count()
-    assert reference_count >= 1, (
-        f"Expected at least 1 reference to people_data.json, found {reference_count}"
-    )
+    assert reference_count >= 1, f"Expected at least 1 reference to people_data.json, found {reference_count}"
 
     # At least one reference should be in the crew.py file
     crew_references = json_file.referenced_by.filter(file_path__contains="crew.py")
@@ -334,12 +308,8 @@ def test_save_data_files_to_db_crewai(test_directory):
     analysis = DataFileAnalysis.objects.first()
     assert analysis is not None, "Analysis not found"
     assert analysis.is_valid_reference, "File should be marked as a valid reference"
-    assert analysis.content_category == "data", (
-        f"Expected category 'data', found '{analysis.content_category}'"
-    )
+    assert analysis.content_category == "data", f"Expected category 'data', found '{analysis.content_category}'"
 
     # Verify that the analysis has a file purpose
     assert analysis.file_purpose, "Analysis should have a file purpose"
-    assert analysis.confidence_score > 0.5, (
-        f"Expected confidence score > 0.5, found {analysis.confidence_score}"
-    )
+    assert analysis.confidence_score > 0.5, f"Expected confidence score > 0.5, found {analysis.confidence_score}"

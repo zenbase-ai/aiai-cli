@@ -67,15 +67,9 @@ class DataFileInfo(models.Model):
 
 
 class DataFileAnalysis(models.Model):
-    data_file = models.OneToOneField(
-        DataFileInfo, on_delete=models.CASCADE, related_name="analysis"
-    )
-    is_valid_reference = models.BooleanField(
-        default=False
-    )  # True reference or false positive?
-    file_purpose = models.TextField(
-        null=True, blank=True
-    )  # Description of what this file is used for
+    data_file = models.OneToOneField(DataFileInfo, on_delete=models.CASCADE, related_name="analysis")
+    is_valid_reference = models.BooleanField(default=False)  # True reference or false positive?
+    file_purpose = models.TextField(null=True, blank=True)  # Description of what this file is used for
     content_category = models.CharField(
         max_length=50, null=True, blank=True
     )  # "prompt", "data", "configuration", "other"

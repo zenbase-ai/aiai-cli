@@ -68,26 +68,18 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="datafileinfo",
-            index=models.Index(
-                fields=["file_type"], name="app_datafil_file_ty_30471e_idx"
-            ),
+            index=models.Index(fields=["file_type"], name="app_datafil_file_ty_30471e_idx"),
         ),
         migrations.AddIndex(
             model_name="datafileinfo",
-            index=models.Index(
-                fields=["file_path"], name="app_datafil_file_pa_dec686_idx"
-            ),
+            index=models.Index(fields=["file_path"], name="app_datafil_file_pa_dec686_idx"),
         ),
         migrations.AddIndex(
             model_name="datafileanalysis",
-            index=models.Index(
-                fields=["is_valid_reference"], name="app_datafil_is_vali_a57352_idx"
-            ),
+            index=models.Index(fields=["is_valid_reference"], name="app_datafil_is_vali_a57352_idx"),
         ),
         migrations.AddIndex(
             model_name="datafileanalysis",
-            index=models.Index(
-                fields=["content_category"], name="app_datafil_content_473bd0_idx"
-            ),
+            index=models.Index(fields=["content_category"], name="app_datafil_content_473bd0_idx"),
         ),
     ]

@@ -101,9 +101,7 @@ class DataFileAnalyzer:
                         all_file_data.append(file_data)
                         file_data_map[file_data["file_path"]] = data_file
                 except Exception as e:
-                    logger.error(
-                        f"Error preparing data for {data_file.file_path}: {str(e)}"
-                    )
+                    logger.error(f"Error preparing data for {data_file.file_path}: {str(e)}")
 
             if not all_file_data:
                 logger.warning("No valid files to analyze after preparation")
@@ -135,9 +133,7 @@ class DataFileAnalyzer:
                 logger.error(f"Error in batch analysis: {str(e)}")
                 return [] if return_results else 0
 
-    def _run_pipeline(
-        self, file_data_list: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _run_pipeline(self, file_data_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Run the docetl pipeline on the provided file data.
 
@@ -185,19 +181,13 @@ class DataFileAnalyzer:
                 )
 
                 # Define steps
-                steps = [
-                    PipelineStep(
-                        name="analyze_files", input="input", operations=["analyze_file"]
-                    )
-                ]
+                steps = [PipelineStep(name="analyze_files", input="input", operations=["analyze_file"])]
 
                 # Define datasets
                 datasets = {"input": Dataset(type="file", path=in_path, source="local")}
 
                 # Create output
-                output = PipelineOutput(
-                    type="file", path=out_path, intermediate_dir=temp_dir
-                )
+                output = PipelineOutput(type="file", path=out_path, intermediate_dir=temp_dir)
 
                 # Create the pipeline
                 pipeline = Pipeline(
@@ -222,9 +212,7 @@ class DataFileAnalyzer:
 
                 # Ensure we have results for all files
                 if len(results) < len(file_data_list):
-                    logger.warning(
-                        f"Expected {len(file_data_list)} results, got {len(results)}"
-                    )
+                    logger.warning(f"Expected {len(file_data_list)} results, got {len(results)}")
                     # Pad with default values if needed
                     for _ in range(len(file_data_list) - len(results)):
                         results.append(

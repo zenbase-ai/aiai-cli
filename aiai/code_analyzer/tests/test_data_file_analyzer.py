@@ -4,12 +4,13 @@ Test script for the DataFileAnalyzer class.
 This is an integration test that uses actual LLM calls through docetl.
 """
 
-import os
 import json
-import yaml
-import tempfile
+import os
 import shutil
+import tempfile
+
 import pytest
+import yaml
 
 
 @pytest.fixture
@@ -73,7 +74,7 @@ def setup_database(test_directory):
 
     setup_django()
 
-    from aiai.app.models import DataFileInfo, FunctionInfo, DataFileAnalysis
+    from aiai.app.models import DataFileAnalysis, DataFileInfo, FunctionInfo
 
     # Clear existing data
     DataFileInfo.objects.all().delete()
@@ -172,8 +173,8 @@ def setup_database(test_directory):
 @pytest.mark.django_db
 def test_analyze_all_files(setup_database):
     """Test analyzing all files that need analysis using actual LLM."""
-    from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
     from aiai.app.models import DataFileAnalysis
+    from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
 
     # Create the analyzer with explicit model choice
     analyzer = DataFileAnalyzer(model="gpt-4o")
@@ -189,29 +190,19 @@ def test_analyze_all_files(setup_database):
     assert analyses.count() == 3, f"Expected 3 analyses in DB, got {analyses.count()}"
 
     # Check file categorization specifically for each file
-    prompt_file = DataFileAnalysis.objects.filter(
-        data_file__file_path__contains="prompt_template.json"
-    ).first()
+    prompt_file = DataFileAnalysis.objects.filter(data_file__file_path__contains="prompt_template.json").first()
     assert prompt_file is not None, "Prompt file not found"
-    assert prompt_file.content_category == "prompt", (
-        f"Expected 'prompt', got '{prompt_file.content_category}'"
-    )
+    assert prompt_file.content_category == "prompt", f"Expected 'prompt', got '{prompt_file.content_category}'"
 
-    config_file = DataFileAnalysis.objects.filter(
-        data_file__file_path__contains="config.yaml"
-    ).first()
+    config_file = DataFileAnalysis.objects.filter(data_file__file_path__contains="config.yaml").first()
     assert config_file is not None, "Config file not found"
     assert config_file.content_category == "configuration", (
         f"Expected 'configuration', got '{config_file.content_category}'"
     )
 
-    data_file = DataFileAnalysis.objects.filter(
-        data_file__file_path__contains="data.json"
-    ).first()
+    data_file = DataFileAnalysis.objects.filter(data_file__file_path__contains="data.json").first()
     assert data_file is not None, "Data file not found"
-    assert data_file.content_category == "data", (
-        f"Expected 'data', got '{data_file.content_category}'"
-    )
+    assert data_file.content_category == "data", f"Expected 'data', got '{data_file.content_category}'"
 
     # Verify results are reasonable
     # (we don't know exact outputs since we're using real LLM)
@@ -225,16 +216,14 @@ def test_analyze_all_files(setup_database):
             "other",
             "unknown",
         ]
-        assert 0 <= analysis.confidence_score <= 1, (
-            "Confidence score should be between 0 and 1"
-        )
+        assert 0 <= analysis.confidence_score <= 1, "Confidence score should be between 0 and 1"
 
 
 @pytest.mark.django_db
 def test_analyze_specific_file(setup_database):
     """Test analyzing a specific file by path using actual LLM."""
-    from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
     from aiai.app.models import DataFileAnalysis
+    from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
 
     # Get a specific file to analyze
     file_path = setup_database["prompt_file"].file_path
@@ -260,16 +249,14 @@ def test_analyze_specific_file(setup_database):
         "other",
         "unknown",
     ]
-    assert 0 <= analysis.confidence_score <= 1, (
-        "Confidence score should be between 0 and 1"
-    )
+    assert 0 <= analysis.confidence_score <= 1, "Confidence score should be between 0 and 1"
 
 
 @pytest.mark.django_db
 def test_analyze_with_return_results(setup_database):
     """Test analyzing files with return_results=True using actual LLM."""
-    from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
     from aiai.app.models import DataFileAnalysis
+    from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
 
     # Clear any existing analyses
     DataFileAnalysis.objects.all().delete()

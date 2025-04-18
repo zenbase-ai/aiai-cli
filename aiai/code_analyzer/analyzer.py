@@ -244,8 +244,9 @@ class CodeAnalyzer:
             file_path: Path to the data file
         """
         try:
-            from aiai.app.models import DataFileInfo
             import os
+
+            from aiai.app.models import DataFileInfo
 
             # Determine file type from extension
             file_ext = os.path.splitext(file_path)[1].lower()
@@ -296,8 +297,9 @@ class CodeAnalyzer:
         Returns:
             A list of dictionaries with function information and context
         """
-        from aiai.app.models import FunctionInfo
         import os
+
+        from aiai.app.models import FunctionInfo
 
         # Get the filename without extension to search for
         file_name = os.path.basename(file_path)
@@ -313,9 +315,7 @@ class CodeAnalyzer:
             context = None
 
             # Check source code
-            if func.source_code and (
-                file_name in func.source_code or file_name_no_ext in func.source_code
-            ):
+            if func.source_code and (file_name in func.source_code or file_name_no_ext in func.source_code):
                 reference_found = True
 
                 # Find the line(s) where the reference occurs
@@ -333,10 +333,7 @@ class CodeAnalyzer:
             if not reference_found and func.string_literals:
                 for literal in func.string_literals:
                     if isinstance(literal, dict) and "value" in literal:
-                        if (
-                            file_name in literal["value"]
-                            or file_name_no_ext in literal["value"]
-                        ):
+                        if file_name in literal["value"] or file_name_no_ext in literal["value"]:
                             reference_found = True
                             context = {
                                 "type": "string_literal",
@@ -350,9 +347,7 @@ class CodeAnalyzer:
 
         return references
 
-    def analyze_data_file_references(
-        self, data_files: list[str], save_to_db: bool = True
-    ) -> dict:
+    def analyze_data_file_references(self, data_files: list[str], save_to_db: bool = True) -> dict:
         """
         Analyze references to data files in the code.
 
@@ -363,7 +358,6 @@ class CodeAnalyzer:
         Returns:
             A dictionary mapping file paths to lists of referencing functions
         """
-        from aiai.app.models import DataFileInfo
 
         file_references = {}
 
@@ -408,9 +402,7 @@ class CodeAnalyzer:
                         data_file.reference_contexts = reference_contexts
                         data_file.save()
 
-                        logger.info(
-                            f"Saved {len(references)} references to {file_path}"
-                        )
+                        logger.info(f"Saved {len(references)} references to {file_path}")
                 except Exception as e:
                     logger.error(f"Error saving references for {file_path}: {str(e)}")
 
@@ -478,9 +470,7 @@ class CodeAnalyzer:
         data_file_references = self.find_and_save_data_files(project_directory)
 
         logger.info(f"Completed comprehensive analysis of {entrypoint_file}")
-        logger.info(
-            f"Found {len(code_graph.functions)} functions and {len(data_file_references)} data files"
-        )
+        logger.info(f"Found {len(code_graph.functions)} functions and {len(data_file_references)} data files")
 
         # Return combined results
         return {"code_graph": code_graph, "data_files": data_file_references}
