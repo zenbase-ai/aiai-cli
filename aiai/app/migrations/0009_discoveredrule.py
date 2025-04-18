@@ -4,22 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('app', '0008_alter_syntheticeval_kind'),
+        ("app", "0008_alter_syntheticeval_kind"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DiscoveredRule',
+            name="DiscoveredRule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rule_type', models.TextField()),
-                ('rule_text', models.TextField()),
-                ('function_name', models.TextField()),
-                ('file_path', models.TextField()),
-                ('target_code_section', models.TextField()),
-                ('confidence', models.DecimalField(decimal_places=2, max_digits=5)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("rule_type", models.TextField()),
+                ("rule_text", models.TextField()),
+                ("function_name", models.TextField()),
+                ("file_path", models.TextField()),
+                ("target_code_section", models.TextField()),
+                ("confidence", models.DecimalField(decimal_places=2, max_digits=5)),
             ],
         ),
     ]

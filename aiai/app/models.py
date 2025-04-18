@@ -20,6 +20,7 @@ class DiscoveredRule(models.Model):
     target_code_section: models.TextField = models.TextField()
     confidence: models.DecimalField = models.DecimalField(max_digits=5, decimal_places=2)
 
+
 class SyntheticEval(models.Model):
     class Kinds(models.TextChoices):
         RULES = "rules"
