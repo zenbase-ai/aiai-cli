@@ -1,8 +1,6 @@
-from dataclasses import Field
-
 import instructor
 import litellm
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Rules(BaseModel):
@@ -10,9 +8,9 @@ class Rules(BaseModel):
 
     always: list[str] = Field(description="Things to always do")
     never: list[str] = Field(description="Things to never do")
-    tips: list[str] = Field(default=[], description="Any additional, useful guidelines")
+    tips: list[str] = Field(default=[], description="Any additional, useful tips")
 
-    @field_validator("always", "never", "guidelines")
+    @field_validator("always", "never", "tips")
     def remove_template_fields(cls, v):
         return [item.replace("{{", "").replace("}}", "") for item in v]
 
