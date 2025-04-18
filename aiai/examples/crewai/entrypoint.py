@@ -1,14 +1,4 @@
-try:
-    from aiai.examples.crewai.crew import LeadEmailCrew
-except ImportError:
-    print("Error: crewAI is not installed. Please install it using:")
-    print("  rye sync --features crewai")
-    print("  or")
-    print("  pip install -e '.[crewai]'")
-    import sys
-
-    sys.exit(1)
-
+from aiai.examples.crewai.crew import LeadEmailCrew
 import json
 import os
 import sys
