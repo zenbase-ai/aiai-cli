@@ -1,4 +1,3 @@
-import re
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -36,10 +35,3 @@ def prepare_messages(
         *([{"role": "user", "content": examples}] if examples else []),
         {"role": "system", "content": sys_prompt},
     ]
-
-
-def pascal_case_to_snake_case(
-    name: str,
-    pattern=re.compile(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"),
-) -> str:
-    return pattern.sub("_", name).lower()
