@@ -7,7 +7,7 @@ import pytest
 from aiai.app.models import FunctionInfo
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_function_info():
     return [
         FunctionInfo(
@@ -135,7 +135,7 @@ def mock_function_info():
     ]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def mock_examples():
     return [
         dedent(

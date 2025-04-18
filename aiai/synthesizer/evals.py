@@ -136,11 +136,11 @@ class EvalGenerator:
             messages=messages,
         )
 
-    def perform(self):
+    def perform(self, fns: list["FunctionInfo"], examples: list[str] | None = None):
         from aiai.app.models import FunctionInfo, SyntheticEval
 
-        fns = list(FunctionInfo.objects.all())
-        examples = get_examples(fns)
+        fns = fns or list(FunctionInfo.objects.all())
+        examples = examples or get_examples(fns)
 
         # Run rules and head_to_head evaluations in parallel
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -165,7 +165,7 @@ class SyntheticEvalRunner:
     prompt_model: str = "openai/o4-mini"
 
     def __post_init__(self):
-        self.lm = instructor.from_litellm(litellm.acompletion)
+        self.lm = instructor.from_litellm(litellm.completion)
 
         if self.eval.kind == "rules":
             self.result_model = RulesEval.Result
