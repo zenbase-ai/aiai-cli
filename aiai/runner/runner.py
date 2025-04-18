@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from aiai.app.models import EvalRun
 from aiai.runner.script_tracer import ScriptTracer
-from aiai.synthesizer.evals import EvalResult
 
 if TYPE_CHECKING:
     pass
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 class Runner:
     script: Path
     data: list[Any]
-    eval: Callable[[Any], EvalResult]
+    eval: Callable[[Any], Any]
     concurrency: int = 16
 
     def perform(self):
