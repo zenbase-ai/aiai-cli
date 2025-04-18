@@ -28,6 +28,9 @@ jobs:
         run: rye fmt --check -v
       - name: Pin python-version ${{ matrix.python-version }}
         run: rye pin ${{ matrix.python-version }}
+      - name: Run rye lint
+        working-directory: .
+        run: rye lint
       - name: Install dependencies
         working-directory: .
         run: rye sync --all-features

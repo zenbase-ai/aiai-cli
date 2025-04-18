@@ -6,7 +6,7 @@ This module provides a graph structure to represent function dependencies.
 
 import json
 import os
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import networkx as nx
 
@@ -22,10 +22,8 @@ class DependencyGraph:
 
     def __init__(self):
         """Initialize an empty dependency graph."""
-        self.functions: dict[str, Function] = {}  # Maps function ID to Function object
-        self.dependencies: dict[
-            str, set[str]
-        ] = {}  # Maps caller ID to set of callee IDs
+        self.functions: Dict[str, Function] = {}  # Maps function ID to Function object
+        self.dependencies: Dict[str, Set[str]] = {}  # Maps caller ID to set of callee IDs
 
     def get_function_id(self, func: Function) -> str:
         """
@@ -73,7 +71,7 @@ class DependencyGraph:
             self.dependencies[caller_id] = set()
         self.dependencies[caller_id].add(callee_id)
 
-    def get_callers(self, func: Function) -> list[Function]:
+    def get_callers(self, func: Function) -> List[Function]:
         """
         Get all functions that call the given function.
 
@@ -90,7 +88,7 @@ class DependencyGraph:
                 callers.append(self.functions[caller_id])
         return callers
 
-    def get_callees(self, func: Function) -> list[Function]:
+    def get_callees(self, func: Function) -> List[Function]:
         """
         Get all functions called by the given function.
 
@@ -106,7 +104,7 @@ class DependencyGraph:
 
         return [self.functions[callee_id] for callee_id in self.dependencies[func_id]]
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """
         Convert the graph to a dictionary representation.
 
@@ -177,9 +175,7 @@ class DependencyGraph:
 
         return G
 
-    def visualize(
-        self, format: str = "markdown", output_path: Optional[str] = None
-    ) -> Optional[str]:
+    def visualize(self, format: str = "markdown", output_path: Optional[str] = None) -> Optional[str]:
         """
         Generate a visualization of the function dependency graph.
 
@@ -199,9 +195,7 @@ class DependencyGraph:
         else:
             raise ValueError(f"Unsupported visualization format: {format}")
 
-    def _generate_markdown_visualization(
-        self, output_path: Optional[str] = None
-    ) -> Optional[str]:
+    def _generate_markdown_visualization(self, output_path: Optional[str] = None) -> Optional[str]:
         """
         Generate an LLM-friendly Markdown representation of the function dependency graph.
 
@@ -212,9 +206,7 @@ class DependencyGraph:
             The path to the generated file, or the Markdown content if output_path is None
         """
         # Create a map from function ID to function object for easy lookup
-        function_id_map = {
-            self.get_function_id(func): func for func_id, func in self.functions.items()
-        }
+        {self.get_function_id(func): func for func_id, func in self.functions.items()}
 
         # Start building the Markdown content
         markdown_content = "# Function Dependency Graph\n\n"
@@ -229,17 +221,11 @@ class DependencyGraph:
             for callee_id in callees:
                 called_functions.add(callee_id)
 
-        root_functions = [
-            func
-            for func_id, func in self.functions.items()
-            if func_id not in called_functions
-        ]
+        root_functions = [func for func_id, func in self.functions.items() if func_id not in called_functions]
 
         markdown_content += f"- Entry point functions: {len(root_functions)}\n"
         if root_functions:
-            markdown_content += (
-                "  - " + ", ".join(func.name for func in root_functions) + "\n"
-            )
+            markdown_content += "  - " + ", ".join(func.name for func in root_functions) + "\n"
 
         # Count leaf functions (those that don't call others)
         leaf_functions = [
@@ -250,27 +236,21 @@ class DependencyGraph:
 
         markdown_content += f"- Leaf functions: {len(leaf_functions)}\n"
         if leaf_functions:
-            markdown_content += (
-                "  - " + ", ".join(func.name for func in leaf_functions) + "\n"
-            )
+            markdown_content += "  - " + ", ".join(func.name for func in leaf_functions) + "\n"
 
         markdown_content += "\n## Function Details\n\n"
 
         # Add details for each function
         for func_id, func in sorted(self.functions.items(), key=lambda x: x[1].name):
             markdown_content += f"### `{func.name}`\n\n"
-            markdown_content += (
-                f"- **Location**: {func.file_path}:{func.line_start}-{func.line_end}\n"
-            )
+            markdown_content += f"- **Location**: {func.file_path}:{func.line_start}-{func.line_end}\n"
             markdown_content += f"- **Signature**: `{func.signature}`\n\n"
 
             # Add docstring if available
             if func.docstring:
-                markdown_content += (
-                    "**Docstring**:\n```\n" + func.docstring + "\n```\n\n"
-                )
+                markdown_content += "**Docstring**:\n```\n" + func.docstring + "\n```\n\n"
 
-            # list functions that this function calls
+            # List functions that this function calls
             callees = self.get_callees(func)
             if callees:
                 markdown_content += "**Calls**:\n"
@@ -280,7 +260,7 @@ class DependencyGraph:
             else:
                 markdown_content += "**Calls**: *No functions*\n\n"
 
-            # list functions that call this function
+            # List functions that call this function
             callers = self.get_callers(func)
             if callers:
                 markdown_content += "**Called by**:\n"
@@ -294,9 +274,7 @@ class DependencyGraph:
             if func.comments:
                 markdown_content += "**Comments**:\n"
                 for comment in func.comments:
-                    markdown_content += (
-                        f"- Line {comment['line']}: `{comment['text']}`\n"
-                    )
+                    markdown_content += f"- Line {comment['line']}: `{comment['text']}`\n"
                 markdown_content += "\n"
 
             # Add string literals (potential prompts)
@@ -305,9 +283,7 @@ class DependencyGraph:
                 for string in func.string_literals:
                     # Only show string literals that might be prompts (minimum length and not just simple words)
                     if len(string["text"]) > 20 or "\n" in string["text"]:
-                        markdown_content += (
-                            f"- Line {string['line']}: ```\n{string['text']}\n```\n"
-                        )
+                        markdown_content += f"- Line {string['line']}: ```\n{string['text']}\n```\n"
                 markdown_content += "\n"
 
             # Add variable assignments
@@ -331,16 +307,12 @@ class DependencyGraph:
             if func.file_references:
                 markdown_content += "**File References**:\n"
                 for file_ref in func.file_references:
-                    markdown_content += (
-                        f"- Line {file_ref['line']}: `{file_ref['path']}`\n"
-                    )
+                    markdown_content += f"- Line {file_ref['line']}: `{file_ref['path']}`\n"
                 markdown_content += "\n"
 
             # Add full source code
             if func.source_code:
-                markdown_content += (
-                    "**Source Code**:\n```python\n" + func.source_code + "\n```\n\n"
-                )
+                markdown_content += "**Source Code**:\n```python\n" + func.source_code + "\n```\n\n"
 
         # Add a Mermaid graph for visual representation
         markdown_content += "\n## Visualization\n\n"
@@ -353,13 +325,9 @@ class DependencyGraph:
 
         # Add edges
         for caller_id, callees in self.dependencies.items():
-            safe_caller_id = (
-                caller_id.replace(":", "_").replace("/", "_").replace(".", "_")
-            )
+            safe_caller_id = caller_id.replace(":", "_").replace("/", "_").replace(".", "_")
             for callee_id in callees:
-                safe_callee_id = (
-                    callee_id.replace(":", "_").replace("/", "_").replace(".", "_")
-                )
+                safe_callee_id = callee_id.replace(":", "_").replace("/", "_").replace(".", "_")
                 markdown_content += f"    {safe_caller_id} --> {safe_callee_id}\n"
 
         markdown_content += "```\n"
@@ -373,9 +341,7 @@ class DependencyGraph:
         else:
             return markdown_content
 
-    def _generate_dot_visualization(
-        self, output_path: Optional[str] = None
-    ) -> Optional[str]:
+    def _generate_dot_visualization(self, output_path: Optional[str] = None) -> Optional[str]:
         """
         Generate a DOT visualization of the function dependency graph.
 
@@ -399,9 +365,7 @@ class DependencyGraph:
             nx.drawing.nx_pydot.write_dot(G, buffer)
             return buffer.getvalue()
 
-    def _generate_json_visualization(
-        self, output_path: Optional[str] = None
-    ) -> Optional[str]:
+    def _generate_json_visualization(self, output_path: Optional[str] = None) -> Optional[str]:
         """
         Generate a JSON representation of the function dependency graph.
 

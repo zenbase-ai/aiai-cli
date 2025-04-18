@@ -2,7 +2,6 @@
 Sample file that contains various types of prompts for testing the context extraction.
 """
 
-import os
 from pathlib import Path
 
 # Define some system prompts

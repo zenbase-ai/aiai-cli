@@ -5,7 +5,7 @@ This module defines the abstract base class that all language-specific parsers m
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Any, Set, Optional
+from typing import Any, List, Optional, Tuple
 
 
 class Function:
@@ -36,18 +36,12 @@ class Function:
         self.constants = []  # List of constants used in the function
 
     def __repr__(self):
-        return (
-            f"Function({self.name}, {self.file_path}:{self.line_start}-{self.line_end})"
-        )
+        return f"Function({self.name}, {self.file_path}:{self.line_start}-{self.line_end})"
 
     def __eq__(self, other):
         if not isinstance(other, Function):
             return False
-        return (
-            self.name == other.name
-            and self.file_path == other.file_path
-            and self.line_start == other.line_start
-        )
+        return self.name == other.name and self.file_path == other.file_path and self.line_start == other.line_start
 
     def __hash__(self):
         return hash((self.name, self.file_path, self.line_start))
