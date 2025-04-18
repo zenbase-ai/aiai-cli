@@ -4,17 +4,17 @@ Python language parser implementation using Tree-sitter.
 This module provides a parser for analyzing Python code and extracting function dependencies.
 """
 
-import os
-from typing import List, Tuple, Dict, Any, Set, Optional
 import logging
-from pathlib import Path
+import os
+from typing import Any, Dict, List, Optional, Tuple
 
-# Import tree-sitter and tree-sitter-python
-from tree_sitter import Parser, Language
 import tree_sitter_python
 
-from .base import LanguageParser, Function
+# Import tree-sitter and tree-sitter-python
+from tree_sitter import Language, Parser
+
 from . import register_parser
+from .base import Function, LanguageParser
 
 logger = logging.getLogger(__name__)
 

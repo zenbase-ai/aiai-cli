@@ -1,6 +1,6 @@
-import json
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from aiai.app.models import OtelSpan
 from aiai.optimizer.rule_extractor import build_rules_pipeline, extract_rules
@@ -25,9 +25,9 @@ def test_extract_rules(mock_logs):
         "tempfile.NamedTemporaryFile"
     ) as mock_tempfile, patch("tempfile.mkstemp") as mock_mkstemp, patch(
         "json.dump"
-    ) as mock_json_dump, patch("builtins.open", create=True) as mock_open, patch(
+    ), patch("builtins.open", create=True) as mock_open, patch(
         "json.load"
-    ) as mock_json_load, patch("os.remove") as mock_remove:
+    ) as mock_json_load, patch("os.remove"):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
         mock_mkstemp.return_value = (5, "/tmp/mock_output.json")
@@ -74,8 +74,9 @@ def test_extract_rules(mock_logs):
 
 def test_build_rules_pipeline():
     # Mock the necessary parameters
-    from docetl.api import Dataset, PipelineOutput
     import tempfile
+
+    from docetl.api import Dataset, PipelineOutput
 
     # Create a temp file for output
     with tempfile.NamedTemporaryFile(suffix=".json") as tmp_file:
@@ -109,11 +110,11 @@ def test_build_rules_pipeline():
 @pytest.mark.django_db
 def test_integration_with_db():
     # Create some test spans
-    span1 = OtelSpan.objects.create(
+    OtelSpan.objects.create(
         input_data={"prompt": "Test prompt 1"},
         output_data={"response": "Test response 1"},
     )
-    span2 = OtelSpan.objects.create(
+    OtelSpan.objects.create(
         input_data={"prompt": "Test prompt 2"},
         output_data={"response": "Test response 2"},
     )
@@ -125,9 +126,9 @@ def test_integration_with_db():
         "tempfile.NamedTemporaryFile"
     ) as mock_tempfile, patch("tempfile.mkstemp") as mock_mkstemp, patch(
         "json.dump"
-    ) as mock_json_dump, patch("builtins.open", create=True) as mock_open, patch(
+    ), patch("builtins.open", create=True) as mock_open, patch(
         "json.load"
-    ) as mock_json_load, patch("os.remove") as mock_remove:
+    ) as mock_json_load, patch("os.remove"):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
         mock_mkstemp.return_value = (5, "/tmp/mock_output.json")

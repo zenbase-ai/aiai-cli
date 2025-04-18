@@ -4,14 +4,14 @@ Pytest tests for the enhanced code analyzer with context extraction.
 
 import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add the parent directory to the path if needed for direct test execution
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from aiai.code_analyzer.analyzer import CodeAnalyzer
-from aiai.code_analyzer.parsers.base import Function
 
 
 @pytest.fixture
@@ -192,7 +192,7 @@ def test_context_extraction_file_references(dependency_graph):
 def test_markdown_visualization(dependency_graph, output_dir):
     """Test that the markdown visualization is correctly generated."""
     output_path = output_dir / "test_markdown_visualization.md"
-    result = dependency_graph.visualize(format="markdown", output_path=str(output_path))
+    dependency_graph.visualize(format="markdown", output_path=str(output_path))
 
     assert os.path.exists(output_path), (
         f"Markdown visualization file {output_path} not created"
@@ -217,7 +217,7 @@ def test_markdown_visualization(dependency_graph, output_dir):
 def test_json_visualization(dependency_graph, output_dir):
     """Test that the JSON visualization is correctly generated."""
     output_path = output_dir / "test_json_visualization.json"
-    result = dependency_graph.visualize(format="json", output_path=str(output_path))
+    dependency_graph.visualize(format="json", output_path=str(output_path))
 
     assert os.path.exists(output_path), (
         f"JSON visualization file {output_path} not created"
@@ -243,7 +243,7 @@ def test_json_visualization(dependency_graph, output_dir):
 def test_dot_visualization(dependency_graph, output_dir):
     """Test that the DOT visualization is correctly generated."""
     output_path = output_dir / "test_dot_visualization.dot"
-    result = dependency_graph.visualize(format="dot", output_path=str(output_path))
+    dependency_graph.visualize(format="dot", output_path=str(output_path))
 
     assert os.path.exists(output_path), (
         f"DOT visualization file {output_path} not created"

@@ -5,10 +5,10 @@ This module provides a graph structure to represent function dependencies.
 """
 
 import json
-from typing import Dict, List, Set, Optional, Any, Tuple
 import os
+from typing import Any, Dict, List, Optional, Set
+
 import networkx as nx
-from pathlib import Path
 
 from .parsers.base import Function
 
@@ -212,7 +212,7 @@ class DependencyGraph:
             The path to the generated file, or the Markdown content if output_path is None
         """
         # Create a map from function ID to function object for easy lookup
-        function_id_map = {
+        {
             self.get_function_id(func): func for func_id, func in self.functions.items()
         }
 

@@ -4,8 +4,8 @@ Language parsers for code analysis.
 This module provides the interface and implementations for parsing different programming languages.
 """
 
-from typing import Dict, Type, Optional
 import importlib
+from typing import Dict, Optional, Type
 
 from .base import LanguageParser
 
@@ -52,11 +52,5 @@ def get_parser_for_language(language: str) -> Optional[LanguageParser]:
         return _PARSERS[language]()
     return None
 
-
-# Import specific language implementations to register them
-try:
-    from . import python
-except ImportError:
-    pass  # Python parser not available
 
 __all__ = ["LanguageParser", "register_parser", "get_parser_for_language"]

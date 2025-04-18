@@ -1,8 +1,8 @@
-from pathlib import Path
-import typer
 import os
-from dotenv import load_dotenv
+from pathlib import Path
 
+import typer
+from dotenv import load_dotenv
 
 from aiai.utils import setup_django
 

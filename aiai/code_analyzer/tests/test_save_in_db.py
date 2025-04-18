@@ -6,6 +6,7 @@ This script tests the ability to analyze Python files and save function informat
 
 import os
 from pathlib import Path
+
 import pytest
 
 
@@ -21,8 +22,8 @@ def analyze_and_save_functions():
     setup_django()
 
     # Import after Django is set up
-    from aiai.code_analyzer import CodeAnalyzer
     from aiai.app.models import FunctionInfo
+    from aiai.code_analyzer import CodeAnalyzer
 
     # Clear any existing function data for clean testing
     FunctionInfo.objects.all().delete()
@@ -38,7 +39,7 @@ def analyze_and_save_functions():
     sample_file = tests_dir / "sample_entrypoint.py"
     if sample_file.exists():
         print(f"Analyzing {sample_file.name}")
-        graph = analyzer.analyze_from_file(str(sample_file), save_to_db=True)
+        analyzer.analyze_from_file(str(sample_file), save_to_db=True)
 
     # Verify that functions were saved to the database
     function_count = FunctionInfo.objects.count()

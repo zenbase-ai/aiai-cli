@@ -7,14 +7,16 @@ dependency graph from a Python file.
 
 import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
+
+from aiai.code_analyzer import CodeAnalyzer
 
 # Add parent directory to path so we can import the code_analyzer package
 script_dir = Path(__file__).resolve().parent
 sys.path.insert(0, str(script_dir.parent.parent.parent))
 
-from aiai.code_analyzer import CodeAnalyzer
 
 
 @pytest.fixture

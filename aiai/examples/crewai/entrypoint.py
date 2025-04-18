@@ -9,10 +9,11 @@ except ImportError:
 
     sys.exit(1)
 
+import json
 import os
 import sys
-import json
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 
@@ -41,7 +42,8 @@ def main():
     if not people_data_path.exists():
         sample_data = {
             "leads_text": "Amir Mehr is the CTO of Zenbase AI with a focus on optimizing LLM workflows. "
-            "Sarah Johnson is a Lead Developer at Tech Solutions Inc. interested in prompt engineering and model selection."
+            "Sarah Johnson is a Lead Developer at Tech Solutions Inc. interested in prompt engineering and model "
+                          "selection."
         }
         with open(people_data_path, "w") as f:
             json.dump(sample_data, f)

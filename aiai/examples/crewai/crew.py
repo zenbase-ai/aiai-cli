@@ -1,5 +1,6 @@
 from textwrap import dedent
-from crewai import Agent, Task, Crew, Process
+
+from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai_tools import FileReadTool
 from dotenv import load_dotenv
@@ -16,7 +17,8 @@ class LeadEmailCrew:
     def lead_extractor_agent(self) -> Agent:
         return Agent(
             role="Lead Profile Extractor",
-            goal="Extract relevant details (name, company, role, specific interests/pain points) for each person from the provided data.",
+            goal="Extract relevant details (name, company, role, specific interests/pain points) for each person from "
+                 "the provided data.",
             backstory=dedent(
                 """\
                 You are an expert analyst specializing in identifying key information
@@ -33,7 +35,9 @@ class LeadEmailCrew:
     def email_crafter_agent(self) -> Agent:
         return Agent(
             role="Zenbase Sales Email Crafter",
-            goal="Write a concise and compelling personalized sales email to a potential lead, highlighting how Zenbase can address their specific needs related to LLM development, prompt engineering, and model optimization.",
+            goal="Write a concise and compelling personalized sales email to a potential lead, highlighting how "
+                 "Zenbase can address their specific needs related to LLM development, prompt engineering, "
+                 "and model optimization.",
             backstory=dedent(
                 """\
                 You are a persuasive sales copywriter with deep knowledge of Zenbase.
@@ -99,13 +103,10 @@ class LeadEmailCrew:
                 """
             ),
             expected_output=dedent(
-                """\
-                A series of personalized sales emails, one for each lead.
-                Each email should:
-                - Be addressed to the lead by name.
-                - Reference their role/company/specific details.
-                - Clearly explain relevant Zenbase benefits (automated prompt engineering, model optimization, faster development, DSPy foundation).
-                - Include a clear call to action (e.g., suggest a demo or provide a link).
+                """\ A series of personalized sales emails, one for each lead. Each email should: - Be addressed to 
+                the lead by name. - Reference their role/company/specific details. - Clearly explain relevant Zenbase 
+                benefits (automated prompt engineering, model optimization, faster development, DSPy foundation). - 
+                Include a clear call to action (e.g., suggest a demo or provide a link).
 
                 Example Email for Cyrus Nouroozi:
 
@@ -113,10 +114,10 @@ class LeadEmailCrew:
 
                 Hi Cyrus,
 
-                Knowing your focus on AI integration and optimizing LLM workflows at Innovate Solutions, I wanted to introduce Zenbase...
-                [Explain how Zenbase helps with workflow optimization, automated prompting/model selection]...
-                ...Built on core contributions to Stanford's DSPy framework, Zenbase automates...
-                [Call to action - e.g., schedule a demo?]
+                Knowing your focus on AI integration and optimizing LLM workflows at Innovate Solutions, I wanted to 
+                introduce Zenbase... [Explain how Zenbase helps with workflow optimization, automated prompting/model 
+                selection]... ...Built on core contributions to Stanford's DSPy framework, Zenbase automates... [Call 
+                to action - e.g., schedule a demo?]
 
                 Best regards,
                 [Your Name/Zenbase Team]

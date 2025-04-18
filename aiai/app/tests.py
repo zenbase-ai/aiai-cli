@@ -1,5 +1,6 @@
 # src/aiai/app/tests.py
 import pytest
+
 from aiai.app.models import OtelSpan
 
 
