@@ -18,7 +18,7 @@ class LeadEmailCrew:
         return Agent(
             role="Lead Profile Extractor",
             goal="Extract relevant details (name, company, role, specific interests/pain points) for each person from "
-                 "the provided data.",
+            "the provided data.",
             backstory=dedent(
                 """\
                 You are an expert analyst specializing in identifying key information
@@ -36,8 +36,8 @@ class LeadEmailCrew:
         return Agent(
             role="Zenbase Sales Email Crafter",
             goal="Write a concise and compelling personalized sales email to a potential lead, highlighting how "
-                 "Zenbase can address their specific needs related to LLM development, prompt engineering, "
-                 "and model optimization.",
+            "Zenbase can address their specific needs related to LLM development, prompt engineering, "
+            "and model optimization.",
             backstory=dedent(
                 """\
                 You are a persuasive sales copywriter with deep knowledge of Zenbase.

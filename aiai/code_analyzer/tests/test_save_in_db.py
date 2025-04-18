@@ -61,12 +61,8 @@ def analyze_and_save_functions():
     if file_counts:
         sample_file_name = list(file_counts.keys())[0]
         print(f"\nFunctions in {sample_file_name}:")
-        for func in FunctionInfo.objects.filter(file_path__endswith=sample_file_name)[
-            :5
-        ]:
-            print(
-                f"  {func.name} ({func.line_start}-{func.line_end}): {func.signature}"
-            )
+        for func in FunctionInfo.objects.filter(file_path__endswith=sample_file_name)[:5]:
+            print(f"  {func.name} ({func.line_start}-{func.line_end}): {func.signature}")
 
     print("\nTest completed successfully!")
 

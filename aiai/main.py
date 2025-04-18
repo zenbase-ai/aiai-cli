@@ -16,9 +16,7 @@ def main():
     # If you want to do any DB operations here:
     from aiai.app.models import OtelSpan
 
-    log = OtelSpan.objects.create(
-        input_data={"example": "data"}, output_data="Sample output"
-    )
+    log = OtelSpan.objects.create(input_data={"example": "data"}, output_data="Sample output")
     typer.echo(f"Created log with ID: {log.pk}")
 
     # Check if OpenAI API key is available and run the CrewAI example

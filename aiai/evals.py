@@ -11,9 +11,7 @@ class EvaluationResponse(BaseModel):
         ...,
         description="Classification of the output as either 'good' or 'bad' based on the criteria.",
     )
-    reasoning: str = Field(
-        ..., description="A brief explanation for the classification provided."
-    )
+    reasoning: str = Field(..., description="A brief explanation for the classification provided.")
 
 
 def evaluate_crew_output(output_text: str, client=None) -> EvaluationResponse | None:

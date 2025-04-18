@@ -36,9 +36,7 @@ class Migration(migrations.Migration):
             options={
                 "indexes": [
                     models.Index(fields=["name"], name="app_func_name_d9012f_idx"),
-                    models.Index(
-                        fields=["file_path"], name="app_func_file_pa_06efa8_idx"
-                    ),
+                    models.Index(fields=["file_path"], name="app_func_file_pa_06efa8_idx"),
                 ],
                 "unique_together": {("file_path", "name", "line_start")},
             },

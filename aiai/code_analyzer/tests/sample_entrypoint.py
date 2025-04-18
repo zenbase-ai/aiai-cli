@@ -10,7 +10,7 @@ def get_crewai_agent():
     lead_extractor = Agent(
         role="Lead Profile Extractor",
         goal="Extract relevant details (name, company, role, specific interests/pain points) for each person from the "
-             "provided data.",
+        "provided data.",
         backstory=dedent("""\
             You are an expert analyst specializing in identifying key information 
             from unstructured data. Your goal is to pinpoint the most relevant details 
@@ -24,7 +24,7 @@ def get_crewai_agent():
     email_crafter = Agent(
         role="Zenbase Sales Email Crafter",
         goal="Write a concise and compelling personalized sales email to a potential lead, highlighting how Zenbase "
-             "can address their specific needs related to LLM development, prompt engineering, and model optimization.",
+        "can address their specific needs related to LLM development, prompt engineering, and model optimization.",
         backstory=dedent("""\
             You are a persuasive sales copywriter with deep knowledge of Zenbase. 
             Zenbase helps developers automate prompt engineering and model selection, 

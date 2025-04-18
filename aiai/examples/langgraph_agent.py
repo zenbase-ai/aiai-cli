@@ -173,9 +173,7 @@ def craft_emails(state: AgentState) -> AgentState:
             print(f"Generated email for {lead.get('name', 'Unknown')}:{email_text}---")
             emails.append(email_text)
         except Exception as e:
-            print(
-                f"An error occurred during LLM call for crafting email for {lead.get('name', 'Unknown')}: {e}"
-            )
+            print(f"An error occurred during LLM call for crafting email for {lead.get('name', 'Unknown')}: {e}")
             # Decide whether to skip this email or stop
 
     return {"generated_emails": emails}

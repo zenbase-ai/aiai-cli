@@ -22,9 +22,7 @@ if TYPE_CHECKING:
 
 
 class SynPrompt(BaseModel):
-    prompt: str = Field(
-        description="A highly detailed and thoughtful prompt for generating a single synthetic datum."
-    )
+    prompt: str = Field(description="A highly detailed and thoughtful prompt for generating a single synthetic datum.")
 
 
 async def generate_synthetic_prompt(
@@ -40,8 +38,8 @@ async def generate_synthetic_prompt(
             {
                 "role": "system",
                 "content": "You're an expert AI engineer looking at source code for an agent. Your task is to "
-                           "generate a highly detailed and thoughtful prompt for generating synthetic data to be used "
-                           "for testing the agent.",
+                "generate a highly detailed and thoughtful prompt for generating synthetic data to be used "
+                "for testing the agent.",
             },
             {
                 "role": "user",
@@ -60,8 +58,8 @@ async def generate_synthetic_prompt(
             {
                 "role": "system",
                 "content": "You're an expert AI engineer looking at source code for an agent. Your task is to "
-                           "generate a highly detailed and thoughtful prompt for generating synthetic data to be used "
-                           "for testing the agent.",
+                "generate a highly detailed and thoughtful prompt for generating synthetic data to be used "
+                "for testing the agent.",
             },
         ],
     )
