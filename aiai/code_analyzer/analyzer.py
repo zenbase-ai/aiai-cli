@@ -186,3 +186,291 @@ class CodeAnalyzer:
 
         except Exception as e:
             logger.error(f"Error saving function {func.name} to database: {str(e)}")
+
+    def find_data_files(self, base_directory: str) -> list[str]:
+        """
+        Find all JSON and YAML files in the repository that might contain relevant data.
+
+        Args:
+            base_directory: The root directory to start searching from
+
+        Returns:
+            A list of file paths to JSON and YAML files
+        """
+        import os
+
+        logger.info(f"Finding data files in {base_directory}")
+
+        data_files = []
+        exclude_dirs = {
+            ".git",
+            ".github",
+            ".vscode",
+            "__pycache__",
+            "venv",
+            "env",
+            "node_modules",
+            "migrations",
+        }
+
+        for root, dirs, files in os.walk(base_directory):
+            # Skip excluded directories
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+
+            for file in files:
+                if file.endswith((".json", ".yaml", ".yml")):
+                    # Skip files that are likely configuration files
+                    if file.startswith(".") or file in {
+                        "package.json",
+                        "package-lock.json",
+                        "poetry.lock",
+                        "requirements.lock",
+                        "pyproject.toml",
+                    }:
+                        continue
+
+                    file_path = os.path.join(root, file)
+                    data_files.append(file_path)
+                    logger.debug(f"Found data file: {file_path}")
+
+        logger.info(f"Found {len(data_files)} data files")
+        return data_files
+
+    def save_data_file_to_db(self, file_path: str) -> None:
+        """
+        Save data file information to the database.
+
+        Args:
+            file_path: Path to the data file
+        """
+        try:
+            import os
+
+            from aiai.app.models import DataFileInfo
+
+            # Determine file type from extension
+            file_ext = os.path.splitext(file_path)[1].lower()
+            if file_ext == ".json":
+                file_type = "json"
+            elif file_ext in (".yaml", ".yml"):
+                file_type = "yaml"
+            else:
+                logger.warning(f"Unsupported file type for {file_path}")
+                return
+
+            # Read file content
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception as e:
+                logger.warning(f"Could not read file {file_path}: {str(e)}")
+                content = None
+
+            # Create or update the data file record
+            data_file, created = DataFileInfo.objects.update_or_create(
+                file_path=file_path,
+                defaults={
+                    "file_type": file_type,
+                    "content": content,
+                    "last_analyzed": None,  # Will be updated when analyzed
+                },
+            )
+
+            if created:
+                logger.info(f"Added data file to database: {file_path}")
+            else:
+                logger.info(f"Updated data file in database: {file_path}")
+
+            return data_file
+
+        except Exception as e:
+            logger.error(f"Error saving data file {file_path} to database: {str(e)}")
+            return None
+
+    def find_file_references_in_code(self, file_path: str) -> list[dict]:
+        """
+        Find references to a data file in all analyzed functions.
+
+        Args:
+            file_path: Path to the data file to find references for
+
+        Returns:
+            A list of dictionaries with function information and context
+        """
+        import os
+
+        from aiai.app.models import FunctionInfo
+
+        # Get the filename without extension to search for
+        file_name = os.path.basename(file_path)
+        file_name_no_ext = os.path.splitext(file_name)[0]
+
+        # Get all functions from the database
+        all_functions = FunctionInfo.objects.all()
+        references = []
+
+        for func in all_functions:
+            # Check all potential places where the file might be referenced
+            reference_found = False
+            context = None
+
+            # Check source code
+            if func.source_code and (file_name in func.source_code or file_name_no_ext in func.source_code):
+                reference_found = True
+
+                # Find the line(s) where the reference occurs
+                for i, line in enumerate(func.source_code.splitlines()):
+                    if file_name in line or file_name_no_ext in line:
+                        line_num = func.line_start + i
+                        context = {
+                            "type": "source_code",
+                            "line": line_num,
+                            "content": line.strip(),
+                        }
+                        break
+
+            # Check string literals if available
+            if not reference_found and func.string_literals:
+                for literal in func.string_literals:
+                    if isinstance(literal, dict) and "value" in literal:
+                        if file_name in literal["value"] or file_name_no_ext in literal["value"]:
+                            reference_found = True
+                            context = {
+                                "type": "string_literal",
+                                "line": literal.get("line", 0),
+                                "content": literal["value"],
+                            }
+                            break
+
+            if reference_found:
+                references.append({"function": func, "context": context})
+
+        return references
+
+    def analyze_data_file_references(self, data_files: list[str], save_to_db: bool = True) -> dict:
+        """
+        Analyze references to data files in the code.
+
+        Args:
+            data_files: List of data file paths to analyze
+            save_to_db: Whether to save references to the database
+
+        Returns:
+            A dictionary mapping file paths to lists of referencing functions
+        """
+
+        file_references = {}
+
+        for file_path in data_files:
+            logger.info(f"Analyzing references to {file_path}")
+
+            # Find references to this file in the code
+            references = self.find_file_references_in_code(file_path)
+            file_references[file_path] = references
+
+            if save_to_db:
+                try:
+                    # Get or create the data file record
+                    data_file = self.save_data_file_to_db(file_path)
+
+                    if data_file:
+                        # Clear existing references
+                        data_file.referenced_by.clear()
+
+                        # Store reference contexts
+                        reference_contexts = []
+                        for ref in references:
+                            function = ref["function"]
+                            context = ref["context"]
+
+                            # Add function to the reference list
+                            data_file.referenced_by.add(function)
+
+                            # Add context to the list
+                            if context:
+                                reference_contexts.append(
+                                    {
+                                        "function_name": function.name,
+                                        "function_path": function.file_path,
+                                        "line": context.get("line", 0),
+                                        "content": context.get("content", ""),
+                                        "type": context.get("type", ""),
+                                    }
+                                )
+
+                        # Update reference contexts
+                        data_file.reference_contexts = reference_contexts
+                        data_file.save()
+
+                        logger.info(f"Saved {len(references)} references to {file_path}")
+                except Exception as e:
+                    logger.error(f"Error saving references for {file_path}: {str(e)}")
+
+        return file_references
+
+    def find_and_save_data_files(self, base_directory: str = None) -> dict:
+        """
+        Find all data files in the repository and save them to the database.
+
+        Args:
+            base_directory: The root directory to start searching from (defaults to current directory)
+
+        Returns:
+            A dictionary mapping file paths to lists of referencing functions
+        """
+        import os
+
+        if base_directory is None:
+            base_directory = os.getcwd()
+
+        # Find all data files
+        data_files = self.find_data_files(base_directory)
+
+        # Analyze references to each file
+        file_references = self.analyze_data_file_references(data_files, save_to_db=True)
+
+        return file_references
+
+    def analyze_project(self, entrypoint_file: str, save_to_db: bool = True) -> dict:
+        """
+        Comprehensive analysis of code and data files starting from an entrypoint file.
+
+        This function:
+        1. Analyzes the code starting from the entrypoint file
+        2. Identifies all JSON and YAML files in the project directory
+        3. Finds references to these data files in the analyzed code
+        4. Saves all information to the database
+
+        Args:
+            entrypoint_file: Path to the entrypoint file to analyze
+            save_to_db: Whether to save all information to the database
+
+        Returns:
+            A dictionary with analysis results containing:
+            - 'code_graph': The dependency graph of functions
+            - 'data_files': Mapping of data file paths to their references
+        """
+        import os
+
+        if not os.path.exists(entrypoint_file):
+            raise FileNotFoundError(f"Entrypoint file not found: {entrypoint_file}")
+
+        logger.info(f"Starting comprehensive analysis from {entrypoint_file}")
+
+        # Step 1: Analyze code
+        code_graph = self.analyze_from_file(
+            entrypoint_file=entrypoint_file,
+            recursive=True,
+            max_depth=5,
+            save_to_db=save_to_db,
+        )
+
+        # Step 2: Find and analyze data files
+        project_directory = os.path.dirname(os.path.abspath(entrypoint_file))
+        data_file_references = self.find_and_save_data_files(project_directory)
+
+        logger.info(f"Completed comprehensive analysis of {entrypoint_file}")
+        logger.info(f"Found {len(code_graph.functions)} functions and {len(data_file_references)} data files")
+
+        # Return combined results
+        return {"code_graph": code_graph, "data_files": data_file_references}
