@@ -1,10 +1,11 @@
-from aiai.examples.crewai.crew import LeadEmailCrew
 import json
 import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+from aiai.examples.crewai.crew import LeadEmailCrew
 
 
 def main():
