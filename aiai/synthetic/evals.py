@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from aiai.synthetic.utils import get_examples, prepare_messages
 
 if TYPE_CHECKING:
-    from aiai.app.models import FunctionInfo
+    from aiai.app.models import FunctionInfo, SyntheticEval
 
 
 class RulesEval(BaseModel):
@@ -35,6 +35,15 @@ class RulesEval(BaseModel):
             {self.never}
             </never>\
             """
+        )
+
+    def to_db_model(self) -> "SyntheticEval":
+        from aiai.app.models import SyntheticEval
+
+        return SyntheticEval(
+            kind="rules",
+            prompt=str(self),
+            fields=self.model_dump(),
         )
 
 
@@ -66,6 +75,15 @@ class HeadToHeadEval(BaseModel):
             {self.tips}
             </tips>\
             """
+        )
+
+    def to_db_model(self) -> "SyntheticEval":
+        from aiai.app.models import SyntheticEval
+
+        return SyntheticEval(
+            kind="head_to_head",
+            prompt=str(self),
+            fields=self.model_dump(),
         )
 
 

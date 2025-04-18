@@ -12,6 +12,23 @@ class OtelSpan(models.Model):
         return f"Run at {self.timestamp} - OtelSpan: {self.agent_run_id}"
 
 
+class SyntheticEval(models.Model):
+    class Kinds(models.TextChoices):
+        RULES = "rules"
+        HEAD_TO_HEAD = "head_to_head"
+
+    kind = models.CharField(max_length=20, choices=Kinds.choices)
+    prompt = models.TextField(null=False, blank=False)
+    fields = models.JSONField(null=False, blank=False)
+
+    def __str__(self) -> str:
+        return f"{self.id} - {self.kind}"
+
+
+class SyntheticDatum(models.Model):
+    input_data = models.TextField(null=False, blank=False)
+
+
 class FunctionInfo(models.Model):
     name = models.CharField(max_length=255)
     file_path = models.CharField(max_length=512)

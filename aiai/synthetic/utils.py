@@ -1,3 +1,4 @@
+import re
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
@@ -11,7 +12,7 @@ def get_examples(fns: list["FunctionInfo"]) -> list[str]:
         for variable in fn.variables:
             if variable["name"] in ("example", "examples"):
                 examples.append(variable["value"])
-    return [eval(example) for example in examples]
+    return examples
 
 
 def prepare_messages(
@@ -25,6 +26,7 @@ def prepare_messages(
             Here is the source code for the agent:
             <source_code>
             {source_code}
+            </source_code>
             """
     )
     examples = (
@@ -38,3 +40,10 @@ def prepare_messages(
         *([{"role": "user", "content": examples}] if examples else []),
         {"role": "system", "content": sys_prompt},
     ]
+
+
+def pascal_case_to_snake_case(
+    name: str,
+    pattern=re.compile(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"),
+) -> str:
+    return pattern.sub("_", name).lower()

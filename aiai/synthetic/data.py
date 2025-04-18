@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from aiai.synthetic.utils import get_examples, prepare_messages
 
 if TYPE_CHECKING:
-    from aiai.app.models import FunctionInfo
+    from aiai.app.models import FunctionInfo, SyntheticDatum
 
 
 class SynPrompt(BaseModel):
@@ -63,7 +63,9 @@ class DataGenerator:
         )
         return str(syn_prompt)
 
-    async def data(self, prompt: str) -> str:
+    async def data(self, prompt: str) -> list["SyntheticDatum"]:
+        from aiai.app.models import SyntheticDatum
+
         response = await litellm.acompletion(
             model=self.data_model,
             messages=[{"role": "system", "content": prompt}],
@@ -71,7 +73,7 @@ class DataGenerator:
             n=self.examples,
             seed=self.seed,
         )
-        return [r.message.content for r in response.choices]
+        return [SyntheticDatum(input_data=r.message.content) for r in response.choices]
 
 
 async def cli(output: Path, examples: int, seed: int):
