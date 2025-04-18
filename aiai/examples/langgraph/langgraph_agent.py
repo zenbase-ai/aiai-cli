@@ -38,7 +38,7 @@ class LeadProcessingGraph:
         graph_builder.add_node("extract_leads", self.extract_leads)
         graph_builder.add_node("craft_emails", self.craft_emails)
 
-        graph_builder.add_edge(START, "extract_leads") # Start directly with extraction
+        graph_builder.add_edge(START, "extract_leads")  # Start directly with extraction
         graph_builder.add_edge("extract_leads", "craft_emails")
         graph_builder.add_edge("craft_emails", END)
 
@@ -170,15 +170,15 @@ class LeadProcessingGraph:
         }
         # Execute the graph
         result = self.graph.invoke(initial_state)
-        
+
         # Display results
         if result.get("generated_emails"):
             print("\n\n########################")
             print("## Generated Emails:")
             print("########################\n")
             for i, email in enumerate(result["generated_emails"]):
-                print(f"\n--- Email {i+1} ---\n{email}\n")
+                print(f"\n--- Email {i + 1} ---\n{email}\n")
         else:
             print("No emails were generated. Check for errors in the previous steps.")
-            
+
         return result
