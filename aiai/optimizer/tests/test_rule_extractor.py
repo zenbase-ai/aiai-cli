@@ -58,20 +58,18 @@ def test_extract_rules(mock_logs):
         assert "tips" in result
         assert "evaluation_guide" in result
 
-        # Verify Pipeline was called with correct arguments
-        MockPipeline.assert_called_once()
+        # Verify Pipeline was called correctly
         args, kwargs = MockPipeline.call_args
 
-        # The reward parameter is passed to build_rules_pipeline, not directly to Pipeline
-        # So we should check for the other expected parameters
+        # Check expected parameters
         assert "datasets" in kwargs
         assert "output" in kwargs
         assert "name" in kwargs
         assert "operations" in kwargs
         assert "steps" in kwargs
 
-        # Verify pipeline.run was called
-        assert mock_pipeline_instance.run.called
+        # Verify the run method was called on the instance
+        mock_pipeline_instance.run.assert_called_once()
 
 
 def test_build_rules_pipeline():
@@ -159,7 +157,6 @@ def test_integration_with_db():
         assert "tips" in result
 
         # Verify Pipeline was called correctly
-        MockPipeline.assert_called_once()
         args, kwargs = MockPipeline.call_args
 
         # Check expected parameters
@@ -168,3 +165,6 @@ def test_integration_with_db():
         assert "name" in kwargs
         assert "operations" in kwargs
         assert "steps" in kwargs
+
+        # Verify the run method was called on the instance
+        mock_pipeline_instance.run.assert_called_once()
