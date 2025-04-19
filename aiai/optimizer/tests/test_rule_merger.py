@@ -13,7 +13,7 @@ def test_merge_rules(mock_create):
     after = Rules(always=["also always"], never=["also never"], tips=["another tip"])
 
     # Act
-    merged = merge_rules(before, after)
+    merged = merge_rules(before, after, model="openai/o4-nano")
 
     # Assert: Check if the mock was called and the result is as expected (based on mock return)
     mock_create.assert_called_once()

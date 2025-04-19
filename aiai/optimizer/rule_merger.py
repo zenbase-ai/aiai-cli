@@ -20,13 +20,14 @@ class Rules(BaseModel):
 def merge_rules(
     before: Rules | dict,
     after: Rules | dict,
+    model: str = "openai/o3",
     lm=instructor.from_litellm(litellm.completion),
 ) -> Rules:
     before_str = before.model_dump_json() if isinstance(before, Rules) else json.dumps(before)
     after_str = after.model_dump_json() if isinstance(after, Rules) else json.dumps(after)
     rules: Rules = lm.create(
         response_model=Rules,
-        model="openai/o4-mini",
+        model=model,
         messages=[
             {
                 "role": "system",
