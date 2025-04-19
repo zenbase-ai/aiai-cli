@@ -1,4 +1,5 @@
 import importlib.util
+import inspect
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -60,7 +61,17 @@ class ScriptTracer:
         with self.tracer.start_as_current_span("script_execution") as span:
             span.set_attribute("file_path", str(self.file_path))
             span.set_attribute("agent_run_id", self.run_id)
-            result = self.module.main(input_data)
+
+            # Support both `main()` and `main(input_data)` signatures.
+            try:
+                sig = inspect.signature(self.module.main)
+                if len(sig.parameters) == 0:
+                    result = self.module.main()
+                else:
+                    result = self.module.main(input_data)
+            except ValueError:
+                # Fallback if signature cannot be inspected.
+                result = self.module.main(input_data)
             # Keep result simple for attribute
             span.set_attribute("result", str(result))
             if span_decorator:

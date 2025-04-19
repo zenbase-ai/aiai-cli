@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from docetl.api import Dataset, PipelineOutput
-from optimizer.rule_locator import RuleLocator
 
 from aiai.app.models import FunctionInfo
+from aiai.optimizer.rule_locator import RuleLocator
 
 
 @pytest.fixture
@@ -104,15 +104,15 @@ def test_build_rule_locator_pipeline():
 @pytest.mark.django_db
 def test_find_prompt_functions(mock_functions):
     with (
-        patch("aiai.rule_locator.rule_locator.RuleLocator._build_prompt_finder_pipeline") as mock_build_pipeline,
-        patch("aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
-        patch("aiai.rule_locator.rule_locator.tempfile.mkstemp") as mock_mkstemp,
-        patch("aiai.rule_locator.rule_locator.json.dump") as _,
-        patch("aiai.rule_locator.rule_locator.open", create=True) as mock_open,
-        patch("aiai.rule_locator.rule_locator.json.load") as mock_json_load,
-        patch("aiai.rule_locator.rule_locator.os.remove") as _,
-        patch("aiai.rule_locator.rule_locator.os.close") as _,
-        patch("aiai.rule_locator.rule_locator.os.path.exists") as mock_exists,
+        patch("aiai.optimizer.rule_locator.RuleLocator._build_prompt_finder_pipeline") as mock_build_pipeline,
+        patch("aiai.optimizer.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
+        patch("aiai.optimizer.rule_locator.tempfile.mkstemp") as mock_mkstemp,
+        patch("aiai.optimizer.rule_locator.json.dump") as _,
+        patch("aiai.optimizer.rule_locator.open", create=True) as mock_open,
+        patch("aiai.optimizer.rule_locator.json.load") as mock_json_load,
+        patch("aiai.optimizer.rule_locator.os.remove") as _,
+        patch("aiai.optimizer.rule_locator.os.close") as _,
+        patch("aiai.optimizer.rule_locator.os.path.exists") as mock_exists,
     ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
@@ -163,15 +163,15 @@ def test_find_prompt_functions(mock_functions):
 @pytest.mark.django_db
 def test_locate_rules(mock_prompt_functions, mock_rules):
     with (
-        patch("aiai.rule_locator.rule_locator.RuleLocator._build_rule_locator_pipeline") as mock_build_pipeline,
-        patch("aiai.rule_locator.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
-        patch("aiai.rule_locator.rule_locator.tempfile.mkstemp") as mock_mkstemp,
-        patch("aiai.rule_locator.rule_locator.json.dump") as _,
-        patch("aiai.rule_locator.rule_locator.open", create=True) as mock_open,
-        patch("aiai.rule_locator.rule_locator.json.load") as mock_json_load,
-        patch("aiai.rule_locator.rule_locator.os.remove") as _,
-        patch("aiai.rule_locator.rule_locator.os.close") as _,
-        patch("aiai.rule_locator.rule_locator.os.path.exists") as mock_exists,
+        patch("aiai.optimizer.rule_locator.RuleLocator._build_rule_locator_pipeline") as mock_build_pipeline,
+        patch("aiai.optimizer.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
+        patch("aiai.optimizer.rule_locator.tempfile.mkstemp") as mock_mkstemp,
+        patch("aiai.optimizer.rule_locator.json.dump") as _,
+        patch("aiai.optimizer.rule_locator.open", create=True) as mock_open,
+        patch("aiai.optimizer.rule_locator.json.load") as mock_json_load,
+        patch("aiai.optimizer.rule_locator.os.remove") as _,
+        patch("aiai.optimizer.rule_locator.os.close") as _,
+        patch("aiai.optimizer.rule_locator.os.path.exists") as mock_exists,
     ):
         # Setup mock temporary files
         mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
@@ -284,11 +284,11 @@ def test_integration_with_db():
     ]
 
     with (
-        patch("aiai.rule_locator.rule_locator.RuleLocator._find_prompt_functions") as mock_find_prompt,
-        patch("aiai.rule_locator.rule_locator.RuleLocator._find_prompt_data_files") as mock_find_data_files,
-        patch("aiai.rule_locator.rule_locator.RuleLocator._locate_rules") as mock_locate_rules,
-        patch("aiai.rule_locator.rule_locator.RuleLocator._save_rules_to_db") as mock_save_rules,
-        patch("aiai.rule_locator.rule_locator.setup_django") as _,
+        patch("aiai.optimizer.rule_locator.RuleLocator._find_prompt_functions") as mock_find_prompt,
+        patch("aiai.optimizer.rule_locator.RuleLocator._find_prompt_data_files") as mock_find_data_files,
+        patch("aiai.optimizer.rule_locator.RuleLocator._locate_rules") as mock_locate_rules,
+        patch("aiai.optimizer.rule_locator.RuleLocator._save_rules_to_db") as mock_save_rules,
+        patch("aiai.optimizer.rule_locator.setup_django") as _,
     ):
         # Setup mock return values
         prompt_functions = [

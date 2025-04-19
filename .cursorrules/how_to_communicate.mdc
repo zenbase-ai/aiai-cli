@@ -1,0 +1,91 @@
+---
+description: Communication rules for AI engineers
+globs: 
+alwaysApply: false
+---
+# Communication Rules for AI Engineers
+
+This document outlines the expected communication standards for AI engineers. Following these guidelines ensures that team members communicate progress, experiments, and results in a way that drives decision-making and project success.
+
+## Core Principles
+
+1. **Be precise and quantitative** - Avoid vague adjectives and subjective descriptions
+2. **State clear hypotheses** - Frame experiments around testable assumptions
+3. **Report concrete results** - Use metrics and measurements, not opinions
+4. **Acknowledge trade-offs** - Honestly present costs and benefits of approaches
+
+## Unacceptable Communication Patterns
+
+The following are examples of ineffective updates that should be avoided:
+
+❌ "I tried some things and the results look better now."
+❌ "The model seems more accurate after our changes."
+❌ "Users might find the new approach helpful."
+
+These updates fail because they:
+- Use vague adjectives instead of metrics
+- Don't specify what was actually changed
+- Provide no basis for decision-making
+- Omit any discussion of trade-offs
+
+## Effective Communication Structure
+
+When communicating about AI engineering work, follow this structure:
+
+### 1. Hypothesis
+Clearly state what you believed would happen and why.
+
+### 2. Intervention
+Describe specifically what you implemented or changed.
+
+### 3. Results
+Provide quantitative measurements using relevant metrics.
+
+### 4. Trade-offs
+Acknowledge the costs and downsides of the approach.
+
+## Example of Proper Communication
+
+✅ **Good Update:**
+
+> I hypothesized that combining lexical search (BM25) with semantic search would improve retrieval quality. I implemented a hybrid indexing approach with re-ranking. This increased Recall@5 from 73% to 88% (+20.5%) and Recall@10 from 80% to 95% (+18.8%). However, query latency increased from 50ms to 200ms.
+
+| Metric       | Baseline | Hybrid Search | Re-ranking |
+|--------------|----------|---------------|------------|
+| Recall @ 5   | 73%      | 85% (+16.4%)  | 88% (+20.5%) |
+| Recall @ 10  | 80%      | 93% (+16.3%)  | 95% (+18.8%) |
+| Latency      | 50ms     | 55ms (+10%)   | 200ms (+300%) |
+
+This update is effective because it:
+- States a clear hypothesis
+- Specifies the exact intervention
+- Provides quantifiable results with percentage improvements
+- Acknowledges the trade-off (increased latency)
+- Presents data in an easily-comparable format
+
+## Additional Guidelines
+
+### When Reporting Experimental Results
+
+1. **Always include baselines** - Show current performance for comparison
+2. **Report relative and absolute changes** - "Improved from 80% to 90% (+12.5% relative)"
+3. **Include multiple relevant metrics** - Accuracy, latency, resource usage, etc.
+4. **Use tables for clarity** - When comparing multiple approaches
+
+### When Experiments Fail
+
+1. **Be transparent about negative results** - Failed experiments provide valuable information
+2. **Explain why you believe it didn't work** - Share your analysis
+3. **Suggest potential next steps** - What would you try instead?
+4. **Quantify the failure** - How much worse was it than baseline?
+
+### For Regular Status Updates
+
+1. **Start with the most important insights** - Lead with high-impact information
+2. **Prioritize actionable information** - What decisions need to be made?
+3. **Highlight risks and blockers** - Be clear about what might derail progress
+4. **Connect to broader project goals** - Show how this work relates to overall objectives
+
+## Remember
+
+Effective communication in AI engineering isn't just about sharing what you did—it's about enabling informed decision-making in systems with inherent uncertainty. Good communication accelerates progress, reduces misalignment, and builds team knowledge.
