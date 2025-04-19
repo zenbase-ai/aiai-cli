@@ -31,7 +31,7 @@ crewai = ["crewai==0.114.0", "crewai-tools>=0.40.1"]
 langgraph = ["langgraph>=0.3.31"]
 
 [project.scripts]
-aiai = "aiai.main:main"
+aiai = "aiai.cli.app:app"
 
 [build-system]
 requires = ["hatchling"]
