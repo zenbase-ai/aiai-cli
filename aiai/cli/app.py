@@ -12,9 +12,9 @@ from aiai.code_analyzer import CodeAnalyzer
 from aiai.optimizer.rule_extractor import extract_rules
 from aiai.optimizer.rule_locator import RuleLocator
 from aiai.optimizer.rule_merger import Rules
+from aiai.runner.py_script_tracer import PyScriptTracer
 from aiai.runner.runner import Runner
 from aiai.runner.runner import Runner as BatchRunner
-from aiai.runner.script_tracer import ScriptTracer
 from aiai.synthesizer.data import DataGenerator
 from aiai.synthesizer.evals import EvalGenerator, SyntheticEvalRunner
 
@@ -74,7 +74,7 @@ def _validate_entrypoint(entrypoint: Path) -> None:
 
     # No need for inner import now
     with loading("Validating entrypoint…"):
-        with ScriptTracer(entrypoint) as tracer:
+        with PyScriptTracer(entrypoint) as tracer:
             tracer()
 
 

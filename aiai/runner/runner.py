@@ -1,13 +1,10 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable
 
 from aiai.app.models import EvalRun
-from aiai.runner.script_tracer import ScriptTracer
-
-if TYPE_CHECKING:
-    pass
+from aiai.runner.py_script_tracer import PyScriptTracer
 
 
 @dataclass
@@ -15,17 +12,27 @@ class Runner:
     script: Path
     data: list[Any]
     eval: Callable[[Any], Any]
-    concurrency: int = 16
+    run_eval: bool = False
+    concurrency: int = 32
 
     def perform(self):
         with ThreadPoolExecutor(max_workers=self.concurrency) as pool:
-            results = pool.map(self._run_datum, self.data)
+            results = pool.map(self.__call__, self.data)
         return EvalRun.objects.bulk_create(results)
 
-    def _run_datum(self, input_data: Any, run_eval: bool = True):
-        with ScriptTracer(self.script) as tracer:
+    def tracer(self):
+        if self.script.suffix == ".py":
+            return PyScriptTracer(self.script)
+        else:
+            raise ValueError(f"Unsupported script type: {self.script.suffix}")
+
+    def __call__(self, input_data: Any):
+        reward = None
+
+        with self.tracer() as tracer:
             run_id, output_data = tracer(input_data)
-            reward = self.eval(output_data)
+            if self.run_eval:
+                reward = self.eval(output_data)
 
         return EvalRun(
             agent_run_id=run_id,

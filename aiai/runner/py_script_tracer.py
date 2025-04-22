@@ -14,12 +14,12 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from aiai.runner.otel_exporter import DjangoSpanExporter
 
 
-class ScriptTracer:
+class PyScriptTracer:
     def __init__(self, file_path: Path):
         self.file_path = file_path
         self.module_name = file_path.stem
 
-    def __enter__(self) -> "ScriptTracer":
+    def __enter__(self) -> "PyScriptTracer":
         self.run_id = uuid4().hex
         self.provider = TracerProvider()
         self.exporter = DjangoSpanExporter(self.run_id)
@@ -28,7 +28,7 @@ class ScriptTracer:
 
         self.tracer = self.provider.get_tracer(__name__)
         openlit.init(
-            environment="dev",
+            environment="aiai",
             tracer=self.tracer,
             event_logger=NoOpEventLogger(name="noop"),
             disable_metrics=True,
