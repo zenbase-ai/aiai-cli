@@ -1,9 +1,9 @@
 import importlib.util
 import inspect
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
-from uuid import uuid4
 
 import openlit
 from opentelemetry import trace
@@ -14,16 +14,14 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from aiai.runner.otel_exporter import DjangoSpanExporter
 
 
+@dataclass
 class PyScriptTracer:
-    def __init__(self, file_path: Path):
-        self.file_path = file_path
-        self.module_name = file_path.stem
+    file_path: Path
 
     def __enter__(self) -> "PyScriptTracer":
-        self.run_id = uuid4().hex
+        self.module_name = self.file_path.stem
         self.provider = TracerProvider()
-        self.exporter = DjangoSpanExporter(self.run_id)
-        self.provider.add_span_processor(BatchSpanProcessor(self.exporter))
+        self.provider.add_span_processor(BatchSpanProcessor(DjangoSpanExporter()))
         trace.set_tracer_provider(self.provider)
 
         self.tracer = self.provider.get_tracer(__name__)
@@ -34,8 +32,7 @@ class PyScriptTracer:
             disable_metrics=True,
         )
 
-        module_name = self.file_path.stem
-        spec = importlib.util.spec_from_file_location(module_name, self.file_path)
+        spec = importlib.util.spec_from_file_location(self.module_name, self.file_path)
         if spec is None or spec.loader is None:
             raise ImportError(f"Could not load spec for module from file: {self.file_path}")
 
@@ -56,26 +53,23 @@ class PyScriptTracer:
         self.provider.force_flush()
 
     def __call__(self, input_data=None, span_decorator: Callable[[Any], dict] | None = None) -> tuple[str, Any]:
-        assert self.run_id is not None
-
         with self.tracer.start_as_current_span("script_execution") as span:
             span.set_attribute("file_path", str(self.file_path))
-            span.set_attribute("agent_run_id", self.run_id)
 
             # Support both `main()` and `main(input_data)` signatures.
+            fn = self.module.main
             try:
-                sig = inspect.signature(self.module.main)
-                if len(sig.parameters) == 0:
-                    result = self.module.main()
-                else:
-                    result = self.module.main(input_data)
+                sig = inspect.signature(fn)
+                result = fn() if len(sig.parameters) == 0 else fn(input_data)
             except ValueError:
                 # Fallback if signature cannot be inspected.
-                result = self.module.main(input_data)
+                result = fn(input_data)
             # Keep result simple for attribute
             span.set_attribute("result", str(result))
             if span_decorator:
                 for k, v in span_decorator(result).items():
                     span.set_attribute(k, v)
 
-        return self.run_id, result
+            trace_id = span.get_span_context().trace_id
+
+        return trace_id, result

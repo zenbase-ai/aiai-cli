@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from aiai.code_analyzer.analyzer import CodeAnalyzer
+from aiai.code_analyzer.code_analyzer import CodeAnalyzer
 
 
 @pytest.fixture

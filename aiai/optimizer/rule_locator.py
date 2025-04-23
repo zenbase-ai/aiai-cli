@@ -1,19 +1,46 @@
 import json
 import os
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
+from textwrap import dedent
+from typing import TYPE_CHECKING
 
+import instructor
+import litellm
 from docetl.api import Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep
+from pydantic import BaseModel, Field, model_validator
 
 from aiai.utils import setup_django
+
+if TYPE_CHECKING:
+    from aiai.app.models import FunctionInfo
 
 cwd = Path(__file__).parent
 
 
+class CodeModification(BaseModel):
+    """
+    A code modification to be made to a function, selecting the relevant always, never, and tips.
+    """
+
+    function_id: int | None = Field(description="The ID of the function to modify")
+    data_file_id: int | None = Field(description="The ID of the data file to modify")
+    always: list[str] = Field(description="The always rules to add")
+    never: list[str] = Field(description="The never rules to add")
+    tips: list[str] = Field(description="The tips to add")
+
+    @model_validator(mode="after")
+    def validate_function_or_data_file(self):
+        if self.function_id is None and self.data_file_id is None:
+            raise ValueError("Either function_id or data_file_id must be provided")
+        return self
+
+
+@dataclass
 class RuleLocator:
-    def __init__(self, rules, model="gpt-4o"):
-        self.rules = rules
-        self.model = model
+    rules: dict
+    model: str = "openai/o4-mini"
 
     def _build_prompt_finder_pipeline(self, **kwargs) -> Pipeline:
         """
@@ -177,129 +204,7 @@ class RuleLocator:
             **kwargs,
         )
 
-    def _build_rule_locator_pipeline(self, **kwargs) -> Pipeline:
-        """
-        Build a pipeline for locating where rules should be placed in prompts.
-
-        Args:
-            **kwargs: Additional arguments to pass to the Pipeline constructor
-
-        Returns:
-            Pipeline: A configured pipeline instance
-        """
-        operations = [
-            MapOp(
-                name="locate_rule_placement",
-                type="map",
-                prompt="""
-                    <instructions>
-                        You are an expert in analyzing LLM prompts. Your task is to determine
-                        where to insert specific rules into existing prompts.
-
-                        You will be given:
-                        1. A rule that needs to be added to prompts (as an exact string)
-                        2. Information about multiple functions that contain prompts/agents
-
-                        For this rule, determine which prompt(s) it should be added to.
-                        A good match is one where:
-                        - The rule enhances the prompt's purpose
-                        - The rule is relevant to the prompt's context
-                        - The rule complements the existing instructions
-
-                        IMPORTANT: You are NOT being asked to apply or implement the rule by
-                        rewriting the prompt. Your task is to identify the EXACT CODE SECTION where
-                        the rule should be added.
-
-                        For each suitable prompt, determine:
-                        1. The specific code section (could be multiple lines of code) where the rule belongs
-                        2. Why this code section is the appropriate place for the rule
-                        3. The confidence level (0-100%) that adding this rule will improve results
-
-                        The code section should be a direct copy of the relevant lines from the source code,
-                        such as a specific part of a role definition, backstory, goal, or description.
-
-                        Only include placements that would meaningfully improve the system.
-                    </instructions>
-
-                    <rule>
-                        {{input.rule_type}}: {{input.rule_text}}
-                    </rule>
-
-                    <prompt_sources>
-                        {% for source in input.prompt_functions %}
-                        <source id="{{loop.index}}">
-                            Name: {{source.name}}
-                            File Path: {{source.file_path}}
-                            Prompt Type: {{source.prompt_type}}
-
-                            Source Code:
-                            {{source.source_code}}
-
-                            {% if source.docstring %}
-                            Docstring:
-                            {{source.docstring}}
-                            {% endif %}
-
-                            Prompt Segments:
-                            {% for segment in source.prompt_segments %}
-                            ---
-                            {{segment}}
-                            ---
-                            {% endfor %}
-                        </source>
-                        {% endfor %}
-                    </prompt_sources>
-
-                    <output>
-                        Respond **only** with a JSON object matching this exact schema (no extra keys!):
-
-                        placements: list[{source_id: int, source_name: str, file_path: str,
-                                        target_code_section: str, confidence: float, reasoning: str}]
-
-                        So your entire output should look like:
-
-                        ```json
-                        {
-                            "placements": [
-                                {
-                                    "source_id": 1,
-                                    "source_name": "example_source",
-                                    "file_path": "src/foo.py",
-                                    "target_code_section": "…exact lines…",
-                                    "reasoning": "This rule fits here because…"
-                                    "confidence": 92.5,
-                                },
-                                …
-                            ]
-                        }
-                    </output>
-                """,
-                output={
-                    "schema": {
-                        "placements": "list[{source_id: int, source_name: str, file_path: str, "
-                        "target_code_section: str, confidence: float, reasoning: str}]"
-                    }
-                },
-                optimize=True,
-            ),
-        ]
-
-        steps = [
-            PipelineStep(
-                name="rule_placement",
-                input="rules_with_prompt_sources",
-                operations=["locate_rule_placement"],
-            ),
-        ]
-
-        return Pipeline(
-            name="rule-locator-pipeline",
-            operations=operations,
-            steps=steps,
-            **kwargs,
-        )
-
-    def _find_prompt_functions(self, functions, model="gpt-4o"):
+    def _find_prompt_functions(self, functions: list["FunctionInfo"]) -> list[dict]:
         """
         Identify functions that contain prompts or define agents.
 
@@ -313,6 +218,7 @@ class RuleLocator:
         # Format functions data
         functions_data = [
             {
+                "id": function.id,
                 "name": function.name,
                 "file_path": function.file_path,
                 "signature": function.signature,
@@ -345,7 +251,7 @@ class RuleLocator:
                 pipeline = self._build_prompt_finder_pipeline(
                     datasets=datasets,
                     output=PipelineOutput(type="file", path=out_path),
-                    default_model=model,
+                    default_model=self.model,
                 )
                 pipeline.run()
 
@@ -377,7 +283,7 @@ class RuleLocator:
             print(f"Error in find_prompt_functions: {str(e)}")
             return []
 
-    def _find_prompt_data_files(self, data_files, model="gpt-4o"):
+    def _find_prompt_data_files(self, data_files):
         """
         Identify JSON and YAML files that contain prompts or agent definitions.
 
@@ -391,6 +297,7 @@ class RuleLocator:
         # Format data files
         data_files_data = [
             {
+                "id": data_file.id,
                 "file_path": data_file.file_path,
                 "file_type": data_file.file_type,
                 "content": data_file.content,
@@ -421,7 +328,7 @@ class RuleLocator:
                 pipeline = self._build_datafile_prompt_finder_pipeline(
                     datasets=datasets,
                     output=PipelineOutput(type="file", path=out_path),
-                    default_model=model,
+                    default_model=self.model,
                 )
                 pipeline.run()
 
@@ -441,7 +348,21 @@ class RuleLocator:
                             pdf.update(df)
                             break
 
-                return prompt_data_files
+                formatted_data_files = []
+                for df in prompt_data_files:
+                    formatted_data_file = {
+                        "id": df["id"],
+                        "name": f"data_file_{os.path.basename(df['file_path'])}",
+                        "file_path": df["file_path"],
+                        "signature": f"DataFile ({df['file_type']})",
+                        "source_code": df["content"],
+                        "docstring": "",
+                        "prompt_type": df.get("prompt_type", ""),
+                        "prompt_segments": df.get("prompt_segments", []),
+                    }
+                    formatted_data_files.append(formatted_data_file)
+
+                return formatted_data_files
 
             finally:
                 # Clean up temp files
@@ -453,34 +374,7 @@ class RuleLocator:
             print(f"Error in find_prompt_data_files: {str(e)}")
             return []
 
-    def _prepare_data_files_for_rule_location(self, prompt_data_files):
-        """
-        Convert DataFileInfo prompt objects to a format compatible with the rule locator pipeline.
-
-        Args:
-            prompt_data_files: List of data files containing prompts
-
-        Returns:
-            list: List of formatted data file prompts that can be used with locate_rules
-        """
-        formatted_data_files = []
-
-        for data_file in prompt_data_files:
-            # Create a structure similar to function info but for data files
-            formatted_data_file = {
-                "name": f"data_file_{os.path.basename(data_file['file_path'])}",
-                "file_path": data_file["file_path"],
-                "signature": f"DataFile ({data_file['file_type']})",
-                "source_code": data_file["content"],
-                "docstring": "",
-                "prompt_type": data_file.get("prompt_type", ""),
-                "prompt_segments": data_file.get("prompt_segments", []),
-            }
-            formatted_data_files.append(formatted_data_file)
-
-        return formatted_data_files
-
-    def _locate_rules(self, prompt_sources, model="gpt-4o"):
+    def _locate_rules(self, prompt_functions: list[dict], prompt_data_files: list[dict]) -> list[CodeModification]:
         """
         Locate which prompts should be updated with which rules.
 
@@ -492,148 +386,114 @@ class RuleLocator:
         Returns:
             list: List of rule placement recommendations
         """
-        if not prompt_sources:
+        if not prompt_functions and not prompt_data_files:
             print("No sources with prompts found")
             return []
 
         # Prepare data for pipeline - one entry per rule
-        rules_with_prompt_sources = []
 
-        # Process each type of rule
-        for rule in self.rules:
-            for rule_type in ["always", "never", "tips"]:
-                for rule_text in rule.get(rule_type, []):
-                    # Create entry with the rule and all prompt sources
-                    rules_with_prompt_sources.append(
-                        {
-                            "rule_type": rule_type,
-                            "rule_text": rule_text,
-                            "prompt_functions": prompt_sources,  # Keep the key name for backward compatibility
-                        }
-                    )
+        lm = instructor.from_litellm(litellm.completion)
 
-        if not rules_with_prompt_sources:
-            return []
+        modifications = lm.create(
+            model=self.model,
+            response_model=list[CodeModification],
+            max_retries=3,
+            messages=[
+                {
+                    "role": "system",
+                    "content": dedent(
+                        """\
+                        You are an expert in analyzing LLM prompts. Your task is to determine
+                        where to insert specific rules into existing prompts.
 
-        # Write rule data to a temp JSON file
-        try:
-            with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as inf:
-                json.dump(rules_with_prompt_sources, inf)
-                in_path = inf.name
+                        You will be given:
+                        1. Source code with function and data file IDs
+                        2. Rules ("always"/"never") and tips that need to be added to the functions
 
-            # Reserve a temp file for the pipeline output
-            out_fd, out_path = tempfile.mkstemp(suffix=".json")
-            os.close(out_fd)
+                        You need to determine which function(s) and data file(s) should
+                        be modified to add the rules/tips.
 
-            try:
-                datasets = {
-                    "rules_with_prompt_sources": Dataset(
-                        type="file",
-                        path=in_path,
-                    )
-                }
-                pipeline = self._build_rule_locator_pipeline(
-                    datasets=datasets,
-                    output=PipelineOutput(type="file", path=out_path),
-                    default_model=model,
-                )
-                pipeline.run()
+                        A good match is one where:
+                        - The rule enhances the prompt's purpose
+                        - The rule is relevant to the prompt's context
+                        - The rule complements the existing instructions
 
-                # Read back the results
-                with open(out_path) as f:
-                    results = json.load(f)
+                        IMPORTANT: You are NOT being asked to apply or implement the rule/tips by
+                        rewriting the prompt. Your task is to map the rules/tips to the prompt that
+                        should be modified.
 
-                # Flatten placements from all rules
-                all_placements = []
-                for result in results:
-                    placements = result.get("placements", [])
-                    for placement in placements:
-                        placement["rule_type"] = result.get("rule_type")
-                        placement["rule_text"] = result.get("rule_text")
-                    all_placements.extend(placements)
+                        Ensure that all rules/tips are mapped to a prompt.
 
-                return all_placements
+                        Take a deep breath and think step by step.
+                        """
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": dedent(
+                        f"""\
+                        Here are the functions and their source code:
 
-            finally:
-                # Clean up temp files
-                if os.path.exists(in_path):
-                    os.remove(in_path)
-                if os.path.exists(out_path):
-                    os.remove(out_path)
-        except Exception as e:
-            print(f"Error in locate_rules: {str(e)}")
-            return []
+                        <functions>
+                        {json.dumps(prompt_functions)}
+                        </functions>
 
-    def _save_rule_placements(self, placements):
-        """
-        Save rule placement recommendations to the database.
+                        <data_files>
+                        {json.dumps(prompt_data_files)}
+                        </data_files>
 
-        Args:
-            placements: List of rule placement recommendations
-        """
-        from aiai.app.models import DiscoveredRule
+                        Here are the rules and tips to add:
 
-        for placement in placements:
-            # Only process high confidence placements
-            if placement.get("confidence", 0) >= 70:
-                # Create or update rule record
-                rule_text = f"{placement.get('rule_type', 'rule')}: {placement.get('rule_text', '')}"
+                        <rules>
+                        {json.dumps(self.rules)}
+                        </rules>
+                        """
+                    ),
+                },
+            ],
+        )
+        return modifications
 
-                # Get or create the rule
-                rule, created = DiscoveredRule.objects.get_or_create(
-                    rule_text=rule_text,
-                    defaults={"confidence": placement.get("confidence", 0)},
-                )
-
-                # Update confidence if not created
-                if not created and placement.get("confidence", 0) > rule.confidence:
-                    rule.confidence = placement.get("confidence", 0)
-                    rule.save()
-
-    def _save_rules_to_db(self, placements):
-        from aiai.app.models import DiscoveredRule
-
-        objects = [
-            DiscoveredRule(
-                rule_type=p.get("rule_type", ""),
-                rule_text=p.get("rule_text", ""),
-                function_name=p.get("source_name", ""),
-                file_path=p.get("file_path", ""),
-                target_code_section=p.get("target_code_section", ""),
-                confidence=p.get("confidence", 0),
-            )
-            for p in placements
-        ]
-        DiscoveredRule.objects.bulk_create(objects)
-
-    def perform(self, save_to_db=True):
+    def perform(self):
         setup_django()
         from aiai.app.models import DataFileInfo, FunctionInfo
 
-        # Get all functions from the database
-        functions = FunctionInfo.objects.all()
-        prompt_functions = self._find_prompt_functions(functions)
+        prompt_functions = self._find_prompt_functions(FunctionInfo.objects.all())
+        prompt_data_files = self._find_prompt_data_files(DataFileInfo.objects.all())
 
-        data_files = DataFileInfo.objects.all()
-        prompt_data_files = self._find_prompt_data_files(data_files)
-        formatted_data_files = self._prepare_data_files_for_rule_location(prompt_data_files)
+        # prompt_sources = prompt_functions + formatted_data_files
 
-        prompt_sources = prompt_functions + formatted_data_files
+        print("Locating optimal modifications...")
+        raw_code_mods = self._locate_rules(prompt_functions, prompt_data_files)
 
-        print("Locating optimal rule placements...")
-        placements = self._locate_rules(prompt_sources)
-        if save_to_db:
-            self._save_rules_to_db(placements)
-        return placements
+        code_mods: list[dict] = []
+        for mod in raw_code_mods:
+            if mod.function_id:
+                code_mods.append(
+                    {
+                        "target_type": "function",
+                        "target": next(f for f in prompt_functions if f["id"] == mod.function_id),
+                        "mods": mod.model_dump(include=["always", "never", "tips"]),
+                    }
+                )
+            elif mod.data_file_id:
+                code_mods.append(
+                    {
+                        "target_type": "data_file",
+                        "target": next(f for f in prompt_data_files if f["id"] == mod.data_file_id),
+                        "mods": mod.model_dump(include=["always", "never", "tips"]),
+                    }
+                )
+        return code_mods
 
 
 if __name__ == "__main__":
     setup_django()
 
     from aiai.app.models import OtelSpan
-    from aiai.optimizer.rule_extractor import generate_rules
+    from aiai.optimizer.rule_extractor import generate_rules_and_tips
 
     logs = OtelSpan.objects.all()
-    rules = generate_rules(logs)
+    rules = generate_rules_and_tips(logs)
 
     placements = RuleLocator(rules).perform()

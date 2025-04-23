@@ -35,7 +35,7 @@ def process_config():
     import yaml
     with open('config.yaml', 'r') as f:
         return yaml.safe_load(f)
-        
+
 def unrelated_function():
     \"\"\"This function doesn't reference any data files.\"\"\"
     return "Hello World"
@@ -293,7 +293,7 @@ def test_save_data_files_to_db_crewai(test_directory):
     assert crew_references.exists(), "Expected references from crew.py but found none"
 
     # Now analyze the data files using DataFileAnalyzer
-    data_analyzer = DataFileAnalyzer(model="gpt-4o")
+    data_analyzer = DataFileAnalyzer(model="openai/gpt-4.1-nano")
     analyzed_count = data_analyzer.analyze()
 
     # Verify that the file was analyzed

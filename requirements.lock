@@ -503,6 +503,8 @@ pydantic-core==2.33.1
     # via pydantic
 pydantic-settings==2.8.1
     # via langchain-community
+pydash==8.0.5
+    # via aiai
 pydot==3.0.4
     # via aiai
 pygments==2.19.1
@@ -701,6 +703,7 @@ typing-extensions==4.13.2
     # via opentelemetry-sdk
     # via pydantic
     # via pydantic-core
+    # via pydash
     # via pyright
     # via referencing
     # via sqlalchemy

@@ -1,46 +1,53 @@
 import pytest
 
 from aiai.app.models import FunctionInfo, SyntheticDatum
-from aiai.synthesizer.data import DataGenerator
+from aiai.optimizer.contextualizer import AgentContext
+from aiai.synthesizer.data import generate_data
 
 
-def test_data_generator_data(mock_function_info: list[FunctionInfo], mock_examples: list[str]):
-    generator = DataGenerator(
-        examples=2,
-        seed=42,
-        prompt_model="openai/gpt-4.1-mini",
-        data_model="openai/gpt-4.1-mini",
+@pytest.fixture
+def mock_agent_context():
+    class MockAnalysis:
+        expert_persona = "You are an expert lead engineer"
+
+    class MockPrompts:
+        synthetic_data = "Generate synthetic data for testing"
+
+    context = AgentContext(
+        source_code="",
+        analysis=MockAnalysis(),
+        optimizer_prompts=MockPrompts(),
     )
-    assert generator.examples == 2
-    assert generator.seed == 42
-    assert generator.prompt_model == "openai/gpt-4.1-mini"
-    assert generator.data_model == "openai/gpt-4.1-mini"
+    return context
 
-    prompt = generator.prompt(mock_function_info, mock_examples)
-    assert "lead" in str(prompt)
-    assert "<examples>" in str(prompt)
-    assert "<instructions>" in str(prompt)
 
-    data = generator.data(prompt)
+def test_generate_data(mock_agent_context, mock_function_info, mock_examples):
+    data = generate_data(
+        agent_context=mock_agent_context,
+        count=2,
+        seed=42,
+        examples=mock_examples,
+        model="openai/gpt-4.1-mini",
+        save_to_db=False,
+    )
+
     assert len(data) == 2
     for d in data:
         assert isinstance(d, SyntheticDatum)
         assert d.input_data is not None
-        assert "LLM" in d.input_data
 
 
 @pytest.mark.django_db
-def test_data_generator_perform(mock_function_info: list[FunctionInfo]):
+def test_generate_data_with_db(mock_agent_context, mock_function_info):
     FunctionInfo.objects.bulk_create(mock_function_info)
 
-    generator = DataGenerator(
-        examples=2,
+    data = generate_data(
+        agent_context=mock_agent_context,
+        count=2,
         seed=42,
-        prompt_model="openai/gpt-4.1-mini",
-        data_model="openai/gpt-4.1-mini",
+        model="openai/gpt-4.1-mini",
     )
-    prompt, data = generator.perform()
-    assert isinstance(prompt, str)
+
     assert isinstance(data, list)
     assert len(data) == 2
     for d in data:

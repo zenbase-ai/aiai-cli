@@ -5,15 +5,17 @@ from collections import defaultdict
 from pathlib import Path
 from textwrap import dedent
 
+import pydash
 from docetl.api import ClusterOp, Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep, ReduceOp, UnnestOp
 
-from aiai.app.models import EvalRun, FunctionInfo, OtelSpan
+from aiai.app.models import EvalRun, OtelSpan
+from aiai.optimizer.contextualizer import AgentContext
 from aiai.utils import setup_django
 
 cwd = Path(__file__).parent
 
 
-def build_rules_pipeline(**kwargs) -> Pipeline:
+def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
     """
     Build a pipeline for extracting rules from traces.
 
@@ -30,28 +32,40 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
             type="map",
             litellm_completion_kwargs={"temperature": 1},
             prompt=dedent(
-                """\
+                f"""\
                 <instructions>
+                    {context.analysis.expert_persona}
+
                     You are approximating a reward function for an agent based on their outputs.
-                    You are given the source code of the agent, the trace, and the earned reward.
+                    You are given the source code of the agent, an analysis of the agent,
+                    an execution trace, and the earned reward.
 
                     Put yourself in the shoes of the agent and generate a hypothetical reasoning trace that
                     leads to the reward.
 
-                    First, put yourself in the agent's shoes and consider that it is thinking.
-                    Think about what it is optimizing for.
-                    Put yourself in the agent's user's shoes, and imagine their train of thought.
-                    Then, merge the perspectives into a single hypothetical reasoning trace.
-                    Finally, ensure that the reasoning trace's conclusion is that the result
-                    earns specified reward.
+                    Consider the goal of the agent and what the user is trying to achieve with the agent.
+                    Ensure that the reasoning trace's logically leads to the specified reward.
+
+                    {context.optimizer_prompts.reward_reasoning}
                 </instructions>
 
-                <source_code>
-                    {{input.source_code}}
-                </source_code>
-
-                <trace>
-                    {{input.trace}}
+                <agent>
+                    <source_code>
+                        {context.source_code}
+                    </source_code>
+                    <analysis>
+                        {context.analysis.model_dump_json()}
+                    </analysis>
+                </agent>
+                """
+                + """\
+                <trace id="{{input.trace_id}}">
+                    {% for span in input.trace %}
+                        <span id="{{span.span_id}}">
+                            <prompt>{{span.prompt}}</prompt>
+                            <completion>{{span.completion}}</completion>
+                        </span>
+                    {% endfor %}
                 </trace>
 
                 <reward>
@@ -77,23 +91,37 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
             name="traces_to_patterns",
             type="map",
             prompt=dedent(
-                """\
+                f"""\
                 <instructions>
+                    {context.analysis.expert_persona}
+
                     Analyze the following LLM trace to identify patterns that resulted in the agent
                     receiving the reward. You will be given the agent source code, the trace, and the reward.
 
-                    Your job is to deeply analyze the trace and to identify patterns that led to the reward.
-
                     Make sure the patterns you identify are specific and detailed. We will then be clustering
                     these patterns to identify groups and then formulate rules to improve outcomes.
+
+                    {context.optimizer_prompts.traces_to_patterns}
                 </instructions>
 
-                <source_code>
-                    {{input.source_code}}
-                </source_code>
-
-                <trace>
-                    {{input.trace}}
+                <agent>
+                    <source_code>
+                        {context.source_code}
+                    </source_code>
+                    <analysis>
+                        <what>{context.analysis.what}</what>
+                        <how>{context.analysis.how}</how>
+                    </analysis>
+                </agent>
+                """
+                + """\
+                <trace id="{{input.trace_id}}">
+                    {% for span in input.trace %}
+                        <span id="{{span.span_id}}">
+                            <prompt>{{span.prompt}}</prompt>
+                            <completion>{{span.completion}}</completion>
+                        </span>
+                    {% endfor %}
                 </trace>
 
                 <reward>
@@ -117,17 +145,28 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
             ],
             output_key="cluster_patterns",
             summary_prompt=dedent(
-                """\
+                f"""\
                 <instructions>
+                    {context.analysis.expert_persona}
+
                     We've identified patterns in LLM traces that result in varying outcomes.
                     Now, your job is to analyze and derive insights from these patterns to inform future runs.
                     Focus on identifying insights that will help the agent earn greater rewards.
+
+                    {context.optimizer_prompts.patterns_to_insights}
                 </instructions>
 
-                <source_code>
-                    {{input.source_code}}
-                </source_code>
-
+                <agent>
+                    <source_code>
+                        {context.source_code}
+                    </source_code>
+                    <analysis>
+                        <what>{context.analysis.what}</what>
+                        <how>{context.analysis.how}</how>
+                    </analysis>
+                </agent>
+                """
+                + """\
                 <patterns>
                     {% for input in inputs %}
                         {% if input.patterns %}
@@ -165,21 +204,31 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
             type="reduce",
             reduce_key="insights",
             prompt=dedent(
-                """\
+                f"""\
                 <instructions>
+                    {context.analysis.expert_persona}
+
                     You are an expert in analyzing model outputs and task performance. We have analyzed traces
                     that have earned rewards. We have also derived insights from the patterns in these traces.
 
-                    Your job is to suggest changes to the prompts to improve the agent's performance.
+                    Your job is to suggest changes to the prompts to improve the agent's performance. These changes
+                    are in the form of rules and tips for the LLM to follow. These rules and tips should be specific,
+                    detailed, simple, and actionable for the LLM without any code changes.
 
-                    The changes should be specific, detailed, simple, and actionable for the LLM without any
-                    code changes.
+                    {context.optimizer_prompts.insights_to_rules}
                 </instructions>
 
-                <source_code>
-                    {{inputs[0].source_code}}
-                </source_code>
-
+                <agent>
+                    <source_code>
+                        {context.source_code}
+                    </source_code>
+                    <analysis>
+                        <what>{context.analysis.what}</what>
+                        <how>{context.analysis.how}</how>
+                    </analysis>
+                </agent>
+                """
+                + """\
                 <insights>
                     {% for input in inputs %}
                         {% if input.insights %}
@@ -242,22 +291,34 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
                 }
             },
             prompt=dedent(
-                """\
+                f"""\
                 <instructions>
-                    You are an expert at analysis and LLM prompting. We have analyzed a set of LLM traces
-                    that have earned rewards. We have also derived insights from the patterns in these traces,
+                    {context.analysis.expert_persona}
+
+                    We have analyzed a set of LLM traces that have earned rewards.
+                    We have also derived insights from the patterns in these traces,
                     and now we have a set of rules and tips.
 
                     Your job is to synthesize the suggestions into a single set of changes to the prompts to
                     improve the agent's performance. Identify the most important changes and combine them into
                     a single set of changes. Each group of changes should be specific, detailed, simple, and
                     actionable for the LLM. Each group should have at most 5 items.
+
+                    Rules must not be about code execution (e.g. environment variables, API keys, etc.)
+
+                    {context.optimizer_prompts.synthesize_rules}
                 </instructions>
 
-                <source_code>
-                    {{inputs[0].source_code}}
-                </source_code>
-
+                <agent>
+                    <source_code>
+                        {context.source_code}
+                    </source_code>
+                    <analysis>
+                        {context.analysis.model_dump_json()}
+                    </analysis>
+                </agent>
+                """
+                + """\
                 <suggestions>
                     <always>
                         {% for input in inputs %}
@@ -291,7 +352,7 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
                       (format as direct actions: "Provide complete information")
                     • Never: ONLY include rules that are absolutely clear-cut prohibitions
                       (format as direct actions, NOT as avoidance statements: "Return invalid results"
-                      NOT "Avoid returning invalid results")
+                      NOT "Avoid returning invalid results"). Presume that the "Never" is prepended to the rule.
 
                     IMPORTANT: Format "never" rules as positive statements of what not to do,
                     NOT negative avoidance statements.
@@ -305,6 +366,7 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
                     - "Avoid returning invalid results"
                     - "Do not use misleading information"
                     - "Don't ignore key requirements"
+                    - "must not ..."
 
                     2. Tips (positive factors that contribute to success):
                     Format each tip as a clear, direct statement about what to look for or consider.
@@ -343,7 +405,7 @@ def build_rules_pipeline(**kwargs) -> Pipeline:
     )
 
 
-def generate_rules(model="o4-mini", cleanup=True):
+def generate_rules_and_tips(context: AgentContext, model="openai/o4-mini") -> dict:
     """
     Extract rules from a collection of traces.
 
@@ -363,10 +425,10 @@ def generate_rules(model="o4-mini", cleanup=True):
             "tips": [],
         }
 
-    agent_run_ids = [e.agent_run_id for e in evals]
+    trace_ids = [e.trace_id for e in evals]
     spans = defaultdict[str, list[OtelSpan]](list)
-    for span in OtelSpan.objects.filter(agent_run_id__in=agent_run_ids).order_by("start_time").all():
-        spans[span.agent_run_id].append(span)
+    for span in OtelSpan.objects.filter(trace_id__in=trace_ids).order_by("start_time").all():
+        spans[span.trace_id].append(span)
 
     if not spans:
         return {
@@ -375,14 +437,11 @@ def generate_rules(model="o4-mini", cleanup=True):
             "tips": [],
         }
 
-    source_code = {name: source_code for name, source_code in FunctionInfo.objects.values_list("name", "source_code")}
-
     runs = []
     for run in evals:
         runs.append(
             {
-                "agent_run_id": run.agent_run_id,
-                "source_code": source_code,
+                "trace_id": run.trace_id,
                 "trace": [
                     {
                         "prompt": span.prompt,
@@ -391,55 +450,47 @@ def generate_rules(model="o4-mini", cleanup=True):
                         "trace_id": span.trace_id,
                         "span_id": span.span_id,
                     }
-                    for span in spans[run.agent_run_id]
+                    for span in spans[run.trace_id]
                 ],
                 "reward": run.reward,
             }
         )
 
     # Filter and join traces into one string
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+        json.dump(runs, f)
+        in_path = f.name
+
+    # Reserve a temp file for the pipeline output
+    out_fd, out_path = tempfile.mkstemp(suffix=".json")
+    os.close(out_fd)
+
     try:
-        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
-            json.dump(runs, f)
-            in_path = f.name
-
-        # Reserve a temp file for the pipeline output
-        out_fd, out_path = tempfile.mkstemp(suffix=".json")
-        os.close(out_fd)
-
-        try:
-            datasets = {
-                "tasks": Dataset(
-                    type="file",
-                    path=in_path,
-                )
-            }
-            pipeline = build_rules_pipeline(
-                datasets=datasets,
-                output=PipelineOutput(type="file", path=out_path),
-                default_model=model,
+        datasets = {
+            "tasks": Dataset(
+                type="file",
+                path=in_path,
             )
-            pipeline.run()
-
-            # Read back your always/never/tips
-            with open(out_path) as f:
-                rules = json.load(f)
-            return rules
-
-        finally:
-            # Clean up temp files
-            if cleanup:
-                if os.path.exists(in_path):
-                    os.remove(in_path)
-                if os.path.exists(out_path):
-                    os.remove(out_path)
-    except Exception:
-        # Return an empty result in case of error
-        return {
-            "always": [],
-            "never": [],
-            "tips": [],
         }
+        pipeline = build_pipeline(
+            context=context,
+            datasets=datasets,
+            output=PipelineOutput(type="file", path=out_path),
+            default_model=model,
+        )
+        pipeline.run()
+
+        # Read back your always/never/tips
+        with open(out_path) as f:
+            rules = json.load(f)
+        return pydash.pick(rules[0], "always", "never", "tips")
+
+    finally:
+        # Clean up temp files
+        if os.path.exists(in_path):
+            os.remove(in_path)
+        if os.path.exists(out_path):
+            os.remove(out_path)
 
 
 if __name__ == "__main__":
@@ -447,5 +498,5 @@ if __name__ == "__main__":
     from aiai.app.models import OtelSpan
 
     traces = list(OtelSpan.objects.all())
-    rules = generate_rules(traces)
+    rules = generate_rules_and_tips(traces)
     print(rules)

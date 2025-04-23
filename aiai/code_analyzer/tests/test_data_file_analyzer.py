@@ -177,7 +177,7 @@ def test_analyze_all_files(setup_database):
     from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
 
     # Create the analyzer with explicit model choice
-    analyzer = DataFileAnalyzer(model="gpt-4o")
+    analyzer = DataFileAnalyzer(model="openai/gpt-4.1-nano")
 
     # Run analysis on all files
     result_count = analyzer.analyze()
@@ -229,7 +229,7 @@ def test_analyze_specific_file(setup_database):
     file_path = setup_database["prompt_file"].file_path
 
     # Create the analyzer and analyze the specific file
-    analyzer = DataFileAnalyzer(model="gpt-4o")
+    analyzer = DataFileAnalyzer(model="openai/gpt-4.1-nano")
     result = analyzer.analyze(file_path=file_path)
 
     # Should have analyzed 1 file
@@ -262,7 +262,7 @@ def test_analyze_with_return_results(setup_database):
     DataFileAnalysis.objects.all().delete()
 
     # Create the analyzer
-    analyzer = DataFileAnalyzer(model="gpt-4o")
+    analyzer = DataFileAnalyzer(model="openai/gpt-4.1-nano")
 
     # Test with a specific file
     file_path = setup_database["prompt_file"].file_path
@@ -295,7 +295,7 @@ def test_analyze_file_not_found(setup_database):
     from aiai.code_analyzer.data_file_analyzer import DataFileAnalyzer
 
     # Create the analyzer
-    analyzer = DataFileAnalyzer(model="gpt-4o")
+    analyzer = DataFileAnalyzer(model="openai/gpt-4.1-nano")
 
     # Try to analyze a non-existent file
     result = analyzer.analyze(file_path="/nonexistent/file.json")

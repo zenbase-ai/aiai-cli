@@ -11,7 +11,7 @@ import pytest
 # Add the parent directory to the path if needed for direct test execution
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from aiai.code_analyzer.analyzer import CodeAnalyzer
+from aiai.code_analyzer.code_analyzer import CodeAnalyzer
 
 
 @pytest.fixture

@@ -33,10 +33,10 @@
 
 **Validation:**
 
-6.  The CLI attempts to run the specified `entrypoint.py` using `ScriptTracer` to ensure it's executable and capture its execution.
-```
-with ScriptTracer(self.script) as tracer:
-    run_id, output_data = tracer()
+6.  The CLI attempts to run the specified `entrypoint.py` using `PyScriptTracer` to ensure it's executable and capture its execution.
+```python
+with PyScriptTracer(self.script) as tracer:
+    trace_id, output_data = tracer()
 ```
 
 7.  **If Failure:**

@@ -1,44 +1,53 @@
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 import instructor
 import litellm
 from pydantic import BaseModel, Field, computed_field
 
-from aiai.synthesizer.utils import get_examples, prepare_messages
+from aiai.optimizer.contextualizer import AgentContext
 
 if TYPE_CHECKING:
-    from aiai.app.models import FunctionInfo, SyntheticEval
+    from aiai.app.models import SyntheticEval
 
 
 class AbstractEval(BaseModel):
-    context: str = Field(description="The context of the evaluation.")
     instructions: str = Field(description="Instructions for the evaluator.")
     always: list[str] = Field(description="A good output must always do the following")
     never: list[str] = Field(description="A good output must never do the following")
     tips: list[str] = Field(description="A list of tips for the evaluator to consider.")
+    background_context: str = Field(description="The context of the evaluation.")
 
     def __str__(self) -> str:
+        tips = "\n".join(f"{i + 1}. {item}" for i, item in enumerate(self.tips))
+        always = "\n".join(f"{i + 1}. {item}" for i, item in enumerate(self.always))
+        never = "\n".join(f"{i + 1}. {item}" for i, item in enumerate(self.never))
         return dedent(
-            f"""\
+            """\
             <context>
-            {self.context}
+            {context}
             </context>
             <instructions>
-            {self.instructions}
+            {instructions}
             </instructions>
+            <tips>
+            {tips}
+            </tips>
             <always>
-            {self.always}
+            {always}
             </always>
             <never>
-            {self.never}
+            {never}
             </never>
-            <tips>
-            {self.tips}
-            </tips>\
             """
+        ).format(
+            context=self.background_context,
+            instructions=self.instructions,
+            tips=tips,
+            always=always,
+            never=never,
         )
 
 
@@ -97,56 +106,112 @@ class HeadToHeadEval(AbstractEval):
 
 @dataclass
 class EvalGenerator:
-    prompt_model: str = "openai/o4-mini"
-    sys_prompt: str = dedent(
-        """\
-        You are an expert AI engineer looking at source code for an agent.
-        Your task is to generate the prompt for an LLM judge that will be used to
-        evaluate a single final output of the agent.
-
-        Rules must only specify knowledge that is available in the source code and
-        context.
-        """
-    )
+    agent_context: AgentContext
+    model: str = "openai/o4-mini"
 
     def __post_init__(self):
         self.lm = instructor.from_litellm(litellm.completion)
 
     def rules(
         self,
-        fns: list["FunctionInfo"],
-        examples: list[str] | None = None,
+        examples: list | None = None,
     ) -> RulesEval:
-        messages = prepare_messages(self.sys_prompt, fns, examples)
         return self.lm.create(
-            model=self.prompt_model,
+            model=self.model,
             response_model=RulesEval,
-            messages=messages,
+            max_retries=3,
+            messages=[
+                {
+                    "role": "system",
+                    "content": dedent(
+                        f"""\
+                        {self.agent_context.analysis.expert_persona}
+
+                        Your job is to generate a prompt for an LLM judge.
+                        Tips and rules must only specifiy knowledge that is available to the LLM.
+                        """
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": dedent(
+                        f"""\
+                        Here is the source code for the agent:
+
+                        <agent>
+                            <source_code>
+                                {self.agent_context.source_code}
+                            </source_code>
+                            <analysis>
+                                <what>{self.agent_context.analysis.what}</what>
+                                <how>{self.agent_context.analysis.how}</how>
+                            </analysis>
+                        </agent>
+
+                        And some examples of input data:
+                        <examples>
+                            {examples}
+                        </examples>
+                        """
+                    ),
+                },
+            ],
         )
 
     def head_to_head(
         self,
-        fns: list["FunctionInfo"],
-        examples: list[str] | None = None,
+        examples: list | None = None,
     ) -> HeadToHeadEval:
-        messages = prepare_messages(self.sys_prompt, fns, examples)
         return self.lm.create(
-            model=self.prompt_model,
+            model=self.model,
             response_model=HeadToHeadEval,
-            messages=messages,
+            max_retries=3,
+            messages=[
+                {
+                    "role": "system",
+                    "content": dedent(
+                        f"""\
+                        {self.agent_context.analysis.expert_persona}
+
+                        Your job is to generate a prompt for an LLM judge.
+                        Tips and rules must only specifiy knowledge that is available to the LLM.
+                        """
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": dedent(
+                        f"""\
+                        Here is the source code for the agent:
+
+                        <agent>
+                            <source_code>
+                                {self.agent_context.source_code}
+                            </source_code>
+                            <analysis>
+                                <what>{self.agent_context.analysis.what}</what>
+                                <how>{self.agent_context.analysis.how}</how>
+                            </analysis>
+                        </agent>
+
+                        And some examples of input data:
+                        <examples>
+                            {examples}
+                        </examples>
+                        """
+                    ),
+                },
+            ],
         )
 
-    def perform(self, fns: list["FunctionInfo"], examples: list[str] | None = None):
-        from aiai.app.models import FunctionInfo, SyntheticEval
-
-        fns = fns or list(FunctionInfo.objects.all())
-        examples = examples or get_examples(fns)
+    def perform(self, examples: list | None = None):
+        from aiai.app.models import SyntheticEval
 
         # Run rules and head_to_head evaluations in parallel
         with ThreadPoolExecutor(max_workers=2) as pool:
-            futures = [
-                pool.submit(self.rules, fns, examples),
-                pool.submit(self.head_to_head, fns, examples),
+            futures: list[Future[RulesEval | HeadToHeadEval]] = [
+                pool.submit(self.rules, examples),
+                pool.submit(self.head_to_head, examples),
             ]
             rules_eval, head_to_head_eval = SyntheticEval.objects.bulk_create(
                 [f.result().to_db_model() for f in futures],
@@ -162,26 +227,27 @@ class EvalResult(TypedDict, total=False):
 @dataclass
 class SyntheticEvalRunner:
     eval: "SyntheticEval"
-    prompt_model: str = "openai/o4-mini"
+    model: str = "openai/o4-mini"
 
     def __post_init__(self):
         self.lm = instructor.from_litellm(litellm.completion)
 
         if self.eval.kind == "rules":
-            self.result_model = RulesEval.Result
+            self.response_model = RulesEval.Result
         elif self.eval.kind == "head_to_head":
-            self.result_model = HeadToHeadEval.Result
+            self.response_model = HeadToHeadEval.Result
         else:
             raise ValueError(f"Unknown eval kind: {self.eval.kind}")
 
-    def __call__(self, agent_output: str) -> EvalResult:
+    def __call__(self, agent_output: Any) -> EvalResult:
         user_message = f"Here is the agent's output: <output>\n{agent_output}\n</output>"
         result: RulesEval.Result | HeadToHeadEval.Result = self.lm.create(
-            model=self.prompt_model,
+            model=self.model,
+            response_model=self.response_model,
+            max_retries=3,
             messages=[
                 {"role": "system", "content": self.eval.prompt},
                 {"role": "user", "content": user_message},
             ],
-            response_model=self.result_model,
         )
         return result.model_dump()

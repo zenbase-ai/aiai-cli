@@ -1,14 +1,12 @@
 from datetime import datetime
-from decimal import Decimal
 from typing import Any
 
 from django.db import models
 
 
 class OtelSpan(models.Model):
-    agent_run_id: str = models.CharField(max_length=32, db_index=True, null=False, blank=False)
-    trace_id: str = models.TextField(db_index=True, null=False, blank=False)
-    span_id: str = models.TextField(db_index=True, null=False, blank=False)
+    trace_id: str = models.TextField(null=False, blank=False)
+    span_id: str = models.TextField(primary_key=True, db_index=True, null=False, blank=False)
     start_time: datetime = models.DateTimeField(null=False, blank=False)
     end_time: datetime = models.DateTimeField(null=False, blank=False)
     attributes: dict[str, Any] = models.JSONField(null=False, blank=False)
@@ -22,7 +20,6 @@ class DiscoveredRule(models.Model):
     function_name: str = models.TextField(default="")
     file_path: str = models.TextField(default="")
     target_code_section: str = models.TextField(default="")
-    confidence: Decimal = models.DecimalField(max_digits=5, decimal_places=2)
 
 
 class SyntheticEval(models.Model):
@@ -43,12 +40,11 @@ class SyntheticDatum(models.Model):
 
 
 class EvalRun(models.Model):
-    agent_run_id: str = models.CharField(max_length=32, db_index=True, null=False, blank=False)
+    trace_id: str = models.TextField(null=False, blank=False)
     eval: SyntheticEval | None = models.ForeignKey(SyntheticEval, on_delete=models.CASCADE, null=True)
     input_data: str = models.TextField(null=False, blank=False)
     output_data: str = models.TextField(null=False, blank=False)
     reward: str = models.TextField(null=False, blank=True)
-    created: datetime = models.DateTimeField(auto_now_add=True)
 
 
 class FunctionInfo(models.Model):

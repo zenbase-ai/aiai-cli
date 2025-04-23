@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from docetl.api import Dataset, PipelineOutput
 
-from aiai.app.models import FunctionInfo
 from aiai.optimizer.rule_locator import RuleLocator
 
 
@@ -50,13 +49,11 @@ def mock_prompt_functions():
 
 @pytest.fixture
 def mock_rules():
-    return [
-        {
-            "always": ["Always do this"],
-            "never": ["Never do that"],
-            "tips": ["Consider this"],
-        }
-    ]
+    return {
+        "always": ["Always do this"],
+        "never": ["Never do that"],
+        "tips": ["Consider this"],
+    }
 
 
 def test_build_prompt_finder_pipeline():
@@ -68,7 +65,9 @@ def test_build_prompt_finder_pipeline():
 
         # Test that the pipeline is built correctly with required parameters
         locator = RuleLocator(rules=[])
-        pipeline = locator._build_prompt_finder_pipeline(datasets=datasets, output=output, default_model="gpt-4o")
+        pipeline = locator._build_prompt_finder_pipeline(
+            datasets=datasets, output=output, default_model="openai/gpt-4.1-nano"
+        )
 
         # Basic assertions about the pipeline structure
         assert pipeline.name == "prompt-finder-pipeline"
@@ -78,27 +77,6 @@ def test_build_prompt_finder_pipeline():
         # Check for specific operations that should be present
         operation_names = [op.name for op in pipeline.operations]
         assert "identify_prompt_functions" in operation_names
-
-
-def test_build_rule_locator_pipeline():
-    # Create a temp file for input/output
-    with tempfile.NamedTemporaryFile(suffix=".json") as tmp_file:
-        # Create test datasets and output
-        datasets = {"rules_with_prompt_sources": Dataset(type="file", path=tmp_file.name)}
-        output = PipelineOutput(type="file", path=tmp_file.name)
-
-        # Test that the pipeline is built correctly with required parameters
-        locator = RuleLocator(rules=[])
-        pipeline = locator._build_rule_locator_pipeline(datasets=datasets, output=output, default_model="gpt-4o")
-
-        # Basic assertions about the pipeline structure
-        assert pipeline.name == "rule-locator-pipeline"
-        assert len(pipeline.operations) > 0
-        assert len(pipeline.steps) > 0
-
-        # Check for specific operations that should be present
-        operation_names = [op.name for op in pipeline.operations]
-        assert "locate_rule_placement" in operation_names
 
 
 @pytest.mark.django_db
@@ -146,8 +124,8 @@ def test_find_prompt_functions(mock_functions):
         mock_build_pipeline.return_value = mock_pipeline
 
         # Call the function under test
-        locator = RuleLocator(rules=[])
-        result = locator._find_prompt_functions(mock_functions, model="gpt-4o")
+        locator = RuleLocator(rules={})
+        result = locator._find_prompt_functions(mock_functions)
 
         # Assertions
         assert len(result) == 1
@@ -158,173 +136,3 @@ def test_find_prompt_functions(mock_functions):
         # Verify Pipeline was called
         mock_build_pipeline.assert_called_once()
         mock_pipeline.run.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_locate_rules(mock_prompt_functions, mock_rules):
-    with (
-        patch("aiai.optimizer.rule_locator.RuleLocator._build_rule_locator_pipeline") as mock_build_pipeline,
-        patch("aiai.optimizer.rule_locator.tempfile.NamedTemporaryFile") as mock_tempfile,
-        patch("aiai.optimizer.rule_locator.tempfile.mkstemp") as mock_mkstemp,
-        patch("aiai.optimizer.rule_locator.json.dump") as _,
-        patch("aiai.optimizer.rule_locator.open", create=True) as mock_open,
-        patch("aiai.optimizer.rule_locator.json.load") as mock_json_load,
-        patch("aiai.optimizer.rule_locator.os.remove") as _,
-        patch("aiai.optimizer.rule_locator.os.close") as _,
-        patch("aiai.optimizer.rule_locator.os.path.exists") as mock_exists,
-    ):
-        # Setup mock temporary files
-        mock_tempfile.return_value.__enter__.return_value.name = "/tmp/mock_input.json"
-        mock_mkstemp.return_value = (5, "/tmp/mock_output.json")
-        mock_exists.return_value = True
-
-        # Mock file open and json load
-        mock_file = MagicMock()
-        mock_open.return_value.__enter__.return_value = mock_file
-
-        # Mock the JSON data that would be read from the output file
-        mock_json_load.return_value = [
-            {
-                "rule_type": "always",
-                "rule_text": "Always do this",
-                "placements": [
-                    {
-                        "source_id": 1,
-                        "source_name": "test_function1",
-                        "file_path": "test/path1.py",
-                        "target_code_section": "prompt = 'Test prompt'",
-                        "confidence": 85,
-                        "reasoning": "This rule fits here because...",
-                    }
-                ],
-            }
-        ]
-
-        # Setup mock pipeline
-        mock_pipeline = MagicMock()
-        mock_build_pipeline.return_value = mock_pipeline
-
-        # Call the function under test
-        locator = RuleLocator(rules=mock_rules)
-        result = locator._locate_rules(mock_prompt_functions, model="gpt-4o")
-
-        # Assertions
-        assert len(result) == 1
-        assert result[0]["source_name"] == "test_function1"
-        assert result[0]["confidence"] == 85
-        assert result[0]["rule_type"] == "always"
-        assert result[0]["rule_text"] == "Always do this"
-
-        # Verify Pipeline was called
-        mock_build_pipeline.assert_called_once()
-        mock_pipeline.run.assert_called_once()
-
-
-@pytest.mark.django_db
-def test_save_rule_placements():
-    with patch("aiai.app.models.DiscoveredRule.objects.get_or_create") as mock_get_or_create:
-        # Setup the mock
-        mock_get_or_create.return_value = (MagicMock(), True)
-
-        # Create test placements
-        placements = [
-            {
-                "rule_type": "always",
-                "rule_text": "Always do this",
-                "source_name": "test_function1",
-                "file_path": "test/path1.py",
-                "target_code_section": "prompt = 'Test prompt'",
-                "confidence": 85,
-                "reasoning": "This rule fits here because...",
-            },
-            {
-                "rule_type": "never",
-                "rule_text": "Never do that",
-                "source_name": "test_function2",
-                "file_path": "test/path2.py",
-                "target_code_section": "another code section",
-                "confidence": 60,  # Below threshold, should be ignored
-                "reasoning": "Another reasoning",
-            },
-        ]
-
-        # Call the function under test
-        locator = RuleLocator(rules=[])
-        locator._save_rule_placements(placements)
-
-        # Verify get_or_create was called once (for the first placement with confidence >= 70)
-        mock_get_or_create.assert_called_once()
-
-        # Verify the arguments to get_or_create
-        args, kwargs = mock_get_or_create.call_args
-        assert kwargs["rule_text"] == "always: Always do this"
-        assert kwargs["defaults"]["confidence"] == 85
-
-
-@pytest.mark.django_db
-def test_integration_with_db():
-    # Create some test functions
-    _ = FunctionInfo.objects.create(
-        name="test_function1",
-        file_path="test/path1.py",
-        line_start=1,
-        line_end=10,
-        signature="def test_function1():",
-        source_code="def test_function1():\n    prompt = 'Test prompt'\n    return prompt",
-        docstring="Test docstring",
-    )
-
-    # Define our test rules
-    test_rules = [
-        {
-            "always": ["Always do this"],
-            "never": ["Never do that"],
-            "tips": ["Consider this"],
-        }
-    ]
-
-    with (
-        patch("aiai.optimizer.rule_locator.RuleLocator._find_prompt_functions") as mock_find_prompt,
-        patch("aiai.optimizer.rule_locator.RuleLocator._find_prompt_data_files") as mock_find_data_files,
-        patch("aiai.optimizer.rule_locator.RuleLocator._locate_rules") as mock_locate_rules,
-        patch("aiai.optimizer.rule_locator.RuleLocator._save_rules_to_db") as mock_save_rules,
-        patch("aiai.optimizer.rule_locator.setup_django") as _,
-    ):
-        # Setup mock return values
-        prompt_functions = [
-            {
-                "name": "test_function1",
-                "file_path": "test/path1.py",
-                "contains_prompt": True,
-                "prompt_type": "instruction_prompt",
-                "prompt_segments": ["Test prompt"],
-                "confidence": 90,
-            }
-        ]
-        mock_find_prompt.return_value = prompt_functions
-        mock_find_data_files.return_value = []
-
-        rule_placements = [
-            {
-                "rule_type": "always",
-                "rule_text": "Always do this",
-                "source_name": "test_function1",
-                "file_path": "test/path1.py",
-                "target_code_section": "prompt = 'Test prompt'",
-                "confidence": 85,
-                "reasoning": "This rule fits here because...",
-            }
-        ]
-        mock_locate_rules.return_value = rule_placements
-
-        # Call perform method
-        locator = RuleLocator(rules=test_rules)
-        placements = locator.perform(save_to_db=True)
-
-        # Verify the correct sequence of function calls
-        mock_find_prompt.assert_called_once()
-        mock_locate_rules.assert_called_once()
-        mock_save_rules.assert_called_once_with(rule_placements)
-
-        # Verify the final result
-        assert placements == rule_placements

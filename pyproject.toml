@@ -22,6 +22,7 @@ dependencies = [
     "aiolimiter>=1.2.1",
     "sorcery>=0.2.2",
     "pandas>=2.2.3",
+    "pydash>=8.0.5",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -31,7 +32,7 @@ crewai = ["crewai==0.114.0", "crewai-tools>=0.40.1"]
 langgraph = ["langgraph>=0.3.31"]
 
 [project.scripts]
-aiai = "aiai.cli.app:app"
+aiai = "aiai:cli"
 
 [build-system]
 requires = ["hatchling"]

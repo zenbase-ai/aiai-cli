@@ -5,7 +5,7 @@ A service that analyzes source code files to generate a dependency graph of func
 and their relationships.
 """
 
-from .analyzer import CodeAnalyzer
+from .code_analyzer import CodeAnalyzer
 from .data_file_analyzer import DataFileAnalyzer
 
 __all__ = ["CodeAnalyzer", "DataFileAnalyzer"]

@@ -25,7 +25,7 @@ class DataFileAnalyzer:
     Identifies files containing prompts, configuration, or data for LLMs.
     """
 
-    def __init__(self, model="gpt-4o"):
+    def __init__(self, model="openai/o4-mini"):
         """Initialize with specified LLM model."""
         self.model = model
 
@@ -145,13 +145,7 @@ class DataFileAnalyzer:
         """
         try:
             # Import docetl
-            from docetl.api import (
-                Dataset,
-                MapOp,
-                Pipeline,
-                PipelineOutput,
-                PipelineStep,
-            )
+            from docetl.api import Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep
 
             # Create temp files for pipeline I/O
             with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as inf:
@@ -320,31 +314,31 @@ class DataFileAnalyzer:
             Your task is to categorize the file and explain its purpose based on its content and code references.
 
             For categorization, use these criteria:
-            
+
             1. PROMPT files:
                - Contains templates, system messages, or user/assistant exchanges
                - May have fields like "prompt", "system", "user", "assistant", "messages", "template"
                - Used to guide LLM interactions or define conversation structure
-            
+
             2. CONFIGURATION files:
                - Contains settings, parameters, or options for LLM or application behavior
                - May include fields like "model", "temperature", "max_tokens", "settings", "config"
                - Used to control behavior of LLMs or related systems
-            
+
             3. DATA files:
                - Contains structured information used by the application
                - May include lists, records, entries, items, or any domain-specific information
                - Often has array/list structures with multiple objects or records
                - Common fields include: "items", "entries", "data", "records", "id", "name"
                - Used to store and retrieve information for application logic
-               - If the file contains entries, records, or listings and doesn't match the prompt or 
+               - If the file contains entries, records, or listings and doesn't match the prompt or
                  configuration criteria, it's most likely a DATA file
-               - IMPORTANT: Files containing collections of items, entities, or records should be 
+               - IMPORTANT: Files containing collections of items, entities, or records should be
                  classified as DATA files even if they don't have code references
-            
+
             4. OTHER files:
                - Files that are LLM-related but don't fit the above categories
-            
+
             IMPORTANT: DEFAULT TO "data" CATEGORY IF THE FILE:
              - Contains array/collection of items/records/entries
              - Has "id" and "name" fields or other typical entity identifiers
@@ -353,12 +347,12 @@ class DataFileAnalyzer:
 
         <file>
             Path: {{input.file_path}}
-            
+
             Content:
             ```{{input.file_type}}
             {{input.formatted_content}}
             ```
-            
+
             Code References:
             {{input.formatted_references}}
         </file>

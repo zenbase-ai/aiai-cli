@@ -8,7 +8,7 @@ from aiai.runner.py_script_tracer import PyScriptTracer
 
 
 @dataclass
-class Runner:
+class BatchRunner:
     script: Path
     data: list[Any]
     eval: Callable[[Any], Any]
@@ -29,11 +29,11 @@ class Runner:
         reward = None
 
         with self.tracer() as tracer:
-            run_id, output_data = tracer(input_data)
+            trace_id, output_data = tracer(input_data)
 
         reward = self.eval(output_data)
         return EvalRun(
-            agent_run_id=run_id,
+            trace_id=trace_id,
             input_data=input_data,
             output_data=output_data,
             reward=reward,

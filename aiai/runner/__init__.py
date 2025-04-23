@@ -1,3 +1,3 @@
-from .runner import Runner
+from .batch_runner import BatchRunner
 
-__all__ = ["Runner"]
+__all__ = ["BatchRunner"]

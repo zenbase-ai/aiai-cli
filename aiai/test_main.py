@@ -16,13 +16,6 @@ from aiai.code_analyzer.graph import DependencyGraph
 runner = CliRunner()
 
 
-@pytest.fixture(autouse=True)
-def setup_test_db():
-    """Ensure Django is set up for each test using the test database."""
-    # setup_django() # Now called automatically via aiai/__init__.py import
-    pass
-
-
 @pytest.mark.django_db  # Mark the test as needing DB access for setup
 @patch("aiai.__main__.typer.prompt")
 @patch("aiai.__main__.typer.confirm")
@@ -68,21 +61,12 @@ def test_cli_demo_agent_success(
     assert result.exit_code == 0, f"CLI exited with code {result.exit_code}\nOutput:\n{result.output}"
 
     output = result.output
+    print(output)
 
-    # Check for key messages indicating the flow proceeded correctly
     assert "🚀 Welcome to aiai! 🤖" in output
     assert "🔑 The demo agent requires an OpenAI API key" in output
-    # We mocked validation, so we don't see the spinner message, but the success one
-    assert "✅ Entrypoint validated successfully." in output
-    assert "✅ Database reset complete." in output
-    assert "🔍 Analyzing your project's code structure" in output
-    assert "✅ Code analysis complete." in output
-    assert "📝 Generating evaluation criteria" in output
-    # Because loading() replaces the line, the simple success message isn't there.
-    # We rely on the exit code and mock calls for success verification.
-    # assert "✅ Evaluation criteria generated." in output
-    assert "🔄 Starting the optimization run…" in output
-    # _optimization_run is mocked, so its internal messages won't appear
+    assert "✅ Analyzing code" in output
+    assert "✅ Generating evals" in output
     assert "👋 Exiting." in output
 
     # Verify mocks were called as expected
