@@ -12,7 +12,6 @@ class Runner:
     script: Path
     data: list[Any]
     eval: Callable[[Any], Any]
-    run_eval: bool = False
     concurrency: int = 32
 
     def perform(self):
@@ -31,9 +30,8 @@ class Runner:
 
         with self.tracer() as tracer:
             run_id, output_data = tracer(input_data)
-            if self.run_eval:
-                reward = self.eval(output_data)
 
+        reward = self.eval(output_data)
         return EvalRun(
             agent_run_id=run_id,
             input_data=input_data,

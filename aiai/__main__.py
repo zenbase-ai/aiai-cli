@@ -1,15 +1,15 @@
 import io
-import textwrap
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
+from textwrap import dedent, shorten
 
 import typer
 from dotenv import load_dotenv
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from aiai.code_analyzer import CodeAnalyzer
-from aiai.optimizer.rule_extractor import extract_rules
+from aiai.optimizer.rule_extractor import generate_rules
 from aiai.optimizer.rule_locator import RuleLocator
 from aiai.optimizer.rule_merger import Rules
 from aiai.runner.py_script_tracer import PyScriptTracer
@@ -29,9 +29,9 @@ from aiai.utils import reset_db
 @contextmanager
 def silence():
     """Temporarily suppress *all* stdout / stderr output (prints, progress bars, etc.)."""
-    new_out, new_err = io.StringIO(), io.StringIO()
-    with redirect_stdout(new_out), redirect_stderr(new_err):
-        yield
+    stdout, stderr = io.StringIO(), io.StringIO()
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        yield stdout, stderr
 
 
 @contextmanager
@@ -91,13 +91,12 @@ def _optimization_run(
 ):
     """Run a single optimisation pass (no epochs)."""
     # Import models here, after setup_django has run
-    from aiai.app.models import OtelSpan, SyntheticDatum
+    from aiai.app.models import SyntheticDatum
 
     # ------------------------------------------------------------------
     # Generate synthetic data (or reuse if already present)
     # ------------------------------------------------------------------
     if SyntheticDatum.objects.count() == 0:
-        typer.echo("Generating synthetic data examples…")
         with loading("Generating synthetic data examples…"):
             DataGenerator(examples=examples, seed=seed).perform()
         typer.secho("", nl=False)  # spacer
@@ -111,27 +110,27 @@ def _optimization_run(
     def _score_fn(output: str):
         return eval_runner(output).get("reward", 0)
 
-    typer.echo("📊 Running evaluation…")
     batch_runner = BatchRunner(
         script=entrypoint,
         data=data_inputs,
         eval=_score_fn,
         concurrency=concurrency,
+        run_eval=True,
     )
     with loading("Running evaluation…"):
         batch_runner.perform()
+
     typer.secho("", nl=False)
 
-    typer.echo("🔍 Analyzing run results to discover optimization rules…")
-    logs = OtelSpan.objects.all()
-    with loading("Extracting optimization rules…"):
-        current_rules = extract_rules(logs)
+    typer.echo("🔍 Optimizing...…")
+    with loading("Optimizing…"):
+        current_rules = generate_rules()
     typer.secho("", nl=False)
 
     # ------------------------------------------------------------------
     # Rule placement
     # ------------------------------------------------------------------
-    typer.echo("📍 Locating where to apply the final rules…")
+    typer.echo("📍 Locating rule placements…")
     with loading("Locating rule placements…"):
         placements = RuleLocator(current_rules).perform()
     typer.secho("", nl=False)
@@ -140,13 +139,13 @@ def _optimization_run(
     # Display placements & save to markdown
     # ------------------------------------------------------------------
     if placements:
-        typer.echo("\n📋 Final discovered optimization rule placements:\n")
+        typer.echo("\n📋 Optimization results:\n")
 
         # Pretty console output (similar to earlier demos)
         for idx, p in enumerate(placements, start=1):
             target = p.get("target_code_section") or p.get("function_name", "")
-            target = textwrap.shorten(str(target).replace("\n", " "), width=80, placeholder="…")
-            rule_text = textwrap.shorten(p.get("rule_text", "").strip(), width=100, placeholder="…")
+            target = shorten(str(target).replace("\n", " "), width=80, placeholder="…")
+            rule_text = shorten(p.get("rule_text", "").strip(), width=100, placeholder="…")
             typer.echo(
                 f"{idx}. File: {p.get('file_path', 'N/A')}\n"
                 f"   - Target: {target}\n"
@@ -166,8 +165,8 @@ def _optimization_run(
             conf = p.get("confidence", "N/A")
             rule = p.get("rule_text", "").replace("|", "\|")
             md_lines.append(
-                f"| {idx} | {file_path} | {textwrap.shorten(target, width=40, placeholder='…')} | {conf} "
-                f"| {textwrap.shorten(rule, width=60, placeholder='…')} |"
+                f"| {idx} | {file_path} | {shorten(target, width=40, placeholder='…')} | {conf} "
+                f"| {shorten(rule, width=60, placeholder='…')} |"
             )
 
         md_content = "\n".join(md_lines)
@@ -178,8 +177,11 @@ def _optimization_run(
         typer.echo("⚠️  No rule placements found.")
 
 
-# Renamed main function to avoid clash
-def run_cli() -> None:  # noqa: C901 – the CLI can be a bit long
+cli = typer.Typer(rich_markup_mode="markdown")
+
+
+@cli.command()
+def main():  # noqa: C901 – the CLI can be a bit long
     """Interactive `aiai` CLI as described in `aiai/cli/README.md`."""
 
     # Early imports kept local to speed up `python -m aiai` startup.
@@ -194,8 +196,8 @@ def run_cli() -> None:  # noqa: C901 – the CLI can be a bit long
     # ------------------------------------------------------------------
     # 1️⃣  Agent selection
     # ------------------------------------------------------------------
-    choice_prompt = "Would you like to optimize:\n (1) A built‑in demo email agent\n (2) Your own agent"
-    choice = typer.prompt(choice_prompt, type=int)
+    typer.secho("What would you like to optimize?\n (1) Demo email agent\n (2) Your own agent\n")
+    choice = typer.prompt("Enter your choice (1 or 2)", type=int)
 
     if choice == 1:
         typer.echo(
@@ -213,11 +215,29 @@ def run_cli() -> None:  # noqa: C901 – the CLI can be a bit long
         entrypoint = Path("aiai/examples/crewai/entrypoint.py").resolve()
 
     elif choice == 2:
-        entrypoint_str = typer.prompt(
-            "\n📂 Please provide the path to your agent's entrypoint file (e.g., "
-            "`src/my_agent_main.py`). This file must have a `main()` function that runs "
-            "your agent."
+        typer.secho(
+            dedent(
+                """\
+
+
+                To optimize your own agent, we need an entrypoint.py file.
+                This file must have a `main(example=None)` function that
+                runs your agent with the provided example.
+
+                Here's an example of what a minimal entrypoint.py file looks like:
+
+                ```python
+                def main(example=None):
+                    crew = get_crewai_agent()
+                    example = example or ... # add your own default example here
+                    result = crew.kickoff({"input": example})
+                    return result.raw
+                ```
+                """
+            )
         )
+
+        entrypoint_str = typer.prompt("\nPath to entrypoint")
         entrypoint = Path(entrypoint_str).expanduser().resolve()
         if not entrypoint.exists():
             typer.secho(f"❌ Entrypoint file not found: {entrypoint}", fg=typer.colors.RED)
@@ -240,7 +260,7 @@ def run_cli() -> None:  # noqa: C901 – the CLI can be a bit long
     # ------------------------------------------------------------------
     # 3️⃣  Analysis setup
     # ------------------------------------------------------------------
-    typer.echo("🔄 Resetting analysis database for a fresh run…")
+    typer.echo("🔄 Resetting database for a fresh run…")
     # setup_django() # Now called in aiai/__init__.py
     reset_db()
     typer.secho("✅ Database reset complete.\n", fg=typer.colors.GREEN)
@@ -292,15 +312,8 @@ def run_cli() -> None:  # noqa: C901 – the CLI can be a bit long
 
 
 # --- Typer hook --------------------------------------------------------------
-
-# Define the Typer app instance
-app = typer.Typer()
-
-# Register the command
-app.command()(run_cli)
-
 if __name__ == "__main__":
-    # This allows running `python -m aiai.cli.app` directly
+    # This allows running `python -m aiai` directly
     # Set up Django FIRST when running as main script
     # setup_django() # Now called in aiai/__init__.py
-    app()
+    cli()

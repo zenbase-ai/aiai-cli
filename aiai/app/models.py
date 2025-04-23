@@ -1,24 +1,28 @@
+from datetime import datetime
+from decimal import Decimal
+from typing import Any
+
 from django.db import models
 
 
 class OtelSpan(models.Model):
-    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    agent_run_id = models.CharField(max_length=32, db_index=True, null=True, blank=True)
-    input_data: models.JSONField = models.JSONField(null=True, blank=True)
-    output_data: models.TextField = models.TextField(null=True, blank=True)
-    raw_span: models.JSONField = models.JSONField(null=True, blank=True)
-
-    def __str__(self) -> str:
-        return f"Run at {self.timestamp} - OtelSpan: {self.agent_run_id}"
+    agent_run_id: str = models.CharField(max_length=32, db_index=True, null=False, blank=False)
+    trace_id: str = models.TextField(db_index=True, null=False, blank=False)
+    span_id: str = models.TextField(db_index=True, null=False, blank=False)
+    start_time: datetime = models.DateTimeField(null=False, blank=False)
+    end_time: datetime = models.DateTimeField(null=False, blank=False)
+    attributes: dict[str, Any] = models.JSONField(null=False, blank=False)
+    prompt: str = models.TextField(null=False, blank=False)
+    completion: str = models.TextField(null=False, blank=False)
 
 
 class DiscoveredRule(models.Model):
-    rule_type: models.TextField = models.TextField(default="")
-    rule_text: models.TextField = models.TextField(default="")
-    function_name: models.TextField = models.TextField(default="")
-    file_path: models.TextField = models.TextField(default="")
-    target_code_section: models.TextField = models.TextField(default="")
-    confidence: models.DecimalField = models.DecimalField(max_digits=5, decimal_places=2)
+    rule_type: str = models.TextField(default="")
+    rule_text: str = models.TextField(default="")
+    function_name: str = models.TextField(default="")
+    file_path: str = models.TextField(default="")
+    target_code_section: str = models.TextField(default="")
+    confidence: Decimal = models.DecimalField(max_digits=5, decimal_places=2)
 
 
 class SyntheticEval(models.Model):
@@ -26,9 +30,9 @@ class SyntheticEval(models.Model):
         RULES = "rules"
         HEAD_TO_HEAD = "head_to_head"
 
-    kind = models.CharField(max_length=20, choices=Kinds.choices)
-    prompt = models.TextField(null=False, blank=False)
-    fields = models.JSONField(null=False, blank=False)
+    kind: str = models.CharField(max_length=20, choices=Kinds.choices)
+    prompt: str = models.TextField(null=False, blank=False)
+    fields: dict[str, Any] = models.JSONField(null=False, blank=False)
 
     def __str__(self) -> str:
         return f"{self.id} - {self.kind}"
@@ -39,26 +43,26 @@ class SyntheticDatum(models.Model):
 
 
 class EvalRun(models.Model):
-    agent_run_id: models.CharField = models.CharField(max_length=32, db_index=True, null=False, blank=False)
-    eval: models.ForeignKey = models.ForeignKey(SyntheticEval, on_delete=models.CASCADE, null=True)
-    input_data: models.TextField = models.TextField(null=False, blank=False)
-    output_data: models.TextField = models.TextField(null=False, blank=False)
-    reward: models.TextField = models.TextField(null=False, blank=False)
-    created: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    agent_run_id: str = models.CharField(max_length=32, db_index=True, null=False, blank=False)
+    eval: SyntheticEval | None = models.ForeignKey(SyntheticEval, on_delete=models.CASCADE, null=True)
+    input_data: str = models.TextField(null=False, blank=False)
+    output_data: str = models.TextField(null=False, blank=False)
+    reward: str = models.TextField(null=False, blank=True)
+    created: datetime = models.DateTimeField(auto_now_add=True)
 
 
 class FunctionInfo(models.Model):
-    name = models.CharField(max_length=255)
-    file_path = models.CharField(max_length=512)
-    line_start = models.IntegerField()
-    line_end = models.IntegerField()
-    signature = models.TextField()
-    source_code = models.TextField()
-    docstring = models.TextField(null=True, blank=True)
-    comments = models.JSONField(null=True, blank=True)
-    string_literals = models.JSONField(null=True, blank=True)
-    variables = models.JSONField(null=True, blank=True)
-    constants = models.JSONField(null=True, blank=True)
+    name: str = models.CharField(max_length=255)
+    file_path: str = models.CharField(max_length=512)
+    line_start: int = models.IntegerField()
+    line_end: int = models.IntegerField()
+    signature: str = models.TextField()
+    source_code: str = models.TextField()
+    docstring: str | None = models.TextField(null=True, blank=True)
+    comments: list | None = models.JSONField(null=True, blank=True)
+    string_literals: list | None = models.JSONField(null=True, blank=True)
+    variables: list | None = models.JSONField(null=True, blank=True)
+    constants: list | None = models.JSONField(null=True, blank=True)
 
     class Meta:
         unique_together = ("file_path", "name", "line_start")

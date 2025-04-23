@@ -29,6 +29,7 @@ def test_runner(crewai_entrypoint: Path):
         data=[example],
         eval=lambda x: {"reward": 0.42},
         concurrency=1,
+        run_eval=True,
     )
     runner.perform()
 

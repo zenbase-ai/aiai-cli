@@ -631,9 +631,9 @@ if __name__ == "__main__":
     setup_django()
 
     from aiai.app.models import OtelSpan
-    from aiai.optimizer.rule_extractor import extract_rules
+    from aiai.optimizer.rule_extractor import generate_rules
 
     logs = OtelSpan.objects.all()
-    rules = extract_rules(logs)
+    rules = generate_rules(logs)
 
     placements = RuleLocator(rules).perform()

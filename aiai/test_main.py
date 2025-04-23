@@ -10,7 +10,7 @@ from typer.testing import CliRunner
 # or use a Typer CliRunner if main() is wrapped in a Typer app object.
 # Let's refine imports based on the actual structure if needed.
 # We'll likely need to import the main function/app object itself.
-from aiai.cli.app import app as cli_app  # Import the Typer app
+from aiai.__main__ import cli  # Import the Typer app
 from aiai.code_analyzer.graph import DependencyGraph
 
 runner = CliRunner()
@@ -24,14 +24,14 @@ def setup_test_db():
 
 
 @pytest.mark.django_db  # Mark the test as needing DB access for setup
-@patch("aiai.cli.app.typer.prompt")
-@patch("aiai.cli.app.typer.confirm")
-@patch("aiai.cli.app._validate_entrypoint")
-@patch("aiai.cli.app.analyze_code")
+@patch("aiai.__main__.typer.prompt")
+@patch("aiai.__main__.typer.confirm")
+@patch("aiai.__main__._validate_entrypoint")
+@patch("aiai.__main__.analyze_code")
 @patch("aiai.synthesizer.evals.EvalGenerator.perform")  # Mock where it's defined
-@patch("aiai.cli.app._optimization_run")
-@patch("aiai.cli.app.reset_db")  # Mock reset_db as well
-@patch("aiai.cli.app.load_dotenv")  # Don't need .env for this test
+@patch("aiai.__main__._optimization_run")
+@patch("aiai.__main__.reset_db")  # Mock reset_db as well
+@patch("aiai.__main__.load_dotenv")  # Don't need .env for this test
 @patch.object(sys, "argv", ["aiai"])  # Mock argv for direct function call
 def test_cli_demo_agent_success(
     mock_load_dotenv,
@@ -62,7 +62,7 @@ def test_cli_demo_agent_success(
     # We call the main function directly. If it were a Typer app object,
     # we'd use runner.invoke(app, [...])
     # Use CliRunner to invoke the Typer app
-    result = runner.invoke(cli_app)
+    result = runner.invoke(cli)
 
     # --- Assert ---
     assert result.exit_code == 0, f"CLI exited with code {result.exit_code}\nOutput:\n{result.output}"
@@ -74,7 +74,6 @@ def test_cli_demo_agent_success(
     assert "🔑 The demo agent requires an OpenAI API key" in output
     # We mocked validation, so we don't see the spinner message, but the success one
     assert "✅ Entrypoint validated successfully." in output
-    assert "🔄 Resetting analysis database" in output  # reset_db is called
     assert "✅ Database reset complete." in output
     assert "🔍 Analyzing your project's code structure" in output
     assert "✅ Code analysis complete." in output
