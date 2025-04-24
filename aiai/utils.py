@@ -5,10 +5,13 @@ from django.core.management import call_command
 
 
 def reset_db():
-    from aiai.app.models import FunctionInfo, OtelSpan
+    from aiai.app.models import EvalRun, FunctionInfo, OtelSpan, SyntheticDatum, SyntheticEval
 
     FunctionInfo.objects.all().delete()
     OtelSpan.objects.all().delete()
+    EvalRun.objects.all().delete()
+    SyntheticDatum.objects.all().delete()
+    SyntheticEval.objects.all().delete()
 
 
 def setup_django():
