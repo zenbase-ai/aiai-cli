@@ -1,5 +1,5 @@
 [project]
-name = "aiai"
+name = "aiai-cli"
 version = "0.1.0"
 description = "An AI Agent that automates AI Engineering"
 authors = [{ name = "Amir Mehr", email = "amir@zenbase.ai" }]
