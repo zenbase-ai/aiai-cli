@@ -139,8 +139,8 @@ def _optimization_run(
         if not data:
             with loading(f"Generating {examples} synthetic inputs…"):
                 data = [d.input_data for d in generate_data(context, examples, seed, model=synthesizer)]
-            with open("./data.json", "w") as f:
-                json.dump(data, f)
+            with (cwd / "synthetic_data.json").open("w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
 
     batch_runner = BatchRunner(
         script=entrypoint,
