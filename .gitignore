@@ -34,3 +34,4 @@ src/aiai/.env
 !aiai/examples/crewai/people_data.json
 
 .idea
+/docs/site/
