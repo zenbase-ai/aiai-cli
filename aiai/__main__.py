@@ -1,5 +1,6 @@
 import io
 import json
+import os
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
@@ -11,7 +12,7 @@ import typer
 from dotenv import load_dotenv
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from aiai.app.models import FunctionInfo, SyntheticEval
+from aiai.app.models import FunctionInfo
 from aiai.code_analyzer import CodeAnalyzer
 from aiai.optimizer.contextualizer import AgentContext, generate_context
 from aiai.optimizer.rule_extractor import generate_rules_and_tips
@@ -103,7 +104,13 @@ def generate_optimization_report(code_mods: list[dict], write_to: Path):
     return content
 
 
-# --- Optimization loop -------------------------------------------------------
+def _validate_entrypoint(entrypoint: Path):
+    if not entrypoint.exists():
+        typer.secho(f"❌ Entrypoint file not found: {entrypoint}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    with loading("Validating entrypoint…"):
+        with PyScriptTracer(entrypoint) as tracer:
+            tracer()
 
 
 def _optimization_run(
@@ -213,10 +220,15 @@ def main(
     typer.secho("What would you like to optimize?\n (1) Outbound email agent (Demo)\n (2) My own agent")
     choice = typer.prompt("Enter your choice (1 or 2)", type=int)
 
+    if choice not in (1, 2):
+        typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
     if choice == 1:
-        typer.echo("🔑 The demo agent requires an OpenAI API key...")
-        if not typer.confirm("Have you added an `OPENAI_API_KEY` to the `.env` file?", default=False):
-            raise typer.Exit(code=1)
+        if not os.getenv("OPENAI_API_KEY"):
+            typer.echo("🔑 The demo agent requires an OpenAI API key...")
+            if not typer.confirm("Have you added an `OPENAI_API_KEY` to the `.env` file?", default=False):
+                raise typer.Exit(code=1)
 
         # Path to the pre‑configured demo entrypoint
         # NOTE: This path needs adjustment when run from cli/app.py
@@ -248,20 +260,12 @@ def main(
         )
 
         entrypoint = Path(typer.prompt("\nPath to entrypoint")).expanduser().resolve()
-        if not entrypoint.exists():
-            typer.secho(f"❌ Entrypoint file not found: {entrypoint}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
-    else:
-        typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
 
     # ------------------------------------------------------------------
     # 2️⃣  Entrypoint validation
     # ------------------------------------------------------------------
     try:
-        with loading("Validating entrypoint…"):
-            with PyScriptTracer(entrypoint) as tracer:
-                tracer()
+        _validate_entrypoint(entrypoint)
     except Exception as exc:  # noqa: BLE001 – show raw error to user
         typer.secho(f"❌ Failed to run the entrypoint. Error details:\n{exc}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
@@ -296,7 +300,6 @@ def main(
     # ------------------------------------------------------------------
     # 6️⃣  Optimization run
     # ------------------------------------------------------------------
-    rules_eval = SyntheticEval.objects.get(id=111)
     if rules_eval:
         _optimization_run(
             entrypoint,
