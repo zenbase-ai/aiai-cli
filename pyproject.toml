@@ -1,8 +1,11 @@
 [project]
 name = "aiai-cli"
-version = "0.1.7"
-description = "An AI Agent that automates AI Engineering"
-authors = [{ name = "Amir Mehr", email = "amir@zenbase.ai" }]
+version = "0.1.8"
+description = "Your friendly neighborhood AI agent optimization AI agent"
+authors = [
+    { name = "Amir Mehr", email = "amir@zenbase.ai" },
+    { name = "Cyrus Nouroozi", email = "cyrus@zenbase.ai" }
+]
 dependencies = [
     "libcst>=1.7.0",
     "django>=5.2",

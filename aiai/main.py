@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from time import monotonic
+from typing import cast
 
 import rich
 import typer
@@ -138,10 +139,12 @@ def _optimization_run(
         if not data:
             with loading(f"Generating {examples} synthetic inputs…"):
                 data = [d.input_data for d in generate_data(context, examples, seed, model=synthesizer)]
+            with open("./data.json", "w") as f:
+                json.dump(data, f)
 
     batch_runner = BatchRunner(
         script=entrypoint,
-        data=data,
+        data=cast(list, data),
         eval=SyntheticEvalRunner(rules_eval, model=evaluator),
         concurrency=concurrency,
     )
@@ -330,8 +333,8 @@ def main(
     if rules_eval:
         _optimization_run(
             entrypoint,
-            rules_eval,
             data=data,
+            rules_eval=rules_eval,
             context=opt_ctx,
             evaluator=evaluator,
             optimizer=optimizer,

@@ -5,13 +5,13 @@ nav:
   - Home: index.md
   - Getting Started: getting-started/getting-started.md
   - User Guide:
-    - Overview: user-guide/overview.md
-    - Configuration: user-guide/configuration-reference.md
+      - Overview: user-guide/overview.md
+      - Configuration: user-guide/configuration-reference.md
   - Concepts:
-    - Rule Extraction: concepts/rule-extraction.md
+      - Rule Extraction: concepts/rule-extraction.md
   - Examples:
-    - Demo Email Agent: examples/demo-email-agent.md
-    - Custom Agents: examples/custom-agents.md
+      - Custom Agents: examples/custom-agents.md
+      - Demo Email Agent: examples/demo-email-agent.md
 theme:
   name: material
   favicon: img/favicon.ico
@@ -39,20 +39,20 @@ theme:
     - navigation.sections
     - navigation.tracking
     - navigation.expand
-    
+
     # Table of contents - Right sidebar
     - toc.integrate
     - toc.follow
-    
+
     # Search
     - search.highlight
     - search.share
     - search.suggest
-    
+
     # Content
     - content.code.copy
     - content.code.annotate
-    
+
   icon:
     repo: fontawesome/brands/github
   font:
