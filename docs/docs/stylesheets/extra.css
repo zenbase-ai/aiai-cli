@@ -1,0 +1,155 @@
+:root {
+    --md-primary-fg-color: #000000;
+    --md-primary-fg-color--light: #424242;
+    --md-primary-fg-color--dark: #121212;
+}
+
+/* Light/Dark mode specific styles */
+[data-md-color-scheme="default"] {
+    --md-default-bg-color: #ffffff;
+    --md-code-bg-color: #f5f5f5;
+    --md-code-fg-color: #24292e;
+    --md-typeset-color: #24292e;
+    --md-typeset-a-color: #0366d6;
+}
+
+[data-md-color-scheme="slate"] {
+    --md-default-bg-color: #1a1f27;
+    --md-code-bg-color: #242a35;
+    --md-code-fg-color: #d1d5da;
+    --md-typeset-color: #d1d5da;
+    --md-typeset-a-color: #58a6ff;
+}
+
+/* Tab navigation styling */
+.md-tabs {
+    background-color: var(--md-primary-fg-color) !important;
+    box-shadow: 0 0 0.2rem rgba(0, 0, 0, .1), 0 0.2rem 0.4rem rgba(0, 0, 0, .2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Improve code block styling */
+.md-typeset pre {
+    background-color: var(--md-code-bg-color) !important;
+    color: var(--md-code-fg-color) !important;
+    border-radius: 4px;
+}
+
+.md-typeset code {
+    background-color: var(--md-code-bg-color) !important;
+    color: var(--md-code-fg-color) !important;
+    border-radius: 3px;
+    padding: 0.2em 0.4em;
+}
+
+/* Adjust content width for better readability */
+.md-grid {
+    max-width: 1440px;
+}
+
+/* Make headers more prominent */
+.md-typeset h1 {
+    font-weight: 600;
+    margin-bottom: 1.5em;
+    color: var(--md-typeset-color);
+}
+
+.md-typeset h2 {
+    font-weight: 600;
+    margin-top: 2em;
+    margin-bottom: 1em;
+    color: var(--md-typeset-color);
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    padding-bottom: 0.3em;
+}
+
+/* Sidebar navigation styling */
+.md-nav {
+    font-size: 0.8rem;
+}
+
+.md-nav__title {
+    color: var(--md-typeset-color);
+}
+
+.md-nav__item--active>.md-nav__link {
+    color: var(--md-typeset-a-color);
+    font-weight: 600;
+}
+
+/* Table of contents styling */
+.md-typeset .toc {
+    position: sticky;
+    top: 72px;
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
+    padding-bottom: 2em;
+}
+
+/* Improve table styling */
+.md-typeset table:not([class]) {
+    box-shadow: 0 0 0.2rem rgba(0, 0, 0, .1), 0 0.2rem 0.4rem rgba(0, 0, 0, .2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.md-typeset table:not([class]) th {
+    background-color: var(--md-primary-fg-color);
+    color: white;
+}
+
+/* Admonition styling (notes, warnings, etc.) */
+.md-typeset .admonition {
+    border-radius: 4px;
+    box-shadow: 0 0 0.2rem rgba(0, 0, 0, .1), 0 0.2rem 0.4rem rgba(0, 0, 0, .2);
+}
+
+/* Improve link styling */
+.md-typeset a {
+    color: var(--md-typeset-a-color);
+    text-decoration: none;
+}
+
+.md-typeset a:hover {
+    text-decoration: underline;
+}
+
+/* Fix positioning of the header in sticky mode */
+.md-header {
+    position: sticky;
+    top: 0;
+    z-index: 101;
+}
+
+/* Code highlighting colors for dark mode */
+[data-md-color-scheme="slate"] .highlight .nd,
+[data-md-color-scheme="slate"] .highlight .nf,
+[data-md-color-scheme="slate"] .highlight .nc {
+    color: #79c0ff;
+}
+
+[data-md-color-scheme="slate"] .highlight .s,
+[data-md-color-scheme="slate"] .highlight .s1,
+[data-md-color-scheme="slate"] .highlight .s2 {
+    color: #a5d6ff;
+}
+
+[data-md-color-scheme="slate"] .highlight .kn,
+[data-md-color-scheme="slate"] .highlight .k,
+[data-md-color-scheme="slate"] .highlight .kd {
+    color: #ff7b72;
+}
+
+/* Content container adjustments */
+.md-content {
+    margin-right: .8rem;
+    margin-left: .8rem;
+}
+
+.md-content__inner {
+    margin: 0 .8rem;
+    padding-top: 1.2rem;
+    padding-bottom: 2.4rem;
+}
