@@ -25,11 +25,11 @@ The Runner executes your agent with different inputs to capture execution traces
 
 ### Rule Extractor
 
-The Rule Extractor analyzes execution traces to identify patterns and extract optimization rules. These rules are then scored based on confidence.
+The Rule Extractor analyzes execution traces to identify patterns and extract optimization rules.
 
 ### Rule Locator
 
-The Rule Locator determines the specific locations in your code where optimization rules should be applied. It provides file paths, target functions or code sections, and confidence scores.
+The Rule Locator determines the specific locations in your code where optimization rules should be applied. It provides file paths, target functions or code sections.
 
 ## Workflow
 
@@ -42,4 +42,4 @@ The typical workflow for using AIAI CLI is:
 5. **Verification**: Re-run your agent to verify improvements
 
 ## Next Steps
-- See [examples](../examples/demo-email-agent.md) of AIAI CLI in action 
+- See [examples](../examples/demo-email-agent.md) of AIAI CLI in action

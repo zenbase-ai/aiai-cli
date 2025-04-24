@@ -13,8 +13,7 @@ AIAI CLI's rule extraction process follows these steps:
 1. **Data Collection**: Execution traces are collected as the agent runs on various inputs.
 2. **Pattern Analysis**: The system analyzes the traces to identify recurring patterns, inefficiencies, and bottlenecks.
 3. **Rule Formulation**: Patterns are converted into explicit rules with clear recommendations.
-4. **Confidence Scoring**: Each rule is assigned a confidence score based on its prevalence and consistency.
-5. **Localization**: Rules are mapped to specific locations in the source code.
+4. **Localization**: Rules are mapped to specific locations in the source code.
 
 ## Types of Rules
 
@@ -38,14 +37,6 @@ AIAI CLI extracts several types of rules:
 
 > "Consider illustrating your reasoning with concrete examples when explaining complex concepts."
 
-## Rule Confidence
-
-Each extracted rule is assigned a confidence score, typically expressed as a percentage. This score reflects how consistently the pattern appears in successful vs. unsuccessful agent runs.
-
-- **High confidence** (80-100%): Strong evidence supports this rule
-- **Medium confidence** (50-79%): Moderate evidence supports this rule
-- **Low confidence** (0-49%): Limited evidence supports this rule
-
 ## Rule Localization
 
 After rules are extracted, AIAI CLI determines where in your code each rule should be applied. This localization process identifies:
@@ -56,22 +47,16 @@ After rules are extracted, AIAI CLI determines where in your code each rule shou
 
 ## Viewing Extracted Rules
 
-AIAI CLI generates a markdown report containing all extracted rules, their confidence scores, and their locations in your code. This report is saved to your current directory with a filename like `optimizations_report_20250423_2132.md`.
+AIAI CLI generates a markdown report containing all extracted rules, and their locations in your code. This report is saved to your current directory with a filename like `optimizations_report_20250423_2132.md`.
 
 ## Agent Optimization Process
 
 AIAI CLI follows a systematic process to optimize AI agents:
 
 1. **Code Analysis**: The system analyzes your agent's source code to understand its structure, dependencies, and components, building a dependency graph.
-
 2. **Synthetic Data Generation**: AIAI CLI generates diverse synthetic test cases that will be used to exercise your agent's functionality and collect execution data.
-
 3. **Evaluation Criteria Generation**: The system creates evaluation criteria based on the code analysis, which will be used to assess your agent's performance.
-
 4. **Execution Tracing**: Your agent is run against the synthetic data to collect detailed execution traces, capturing information about API calls, function execution, and performance metrics.
-
-5. **Rule Extraction**: Patterns identified in the execution traces are converted into explicit optimization rules with confidence scores.
-
+5. **Rule Extraction**: Patterns identified in the execution traces are converted into explicit optimization rules.
 6. **Rule Localization**: Rules are mapped to specific locations in your agent's source code where they should be applied.
-
-7. **Report Generation**: Finally, AIAI CLI produces a comprehensive optimization report with actionable recommendations, file paths, target code sections, and confidence scores.
+7. **Report Generation**: Finally, AIAI CLI produces a comprehensive optimization report with actionable recommendations, file paths, target code sections.

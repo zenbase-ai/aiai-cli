@@ -12,11 +12,18 @@ AIAI CLI is a powerful tool designed to optimize AI agents through rule extracti
 
 ## Getting Started
 
+One-liner to play with the demo email agent:
+
+```bash
+OPENAI_API_KEY='sk-...' uvx --from 'aiai-cli[crewai]' aiai
+```
+
 Get up and running quickly with AIAI CLI:
 
 ```bash
 # Install the AIAI CLI tool
 pip install aiai-cli
+uv add aiai-cli
 
 # Run AIAI CLI
 aiai
@@ -30,7 +37,7 @@ AIAI CLI helps you improve the efficiency, reliability, and performance of your 
 
 1. Analyzing execution patterns across multiple runs
 2. Identifying bottlenecks and optimization opportunities
-3. Providing concrete, actionable recommendations with confidence scores
+3. Providing concrete, actionable recommendations
 4. Generating comprehensive optimization reports
 5. Mapping optimization rules to specific locations in your code
 6. Quantitatively evaluating agent outputs against defined criteria

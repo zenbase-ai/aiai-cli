@@ -8,15 +8,15 @@ This page documents all available configuration options for AIAI CLI. These opti
 aiai [OPTIONS]
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--analyzer` | TEXT | openai/o4-mini | Model used for analyzing code structure and dependencies |
-| `--evaluator` | TEXT | openai/o4-mini | Model used for evaluating agent outputs |
-| `--optimizer` | TEXT | openai/gpt-4.1 | Model used for generating optimization rules |
-| `--synthesizer` | TEXT | openai/gpt-4.1-nano | Model used for generating synthetic data |
-| `--examples` | INTEGER | 25 | Number of synthetic examples to generate |
-| `--seed` | INTEGER | 42 | Random seed for reproducible synthetic data |
-| `--concurrency` | INTEGER | 16 | Number of concurrent evaluations |
+| Option          | Type    | Default             | Description                                              |
+| --------------- | ------- | ------------------- | -------------------------------------------------------- |
+| `--analyzer`    | TEXT    | openai/o4-mini      | Model used for analyzing code structure and dependencies |
+| `--evaluator`   | TEXT    | openai/o4-mini      | Model used for evaluating agent outputs                  |
+| `--optimizer`   | TEXT    | openai/gpt-4.1      | Model used for generating optimization rules             |
+| `--synthesizer` | TEXT    | openai/gpt-4.1-nano | Model used for generating synthetic data                 |
+| `--examples`    | INTEGER | 25                  | Number of synthetic examples to generate                 |
+| `--seed`        | INTEGER | 42                  | Random seed for reproducible synthetic data              |
+| `--concurrency` | INTEGER | 16                  | Number of concurrent evaluations                         |
 
 ## Understanding Configuration Options
 
@@ -63,7 +63,7 @@ aiai --synthesizer="openai/gpt-4o"
 Controls how many synthetic examples are generated to test your agent. More examples provide better coverage but increase runtime.
 
 ```bash
-aiai --examples=50
+aiai --examples=20
 ```
 
 !!! note "Maximum Examples"
@@ -117,4 +117,4 @@ aiai \
 ## Related Topics
 
 - [Installation](../getting-started/getting-started.md)
-- [Custom Agents](../examples/custom-agents.md) 
+- [Custom Agents](../examples/custom-agents.md)
