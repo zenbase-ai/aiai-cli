@@ -1,71 +1,95 @@
-# Demo Email Agent Example
+# Demo Email Agent
 
-AIAI CLI includes a built-in demo email agent that you can use to explore its optimization capabilities. This page explains how to use the demo agent and what you can learn from it.
+AIAI CLI includes a built-in demo email agent that showcases how the tool optimizes AI workflows. This demo is directly integrated into the AIAI CLI tool for easy access.
 
-## What is the Demo Email Agent?
+## What This Demo Does
 
-The demo email agent is a simple AI agent that:
+The demo is an outbound email agent built with CrewAI that:
 
-1. Reads email messages
-2. Categorizes them by priority and type
-3. Generates appropriate responses
-4. Tracks action items and follow-ups
+- Creates personalized sales emails for potential leads
+- Analyzes lead information (role, company, pain points)
+- Crafts persuasive content highlighting relevant product benefits
+- Demonstrates real-world AI agent optimization opportunities
 
-It serves as a practical example of how AIAI CLI can identify optimization opportunities in real-world agent code.
+## Running the Demo
 
-## Running the Demo Agent Optimization
-
-To optimize the demo email agent:
+Running the demo is simple:
 
 ```bash
 # Run AIAI CLI
 aiai
 
-# When prompted, select option 1 to optimize the built-in demo email agent
+# Select option 1 when prompted: "Outbound email agent (Demo)"
 ```
 
-The CLI will guide you through the process with prompts. You'll need an OpenAI API key, which you can set in your `.env` file:
+The CLI will guide you through the optimization process:
+
+1. **Code Analysis**: AIAI analyzes the agent's code structure
+2. **Evaluation Criteria**: The tool generates criteria to assess email quality
+3. **Synthetic Data**: Test examples are created to evaluate the agent
+4. **Optimization**: Rules and improvements are identified
+5. **Report Generation**: A detailed optimization report is saved to your current directory
+
+## What You'll Learn
+
+This demo helps you understand:
+
+- How AIAI CLI analyzes and optimizes AI agent code
+- Effective patterns for email personalization
+- Common optimization opportunities in AI workflows
+- The complete AIAI optimization pipeline
+
+## More Examples
+
+For additional examples using different frameworks, check out the [AIAI CLI Examples Repository](https://github.com/zenbase-ai/aiai-cli-examples), which includes implementations with both CrewAI and LangGraph.
+
+## What These Demos Do
+
+The example agents generate personalized sales emails based on lead information. They demonstrate:
+
+- How to structure AI agents for email generation tasks
+- Effective prompt engineering patterns for personalization
+- Different implementation approaches (CrewAI and LangGraph)
+
+## Try It Yourself
+
+To explore these examples:
 
 ```bash
-OPENAI_API_KEY=sk-your-api-key
+git clone https://github.com/zenbase-ai/aiai-cli-examples.git
+cd aiai-cli-examples
 ```
 
-## What to Expect
+For complete setup instructions and code examples, visit the [AIAI CLI Examples Repository](https://github.com/zenbase-ai/aiai-cli-examples).
 
-After running the optimization, you'll see a report with specific recommendations. For the demo agent, these typically include:
+## What AIAI CLI Will Optimize
 
-1. **Caching Optimizations**: The demo agent makes redundant API calls that could be cached
-2. **Parallelization Opportunities**: Some operations could be executed concurrently
-3. **Error Handling Improvements**: Places where error handling could be more robust
-4. **Cost Reduction Strategies**: Ways to reduce the number of API calls or token usage
+When you run these examples through AIAI CLI, it will identify optimization opportunities such as:
 
-## Example Optimization Report
+- Improved prompt engineering patterns
+- Better handling of lead information
+- More effective email personalization strategies
 
-Here's a sample of what the optimization report might look like:
+These examples serve as practical demonstrations of how AIAI CLI can help optimize AI agent workflows in real-world scenarios.
 
-```markdown
-# Final discovered optimization rule placements
+## Email Agent Implementations
 
-| # | File | Target | Confidence | Rule |
-| --- | --- | --- | --- | --- |
-| 1 | examples/crewai/email_agent.py | process_email_batch | 92 | Always cache the results of categorize_email when processing multiple emails with similar content. |
-| 2 | examples/crewai/email_agent.py | generate_response | 87 | Never make sequential API calls for sentiment analysis and response generation when they can be parallelized. |
-| 3 | examples/crewai/email_agent.py | extract_action_items | 79 | Consider implementing a retry mechanism with exponential backoff for action item extraction to handle API rate limits. |
-```
+The AIAI CLI examples repository includes two implementations of email generation agents:
 
-## Learning from the Demo
+### 1. CrewAI Email Agent
 
-The demo agent is designed to showcase common inefficiencies in AI agent code. By studying the optimizations AIAI CLI recommends, you can:
+The CrewAI implementation is a specialized agent that:
 
-1. Learn patterns to avoid in your own agent code
-2. Understand how to structure your agents for better performance
-3. See real examples of optimization rules in action
-4. Get familiar with the AIAI CLI workflow before applying it to your own agents
+- Creates personalized sales emails for potential leads
+- Highlights how Zenbase can address specific customer needs
+- Focuses on LLM development, prompt engineering, and model optimization capabilities
+- Uses CrewAI's agent and task framework for structured workflow
 
-## Next Steps
+### 2. LangGraph Email Agent
 
-After exploring the demo agent:
+The LangGraph implementation offers a more complex multi-step workflow that:
 
-1. Review the [optimization concepts](../concepts/agent-optimization.md) to understand the recommendations better
-2. Try optimizing [your own agent](custom-agents.md) with AIAI CLI
-3. Learn more about [configuration options](../user-guide/configuration.md) to customize the optimization process 
+- Extracts structured lead information from unstructured text
+- Processes multiple leads simultaneously
+- Generates tailored emails for each lead
+- Uses a directed graph approach with distinct processing nodes
