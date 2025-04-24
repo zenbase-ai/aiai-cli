@@ -1,3 +1,4 @@
+import os
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -11,7 +12,7 @@ from typer.testing import CliRunner
 # Let's refine imports based on the actual structure if needed.
 # We'll likely need to import the main function/app object itself.
 from aiai.__main__ import cli  # Import the Typer app
-from aiai.code_analyzer.graph import DependencyGraph
+from aiai.optimizer.contextualizer import AgentAnalysis, AgentContext, OptimizerPrompts
 
 runner = CliRunner()
 
@@ -46,7 +47,26 @@ def test_cli_demo_agent_success(
 
     # Mock core functions to succeed without doing real work
     mock_validate_entrypoint.return_value = None  # Simulate successful validation
-    mock_analyze_code.return_value = DependencyGraph()  # Return empty graph
+    mock_analyze_code.return_value = AgentContext(
+        "",
+        AgentAnalysis(
+            what="",
+            how="",
+            success_modes=[],
+            failure_modes=[],
+            expert_persona="",
+            considerations=[],
+        ),
+        OptimizerPrompts(
+            synthetic_data="",
+            reward_reasoning="",
+            traces_to_patterns="",
+            patterns_to_insights="",
+            insights_to_rules="",
+            synthesize_rules="",
+            rule_merger="",
+        ),
+    )  # Return empty graph
     # Mock EvalGenerator().perform() to return two dummy objects
     mock_eval_perform.return_value = (MagicMock(), MagicMock())
     mock_optimization_run.return_value = None  # Simulate successful run
@@ -64,14 +84,14 @@ def test_cli_demo_agent_success(
     print(output)
 
     assert "🚀 Welcome to aiai! 🤖" in output
-    assert "🔑 The demo agent requires an OpenAI API key" in output
     assert "✅ Analyzing code" in output
     assert "✅ Generating evals" in output
     assert "👋 Exiting." in output
 
     # Verify mocks were called as expected
     mock_prompt.assert_called_once()
-    mock_confirm.assert_called_once()
+    if not os.getenv("OPENAI_API_KEY"):
+        mock_confirm.assert_called_once()
     mock_validate_entrypoint.assert_called_once()
     mock_analyze_code.assert_called_once()
     mock_eval_perform.assert_called_once()

@@ -18,12 +18,10 @@ def generate_data(
     model: str = "openai/gpt-4.1-mini",
     save_to_db: bool = True,
 ) -> list["SyntheticDatum"]:
-    if not examples:
-        from aiai.app.models import FunctionInfo
+    from aiai.app.models import FunctionInfo, SyntheticDatum
 
-        examples = get_examples(list(FunctionInfo.objects.all()))
-
-    from aiai.app.models import SyntheticDatum
+    assert count <= 25
+    examples = examples or get_examples(list(FunctionInfo.objects.all()))
 
     response = litellm.completion(
         model=model,
@@ -36,8 +34,6 @@ def generate_data(
                         {agent_context.analysis.expert_persona}
 
                         {agent_context.optimizer_prompts.synthetic_data}
-
-                        Create a single example of input data. Not a list, just a single item.
                     </instructions>
 
                     <examples>

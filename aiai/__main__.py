@@ -1,5 +1,6 @@
 import io
 import json
+import os
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
@@ -20,13 +21,15 @@ from aiai.runner.batch_runner import BatchRunner
 from aiai.runner.py_script_tracer import PyScriptTracer
 from aiai.synthesizer.data import generate_data
 from aiai.synthesizer.evals import EvalGenerator, RulesEval, SyntheticEvalRunner
+from aiai.utils import reset_db
 
 # Use absolute imports within the package
-from aiai.utils import reset_db
 
 # ---------------------------------------------------------------------------
 # Utility: silence stdout/stderr and loading spinner
 # ---------------------------------------------------------------------------
+
+cwd = Path.cwd()
 
 
 @contextmanager
@@ -38,7 +41,7 @@ def silence():
 
 
 @contextmanager
-def loading(message: str):
+def loading(message: str, silent: bool = True):
     """Show pretty Rich spinner while silencing inner output."""
     start_at = monotonic()
     with Progress(
@@ -47,7 +50,10 @@ def loading(message: str):
         transient=True,
     ) as progress:
         progress.add_task(description=message, total=None)
-        with silence():
+        if silent:
+            with silence():
+                yield
+        else:
             yield
     duration = monotonic() - start_at
     typer.secho(f"✅ {message} completed in {duration:.2f}s", fg=typer.colors.GREEN)
@@ -65,87 +71,13 @@ def analyze_code(file: Path, model: str) -> AgentContext:
     return context
 
 
-# --- New helper --------------------------------------------------------------
-
-
-def _validate_entrypoint(entrypoint: Path) -> None:
-    """Run the entrypoint once to make sure it is executable.
-
-    This reuses `ScriptTracer` so the run is fully traced and stored
-    in OpenTelemetry. Any exception bubbles up to the caller so the CLI
-    can present a helpful error message.
-    """
-    # No need for inner import now
-    with loading("Validating entrypoint…"):
-        with PyScriptTracer(entrypoint) as tracer:
-            tracer()
-
-
-# --- Optimization loop -------------------------------------------------------
-
-
-def _optimization_run(
-    entrypoint: Path,
-    rules_eval: RulesEval,
-    context: AgentContext,
-    model: str,
-    examples: int,
-    concurrency: int,
-    seed: int,
-):
-    """Run a single optimisation pass (no epochs)."""
-    # Import models here, after setup_django has run
-    from aiai.app.models import SyntheticDatum
-
-    # ------------------------------------------------------------------
-    # Generate synthetic data (or reuse if already present)
-    # ------------------------------------------------------------------
-    data = SyntheticDatum.objects.all()
-    if len(data) == 0:
-        with loading(f"Generating {examples} synthetic data examples…"):
-            data = generate_data(context, examples, seed, model)
-
-    eval_runner = SyntheticEvalRunner(rules_eval, model=model)
-    batch_runner = BatchRunner(
-        script=entrypoint,
-        data=[d.input_data for d in data],
-        eval=lambda output: eval_runner(output).get("reward", 0),
-        concurrency=concurrency,
-    )
-    with loading("Evaluating..."):
-        batch_runner.perform()
-
-    # TODO: Remove before launch
-    with loading("Optimizing…"):
-        rules_and_tips = generate_rules_and_tips(context=context, model=model)
-
-    # ------------------------------------------------------------------
-    # Rule placement
-    # ------------------------------------------------------------------
-    with loading("Generating code modifications…"):
-        code_mods = RuleLocator(rules_and_tips, model=model).perform()
-
-    # ------------------------------------------------------------------
-    # Display placements & save to markdown
-    # ------------------------------------------------------------------
-    if not code_mods:
-        typer.echo("⚠️  No rule placements found.")
-        raise typer.Exit(code=1)
-
-    typer.echo("\n📋 Optimization results:\n")
-    # Build the structured output
+def generate_optimization_report(code_mods: list[dict], write_to: Path):
+    """Generate a markdown report from optimization results."""
     md_lines = ["# Optimization Results\n"]
 
-    # Console output and markdown content
+    # Build markdown content
     for code_mod in code_mods:
         file = code_mod["target"]["file_path"]
-        typer.echo("")
-        typer.echo(f"File: {file} ".ljust(100, "="))
-        typer.echo("Source:")
-        typer.echo(f"```python\n{code_mod['target']['source_code']}\n```")
-        typer.echo("Optimizations:")
-        rich.print_json(data=code_mod["mods"])
-
         md_lines.append(f"## File: {file}\n")
         md_lines.append("Source:")
         md_lines.append(f"```python\n{code_mod['target']['source_code']}\n```")
@@ -167,8 +99,91 @@ def _optimization_run(
             md_lines.append("</tips>")
         md_lines.append("\n")
 
-    report_path = Path(f"optimization_{datetime.now():%Y%m%d_%H%M}.md")
-    report_path.write_text("\n".join(md_lines))
+    content = "\n".join(md_lines)
+    write_to.write_text(content)
+    return content
+
+
+def _validate_entrypoint(entrypoint: Path):
+    if not entrypoint.exists():
+        typer.secho(f"❌ Entrypoint file not found: {entrypoint}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    with loading("Validating entrypoint…"):
+        with PyScriptTracer(entrypoint) as tracer:
+            tracer()
+
+
+def _optimization_run(
+    entrypoint: Path,
+    rules_eval: RulesEval,
+    context: AgentContext,
+    evaluator: str,
+    optimizer: str,
+    synthesizer: str,
+    examples: int,
+    concurrency: int,
+    seed: int,
+):
+    """Run a single optimisation pass (no epochs)."""
+    # Import models here, after setup_django has run
+    from aiai.app.models import SyntheticDatum
+
+    # ------------------------------------------------------------------
+    # Generate synthetic data (or reuse if already present)
+    # ------------------------------------------------------------------
+    data = list(SyntheticDatum.objects.all())
+    if not data:
+        with loading(f"Generating {examples} synthetic inputs…"):
+            data = generate_data(context, examples, seed, model=synthesizer)
+
+    batch_runner = BatchRunner(
+        script=entrypoint,
+        data=[d.input_data for d in data],
+        eval=SyntheticEvalRunner(rules_eval, model=evaluator),
+        concurrency=concurrency,
+    )
+    with loading("Evaluating..."):
+        eval_runs = batch_runner.perform()
+
+    import pandas as pd
+
+    df = pd.DataFrame([(e.trace_id, e.reward["reward"]) for e in eval_runs])
+    for stat in ["min", "mean", "median", "max", "std"]:
+        value = getattr(df[1], stat)()
+        typer.echo(f"{stat}: {value:.2f}")
+
+    # TODO: Remove before launch
+    with loading("Optimizing…"):
+        rules_and_tips = generate_rules_and_tips(context=context, model=optimizer)
+
+    # ------------------------------------------------------------------
+    # Rule placement
+    # ------------------------------------------------------------------
+    with loading("Generating code modifications…"):
+        code_mods = RuleLocator(rules_and_tips, model=optimizer).perform()
+
+    # ------------------------------------------------------------------
+    # Display placements & save to markdown
+    # ------------------------------------------------------------------
+    if not code_mods:
+        typer.echo("⚠️  No rule placements found.")
+        raise typer.Exit(code=1)
+
+    typer.echo("\n📋 Optimization results:\n")
+
+    # Console output
+    for code_mod in code_mods:
+        file = code_mod["target"]["file_path"]
+        typer.echo("")
+        typer.echo(f"File: {file} ".ljust(100, "="))
+        typer.echo("Source:")
+        typer.echo(f"```python\n{code_mod['target']['source_code']}\n```")
+        typer.echo("Optimizations:")
+        rich.print_json(data=code_mod["mods"])
+
+    # Generate markdown report
+    report_path = cwd / f"optimization_{datetime.now():%Y%m%d_%H%M}.md"
+    generate_optimization_report(code_mods, write_to=report_path)
     typer.echo(f"\n📝 Optimization report saved to: {report_path}\n")
 
 
@@ -177,12 +192,21 @@ cli = typer.Typer(rich_markup_mode="markdown")
 
 @cli.command()
 def main(
-    model: str = "openai/gpt-4.1",
-    examples: int = 32,
+    analyzer: str = "openai/o4-mini",
+    evaluator: str = "openai/o4-mini",
+    optimizer: str = "openai/gpt-4.1",
+    synthesizer: str = "openai/gpt-4.1-nano",
+    examples: int = 25,
     seed: int = 42,
     concurrency: int = 16,
 ):  # noqa: C901 – the CLI can be a bit long
     """Interactive `aiai` CLI as described in `aiai/cli/README.md`."""
+    if examples > 25:
+        typer.secho(
+            "⚠️  Maximum number of synthetic examples is 25. Setting to 25.\n",
+            fg=typer.colors.YELLOW,
+        )
+        examples = 25
 
     # Early imports kept local to speed up `python -m aiai` startup.
     load_dotenv()
@@ -196,17 +220,22 @@ def main(
     typer.secho("What would you like to optimize?\n (1) Outbound email agent (Demo)\n (2) My own agent")
     choice = typer.prompt("Enter your choice (1 or 2)", type=int)
 
+    if choice not in (1, 2):
+        typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
     if choice == 1:
-        typer.echo("🔑 The demo agent requires an OpenAI API key...")
-        if not typer.confirm("Have you added an `OPENAI_API_KEY` to the `.env` file?", default=False):
-            raise typer.Exit(code=1)
+        if not os.getenv("OPENAI_API_KEY"):
+            typer.echo("🔑 The demo agent requires an OpenAI API key...")
+            if not typer.confirm("Have you added an `OPENAI_API_KEY` to the `.env` file?", default=False):
+                raise typer.Exit(code=1)
 
         # Path to the pre‑configured demo entrypoint
         # NOTE: This path needs adjustment when run from cli/app.py
         # Let's assume the script is run from the project root for now,
         # or we pass the root path explicitly.
         # For simplicity, using a relative path from expected root execution
-        entrypoint = Path("aiai/examples/crewai/entrypoint.py").resolve()
+        entrypoint = Path("aiai/examples/crewai_agent.py").resolve()
 
     elif choice == 2:
         typer.secho(
@@ -231,12 +260,6 @@ def main(
         )
 
         entrypoint = Path(typer.prompt("\nPath to entrypoint")).expanduser().resolve()
-        if not entrypoint.exists():
-            typer.secho(f"❌ Entrypoint file not found: {entrypoint}", fg=typer.colors.RED)
-            raise typer.Exit(code=1)
-    else:
-        typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
 
     # ------------------------------------------------------------------
     # 2️⃣  Entrypoint validation
@@ -250,14 +273,14 @@ def main(
     # ------------------------------------------------------------------
     # 3️⃣  Analysis setup
     # ------------------------------------------------------------------
-    # setup_django() # Now called in aiai/__init__.py
     reset_db()
 
     # ------------------------------------------------------------------
     # 4️⃣  Code analysis ➜ Dependency graph
     # ------------------------------------------------------------------
     with loading("Analyzing code…"):
-        opt_ctx = analyze_code(entrypoint, model)
+        opt_ctx = analyze_code(entrypoint, analyzer)
+    typer.echo(opt_ctx.analysis.what)
 
     # ------------------------------------------------------------------
     # 5️⃣  Evaluation criteria generation
@@ -265,11 +288,9 @@ def main(
     try:
         # No need for inner import now
         with loading("Generating evals…"):
-            generator = EvalGenerator(opt_ctx, model)
+            generator = EvalGenerator(opt_ctx, evaluator)
             rules_eval, _ = generator.perform()  # Ignore head_to_head
-        typer.echo("<judge_prompt>")
-        typer.echo(rules_eval.prompt)
-        typer.echo("</judge_prompt>")
+        typer.echo(rules_eval.prompt.strip())
     except Exception as exc:  # noqa: BLE001 – non‑critical failure
         typer.secho(
             f"⚠️  Skipped evaluation criteria generation due to error: {exc}\n",
@@ -284,7 +305,9 @@ def main(
             entrypoint,
             rules_eval,
             context=opt_ctx,
-            model=model,
+            evaluator=evaluator,
+            optimizer=optimizer,
+            synthesizer=synthesizer,
             examples=examples,
             seed=seed,
             concurrency=concurrency,
