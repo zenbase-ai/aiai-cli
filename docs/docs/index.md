@@ -5,7 +5,6 @@ AIAI CLI is a powerful tool designed to optimize AI agents through rule extracti
 ## Key Features
 
 - **Agent Optimization**: Automatically analyze your agent code to identify optimization opportunities
-- **Rule Extraction**: Extract optimization rules from agent execution traces to improve performance
 - **Synthetic Data Generation**: Generate diverse test cases to thoroughly exercise your agent
 - **Built-in Demo**: Includes a demo email agent for experimentation and learning
 - **Comprehensive Analysis**: Detailed reports with actionable recommendations and confidence scores
