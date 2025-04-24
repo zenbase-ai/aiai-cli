@@ -444,9 +444,9 @@ class RuleLocator:
 
                         Here are the rules and tips to add:
 
-                        <rules>
+                        <rules_and_tips>
                         {json.dumps(self.rules)}
-                        </rules>
+                        </rules_and_tips>
                         """
                     ),
                 },
