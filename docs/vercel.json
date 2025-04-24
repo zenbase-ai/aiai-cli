@@ -1,13 +1,12 @@
 {
-  "buildCommand": "pip install -r requirements.txt && mkdocs build",
-  "outputDirectory": "site",
-  "installCommand": "python -m pip install --upgrade pip",
-  "framework": null,
-  "devCommand": "mkdocs serve",
+  "version": 2,
   "builds": [
     {
-      "src": "**",
-      "use": "@vercel/python"
+      "src": "build.sh",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "site"
+      }
     }
   ],
   "routes": [
@@ -16,7 +15,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/"
     }
   ]
 }
