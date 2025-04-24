@@ -1,7 +1,13 @@
 {
-  "buildCommand": "pip install -r docs/requirements.txt && mkdocs build",
+  "buildCommand": "pip install -r requirements.txt && mkdocs build",
   "outputDirectory": "site",
-  "installCommand": "pip install --upgrade pip",
+  "installCommand": "python -m pip install --upgrade pip",
   "framework": null,
-  "devCommand": "mkdocs serve"
+  "devCommand": "mkdocs serve",
+  "builds": [
+    {
+      "src": "**",
+      "use": "@vercel/python"
+    }
+  ]
 }
