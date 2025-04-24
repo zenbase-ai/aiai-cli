@@ -10,11 +10,12 @@ import logging
 import os
 import tempfile
 from textwrap import dedent
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import yaml
 
-from aiai.app.models import DataFileAnalysis, DataFileInfo
+if TYPE_CHECKING:
+    from aiai.app.models import DataFileInfo
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,8 @@ class DataFileAnalyzer:
     def analyze(
         self, file_path: Optional[str] = None, return_results: bool = False
     ) -> Union[int, Dict[str, Any], List[Dict[str, Any]]]:
+        from aiai.app.models import DataFileInfo
+
         """
         Analyze data files in the codebase using the docetl pipeline.
 
@@ -252,7 +255,7 @@ class DataFileAnalyzer:
                 for _ in file_data_list
             ]
 
-    def _prepare_file_data(self, data_file: DataFileInfo) -> Optional[Dict[str, Any]]:
+    def _prepare_file_data(self, data_file: "DataFileInfo") -> Optional[Dict[str, Any]]:
         """Prepare file data for analysis."""
         if not data_file.content:
             logger.warning(f"No content available for {data_file.file_path}")
@@ -365,7 +368,9 @@ class DataFileAnalyzer:
         </o>
         """)
 
-    def _save_analysis(self, data_file: DataFileInfo, results: Dict[str, Any]) -> None:
+    def _save_analysis(self, data_file: "DataFileInfo", results: Dict[str, Any]) -> None:
+        from aiai.app.models import DataFileAnalysis
+
         """Save analysis results to database."""
         DataFileAnalysis.objects.update_or_create(
             data_file=data_file,

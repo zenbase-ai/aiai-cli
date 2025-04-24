@@ -20,7 +20,7 @@ from aiai.runner.batch_runner import BatchRunner
 from aiai.runner.py_script_tracer import PyScriptTracer
 from aiai.synthesizer.data import generate_data
 from aiai.synthesizer.evals import EvalGenerator, RulesEval, SyntheticEvalRunner
-from aiai.utils import log_event, log_init, reset_db
+from aiai.utils import log_event, log_init, reset_db, setup_django
 
 # Use absolute imports within the package
 
@@ -147,7 +147,7 @@ def _optimization_run(
     import pandas as pd
 
     df = pd.DataFrame([(e.trace_id, e.reward["reward"]) for e in eval_runs])
-    stats = {stat: getattr(df[1], stat)() for stat in ["min", "mean", "median", "max", "std"]}
+    stats = {stat: float(getattr(df[1], stat)()) for stat in ["min", "mean", "median", "max", "std"]}
     rich.print_json(data=stats)
     log_event("stats", **stats)
 
@@ -279,6 +279,7 @@ def main(
     # ------------------------------------------------------------------
     # 3️⃣  Analysis setup
     # ------------------------------------------------------------------
+    setup_django()
     reset_db()
 
     # ------------------------------------------------------------------

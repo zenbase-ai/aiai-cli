@@ -8,7 +8,6 @@ from textwrap import dedent
 import pydash
 from docetl.api import ClusterOp, Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep, ReduceOp, UnnestOp
 
-from aiai.app.models import EvalRun, OtelSpan
 from aiai.optimizer.contextualizer import AgentContext
 from aiai.utils import setup_django
 
@@ -417,6 +416,8 @@ def generate_rules_and_tips(context: AgentContext, model="openai/o4-mini") -> di
     Returns:
         dict: A dictionary containing always/never rules, tips
     """
+    from aiai.app.models import EvalRun, OtelSpan
+
     evals = list(EvalRun.objects.all())
     if not evals:
         return {

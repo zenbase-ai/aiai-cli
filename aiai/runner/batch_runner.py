@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from aiai.app.models import EvalRun
 from aiai.runner.py_script_tracer import PyScriptTracer
 
 
@@ -15,6 +14,8 @@ class BatchRunner:
     concurrency: int = 32
 
     def perform(self):
+        from aiai.app.models import EvalRun
+
         with ThreadPoolExecutor(max_workers=self.concurrency) as pool:
             results = pool.map(self.__call__, self.data)
         return EvalRun.objects.bulk_create(results)
@@ -26,6 +27,8 @@ class BatchRunner:
             raise ValueError(f"Unsupported script type: {self.script.suffix}")
 
     def __call__(self, input_data: Any):
+        from aiai.app.models import EvalRun
+
         reward = None
 
         with self.tracer() as tracer:

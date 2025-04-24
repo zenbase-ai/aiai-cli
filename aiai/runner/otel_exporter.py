@@ -5,11 +5,11 @@ from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from pytz import UTC
 
-from aiai.app.models import OtelSpan
-
 
 class DjangoSpanExporter(SpanExporter):
     def export(self, captured_spans: typing.Sequence[ReadableSpan]) -> SpanExportResult:
+        from aiai.app.models import OtelSpan
+
         models: list[OtelSpan] = []
 
         for span in captured_spans:
