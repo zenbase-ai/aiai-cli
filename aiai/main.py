@@ -240,7 +240,7 @@ def main(
         # or we pass the root path explicitly.
         # For simplicity, using a relative path from expected root execution
         log_event("demo")
-        entrypoint = Path("aiai/examples/crewai_agent.py").resolve()
+        entrypoint = (Path(__file__).parent / "examples/crewai_agent.py").resolve()
 
     elif choice == 2:
         typer.secho(
