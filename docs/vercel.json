@@ -9,5 +9,14 @@
       "src": "**",
       "use": "@vercel/python"
     }
+  ],
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
