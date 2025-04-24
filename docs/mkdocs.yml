@@ -20,6 +20,8 @@ nav:
   - About: about.md
 theme:
   name: material
+  favicon: img/favicon.ico
+  logo: img/favicon.svg
   palette:
     primary: indigo
     accent: indigo
