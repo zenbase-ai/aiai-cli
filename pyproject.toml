@@ -23,6 +23,7 @@ dependencies = [
     "sorcery>=0.2.2",
     "pandas>=2.2.3",
     "pydash>=8.0.5",
+    "scarf-sdk>=0.1.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"

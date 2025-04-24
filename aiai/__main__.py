@@ -12,7 +12,6 @@ import typer
 from dotenv import load_dotenv
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from aiai.app.models import FunctionInfo
 from aiai.code_analyzer import CodeAnalyzer
 from aiai.optimizer.contextualizer import AgentContext, generate_context
 from aiai.optimizer.rule_extractor import generate_rules_and_tips
@@ -21,7 +20,7 @@ from aiai.runner.batch_runner import BatchRunner
 from aiai.runner.py_script_tracer import PyScriptTracer
 from aiai.synthesizer.data import generate_data
 from aiai.synthesizer.evals import EvalGenerator, RulesEval, SyntheticEvalRunner
-from aiai.utils import reset_db
+from aiai.utils import log_event, log_init, reset_db
 
 # Use absolute imports within the package
 
@@ -60,11 +59,11 @@ def loading(message: str, silent: bool = True):
 
 
 def analyze_code(file: Path, model: str) -> AgentContext:
-    # No need for inner import now
-    analyzer = CodeAnalyzer()
-    analyzer.analyze_from_file(file, save_to_db=True)
+    from aiai.app.models import FunctionInfo
+
+    CodeAnalyzer().analyze_from_file(file, save_to_db=True)
     source_code = json.dumps(
-        {name: source_code for name, source_code in FunctionInfo.objects.values_list("name", "source_code")},
+        {name: source for name, source in FunctionInfo.objects.values_list("name", "source_code")},
     )
     context = generate_context(source_code=source_code, model=model)
     rich.print_json(context.analysis.model_dump_json())
@@ -148,11 +147,17 @@ def _optimization_run(
     import pandas as pd
 
     df = pd.DataFrame([(e.trace_id, e.reward["reward"]) for e in eval_runs])
-    for stat in ["min", "mean", "median", "max", "std"]:
-        value = getattr(df[1], stat)()
-        typer.echo(f"{stat}: {value:.2f}")
+    stats = {stat: getattr(df[1], stat)() for stat in ["min", "mean", "median", "max", "std"]}
+    rich.print_json(data=stats)
+    log_event("stats", **stats)
 
-    # TODO: Remove before launch
+    log_event(
+        "optimization",
+        evaluator=evaluator,
+        optimizer=optimizer,
+        synthesizer=synthesizer,
+        examples=examples,
+    )
     with loading("Optimizing…"):
         rules_and_tips = generate_rules_and_tips(context=context, model=optimizer)
 
@@ -208,11 +213,10 @@ def main(
         )
         examples = 25
 
-    # Early imports kept local to speed up `python -m aiai` startup.
     load_dotenv()
 
-    # Defaults for synthetic data generation
     typer.secho("\n🚀 Welcome to aiai! 🤖\n", fg=typer.colors.BRIGHT_CYAN, bold=True)
+    log_init()
 
     # ------------------------------------------------------------------
     # 1️⃣  Agent selection
@@ -235,6 +239,7 @@ def main(
         # Let's assume the script is run from the project root for now,
         # or we pass the root path explicitly.
         # For simplicity, using a relative path from expected root execution
+        log_event("demo")
         entrypoint = Path("aiai/examples/crewai_agent.py").resolve()
 
     elif choice == 2:
@@ -259,6 +264,7 @@ def main(
             )
         )
 
+        log_event("custom")
         entrypoint = Path(typer.prompt("\nPath to entrypoint")).expanduser().resolve()
 
     # ------------------------------------------------------------------
@@ -281,6 +287,11 @@ def main(
     with loading("Analyzing code…"):
         opt_ctx = analyze_code(entrypoint, analyzer)
     typer.echo(opt_ctx.analysis.what)
+    log_event(
+        "agent_context",
+        analysis=opt_ctx.analysis.model_dump_json(),
+        prompts=opt_ctx.optimizer_prompts.model_dump_json(),
+    )
 
     # ------------------------------------------------------------------
     # 5️⃣  Evaluation criteria generation
