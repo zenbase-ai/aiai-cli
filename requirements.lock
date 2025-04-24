@@ -167,8 +167,6 @@ googleapis-common-protos==1.70.0
     # via opentelemetry-exporter-otlp-proto-http
 gptcache==0.1.44
     # via embedchain
-greenlet==3.2.0
-    # via sqlalchemy
 grpcio==1.71.0
     # via chromadb
     # via grpcio-tools

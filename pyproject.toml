@@ -24,6 +24,7 @@ dependencies = [
     "pandas>=2.2.3",
     "pydash>=8.0.5",
     "scarf-sdk>=0.1.2",
+    "aiai-cli[crewai]>=0.1.6",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"

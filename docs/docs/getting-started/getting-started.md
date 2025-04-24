@@ -93,14 +93,13 @@ This report contains:
 
 Here's an example of what you might see in the report:
 
-```markdown
 # Final discovered optimization rule placements
 
 | # | File | Target | Confidence | Rule |
 | --- | --- | --- | --- | --- |
 | 1 | email_agent.py | generate_email | 94% | Always identify the lead's specific interests from their profile data and establish a clear connection between those interests and your product's benefits before generating the email body. |
 | 2 | email_agent.py | craft_subject_line | 91% | Never use generic subject lines; instead, reference a specific pain point or goal mentioned in the lead's background information to increase open rates. |
-```
+
 
 ## Next Steps
 

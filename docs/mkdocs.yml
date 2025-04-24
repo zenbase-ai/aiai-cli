@@ -6,6 +6,7 @@ nav:
   - Getting Started: getting-started/getting-started.md
   - User Guide:
     - Overview: user-guide/overview.md
+    - Configuration: user-guide/configuration-reference.md
   - Concepts:
     - Rule Extraction: concepts/rule-extraction.md
   - Examples:
