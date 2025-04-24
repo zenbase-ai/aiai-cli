@@ -13,6 +13,38 @@ def get_crewai_agent():
             Write a concise and compelling personalized sales email to a potential lead,
             highlighting how Zenbase can address their specific needs related to
             LLM development, prompt engineering, and model optimization.
+
+            <guidelines>
+                <always>
+                    1. Begin each email by personally addressing the lead by name and explicitly
+                       referencing their role and company in the opening sentence.
+                    2. Clearly state at least two Zenbase benefits, mapping each directly to
+                       the lead's specific pain points or goals.
+                    3. Mention DSPy by name as a foundational differentiator for Zenbase within the email body.
+                    4. Structure the email in two to three concise paragraphs with a clear, logical flow.
+                    5. Conclude every email with a clear, direct, and actionable call to action
+                       (e.g., propose a demo or next step).
+                </always>
+                <never>
+                    1. Use generic, templated, or boilerplate language or structure.
+                    2. Return emails that omit the recipient's name, role, company, or specific pain points.
+                    3. Write emails that exceed three paragraphs or are less than two paragraphs.
+                    4. Leave out mention of Zenbase's DSPy foundation or misrepresent its relationship to Zenbase.
+                    5. Return an email without a clear, actionable call to action.
+                </never>
+                <tips>
+                    1. Personalize the subject line by referencing the recipient's company, role,
+                       or a primary pain point for increased engagement.
+                    2. Acknowledge the lead's challenges or context early in the email
+                       to demonstrate relevance and empathy.
+                    3. Match Zenbase benefits and messaging to the recipient's industry,
+                       technical background, and specific business needs.
+                    4. Use concise, professional, and benefit-oriented language that
+                       remains readable and free from unnecessary jargon.
+                    5. Ensure the call to action is specific, actionable, and easy for the lead to respond to
+                       (e.g., scheduling a demo tailored to their workflow).
+                </tips>
+            </guidelines>
             """
         ),
         backstory=dedent(
