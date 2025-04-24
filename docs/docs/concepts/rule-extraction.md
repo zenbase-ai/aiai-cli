@@ -24,19 +24,19 @@ AIAI CLI extracts several types of rules:
 
 "Always" rules identify patterns that should always be followed. For example:
 
-> "Always cache the results of expensive API calls when the same parameters are used multiple times."
+> "Always break down complex reasoning tasks into step-by-step explanations before providing the final answer."
 
 ### Never Rules
 
 "Never" rules identify patterns that should be avoided. For example:
 
-> "Never make synchronous API calls in sequence when they could be executed in parallel."
+> "Never provide vague or general responses that lack specific details or context-relevant information."
 
 ### Tips
 
 "Tips" are general recommendations that may improve performance. For example:
 
-> "Consider using batch processing for multiple, similar database operations to reduce overhead."
+> "Consider illustrating your reasoning with concrete examples when explaining complex concepts."
 
 ## Rule Confidence
 
@@ -58,7 +58,20 @@ After rules are extracted, AIAI CLI determines where in your code each rule shou
 
 AIAI CLI generates a markdown report containing all extracted rules, their confidence scores, and their locations in your code. This report is saved to your current directory with a filename like `optimizations_report_20250423_2132.md`.
 
-## Related Concepts
+## Agent Optimization Process
 
-- [Agent Optimization](agent-optimization.md): The overall process of improving agent performance
-- [Synthetic Data Generation](../user-guide/configuration.md#synthetic-data-generation): Creating diverse test cases for thorough analysis 
+AIAI CLI follows a systematic process to optimize AI agents:
+
+1. **Code Analysis**: The system analyzes your agent's source code to understand its structure, dependencies, and components, building a dependency graph.
+
+2. **Synthetic Data Generation**: AIAI CLI generates diverse synthetic test cases that will be used to exercise your agent's functionality and collect execution data.
+
+3. **Evaluation Criteria Generation**: The system creates evaluation criteria based on the code analysis, which will be used to assess your agent's performance.
+
+4. **Execution Tracing**: Your agent is run against the synthetic data to collect detailed execution traces, capturing information about API calls, function execution, and performance metrics.
+
+5. **Rule Extraction**: Patterns identified in the execution traces are converted into explicit optimization rules with confidence scores.
+
+6. **Rule Localization**: Rules are mapped to specific locations in your agent's source code where they should be applied.
+
+7. **Report Generation**: Finally, AIAI CLI produces a comprehensive optimization report with actionable recommendations, file paths, target code sections, and confidence scores.

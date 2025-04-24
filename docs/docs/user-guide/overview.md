@@ -14,13 +14,14 @@ The AIAI CLI system consists of several components working together:
 
 The Code Analyzer examines your agent's source code to build a dependency graph and understand the structure of your code. This information is used to identify potential optimization targets.
 
+### Synthesizer
+
+The Synthesizer generates synthetic data examples to test your agent. This ensures a diverse set of test cases to thoroughly exercise your agent's functionality.
+
 ### Runner
 
 The Runner executes your agent with different inputs to capture execution traces. These traces provide valuable information about how your agent behaves under various conditions.
 
-### Synthesizer
-
-The Synthesizer generates synthetic data examples to test your agent. This ensures a diverse set of test cases to thoroughly exercise your agent's functionality.
 
 ### Rule Extractor
 
@@ -41,7 +42,4 @@ The typical workflow for using AIAI CLI is:
 5. **Verification**: Re-run your agent to verify improvements
 
 ## Next Steps
-
-- Learn about available [commands](commands.md)
-- Explore [configuration options](configuration.md)
 - See [examples](../examples/demo-email-agent.md) of AIAI CLI in action 

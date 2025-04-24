@@ -3,21 +3,14 @@ site_description: Documentation for the AIAI CLI tool for agent optimization
 repo_url: https://github.com/zenbase-ai/aiai-cli
 nav:
   - Home: index.md
-  - Getting Started:
-    - Installation: getting-started/installation.md
-    - Quick Start: getting-started/quick-start.md
+  - Getting Started: getting-started/getting-started.md
   - User Guide:
     - Overview: user-guide/overview.md
-    - Command Reference: user-guide/commands.md
-    - Configuration: user-guide/configuration.md
   - Concepts:
     - Rule Extraction: concepts/rule-extraction.md
-    - Agent Optimization: concepts/agent-optimization.md
   - Examples:
     - Demo Email Agent: examples/demo-email-agent.md
     - Custom Agents: examples/custom-agents.md
-  - Contributing: contributing.md
-  - About: about.md
 theme:
   name: material
   favicon: img/favicon.ico
