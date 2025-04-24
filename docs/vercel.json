@@ -1,14 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "build.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "site"
-      }
-    }
-  ],
+  "framework": null,
+  "buildCommand": "pip3 install -r requirements.txt && mkdocs build",
+  "outputDirectory": "site",
   "routes": [
     {
       "handle": "filesystem"
