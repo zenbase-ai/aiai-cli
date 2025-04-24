@@ -14,6 +14,7 @@ aiai [OPTIONS]
 | `--evaluator`   | TEXT    | openai/o4-mini      | Model used for evaluating agent outputs                  |
 | `--optimizer`   | TEXT    | openai/gpt-4.1      | Model used for generating optimization rules             |
 | `--synthesizer` | TEXT    | openai/gpt-4.1-nano | Model used for generating synthetic data                 |
+| `--data`        | PATH    | None                | Path to existing data file                               |
 | `--examples`    | INTEGER | 25                  | Number of synthetic examples to generate                 |
 | `--seed`        | INTEGER | 42                  | Random seed for reproducible synthetic data              |
 | `--concurrency` | INTEGER | 16                  | Number of concurrent evaluations                         |
@@ -56,9 +57,23 @@ The synthesizer model generates diverse examples to test your agent. This model 
 aiai --synthesizer="openai/gpt-4o"
 ```
 
-### Synthetic Data Options
+#### --data
 
-#### --examples
+Path to existing data file. If not provided, AIAI CLI will generate synthetic data.
+
+```bash
+aiai --data="data.json"
+```
+
+data.json should be a JSON file with a list of inputs.
+
+```json
+[
+    "input1",
+    "input2",
+]
+
+### Synthetic Data Options
 
 Controls how many synthetic examples are generated to test your agent. More examples provide better coverage but increase runtime.
 

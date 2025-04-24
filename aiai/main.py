@@ -114,6 +114,7 @@ def _validate_entrypoint(entrypoint: Path):
 
 def _optimization_run(
     entrypoint: Path,
+    data: Path | None,
     rules_eval: RulesEval,
     context: AgentContext,
     evaluator: str,
@@ -130,14 +131,17 @@ def _optimization_run(
     # ------------------------------------------------------------------
     # Generate synthetic data (or reuse if already present)
     # ------------------------------------------------------------------
-    data = list(SyntheticDatum.objects.all())
-    if not data:
-        with loading(f"Generating {examples} synthetic inputs…"):
-            data = generate_data(context, examples, seed, model=synthesizer)
+    if data and data.exists():
+        data = json.loads(data.read_text())
+    else:
+        data = list(SyntheticDatum.objects.all().values_list("input_data", flat=True))
+        if not data:
+            with loading(f"Generating {examples} synthetic inputs…"):
+                data = [d.input_data for d in generate_data(context, examples, seed, model=synthesizer)]
 
     batch_runner = BatchRunner(
         script=entrypoint,
-        data=[d.input_data for d in data],
+        data=data,
         eval=SyntheticEvalRunner(rules_eval, model=evaluator),
         concurrency=concurrency,
     )
@@ -201,6 +205,7 @@ def main(
     evaluator: str = "openai/o4-mini",
     optimizer: str = "openai/gpt-4.1",
     synthesizer: str = "openai/gpt-4.1-nano",
+    data: Path = None,
     examples: int = 25,
     seed: int = 42,
     concurrency: int = 16,
@@ -264,7 +269,17 @@ def main(
             )
         )
 
-        log_event("custom")
+        log_event(
+            "custom",
+            analyzer=analyzer,
+            evaluator=evaluator,
+            optimizer=optimizer,
+            synthesizer=synthesizer,
+            data=str(data),
+            examples=examples,
+            seed=seed,
+            concurrency=concurrency,
+        )
         entrypoint = Path(typer.prompt("\nPath to entrypoint")).expanduser().resolve()
 
     # ------------------------------------------------------------------
@@ -316,6 +331,7 @@ def main(
         _optimization_run(
             entrypoint,
             rules_eval,
+            data=data,
             context=opt_ctx,
             evaluator=evaluator,
             optimizer=optimizer,
