@@ -19,9 +19,6 @@ db.sqlite3
 
 output/
 
-# any json file that have output in its name
-*.json
-
 # .env file
 src/aiai/.env
 
@@ -34,3 +31,4 @@ src/aiai/.env
 !aiai/examples/crewai/people_data.json
 
 .idea
+/docs/site/

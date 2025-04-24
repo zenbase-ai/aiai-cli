@@ -1,0 +1,11 @@
+{
+    "name": "aiai-docs",
+    "version": "1.0.0",
+    "description": "Documentation for AIAI CLI",
+    "scripts": {
+        "build": "pip3 install -r requirements.txt && mkdocs build"
+    },
+    "engines": {
+        "node": ">=14"
+    }
+}
