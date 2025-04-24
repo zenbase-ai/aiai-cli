@@ -1,6 +1,6 @@
 [project]
 name = "aiai-cli"
-version = "0.1.0"
+version = "0.1.2"
 description = "An AI Agent that automates AI Engineering"
 authors = [{ name = "Amir Mehr", email = "amir@zenbase.ai" }]
 dependencies = [
@@ -33,7 +33,7 @@ crewai = ["crewai==0.114.0", "crewai-tools>=0.40.1"]
 langgraph = ["langgraph>=0.3.31"]
 
 [project.scripts]
-aiai = "aiai:cli"
+aiai = "aiai:main.cli"
 
 [build-system]
 requires = ["hatchling==1.26.3"]

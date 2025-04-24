@@ -11,21 +11,21 @@ from typer.testing import CliRunner
 # or use a Typer CliRunner if main() is wrapped in a Typer app object.
 # Let's refine imports based on the actual structure if needed.
 # We'll likely need to import the main function/app object itself.
-from aiai.__main__ import cli  # Import the Typer app
+from aiai.main import cli  # Import the Typer app
 from aiai.optimizer.contextualizer import AgentAnalysis, AgentContext, OptimizerPrompts
 
 runner = CliRunner()
 
 
 @pytest.mark.django_db  # Mark the test as needing DB access for setup
-@patch("aiai.__main__.typer.prompt")
-@patch("aiai.__main__.typer.confirm")
-@patch("aiai.__main__._validate_entrypoint")
-@patch("aiai.__main__.analyze_code")
+@patch("aiai.main.typer.prompt")
+@patch("aiai.main.typer.confirm")
+@patch("aiai.main._validate_entrypoint")
+@patch("aiai.main.analyze_code")
 @patch("aiai.synthesizer.evals.EvalGenerator.perform")  # Mock where it's defined
-@patch("aiai.__main__._optimization_run")
-@patch("aiai.__main__.reset_db")  # Mock reset_db as well
-@patch("aiai.__main__.load_dotenv")  # Don't need .env for this test
+@patch("aiai.main._optimization_run")
+@patch("aiai.main.reset_db")  # Mock reset_db as well
+@patch("aiai.main.load_dotenv")  # Don't need .env for this test
 @patch.object(sys, "argv", ["aiai"])  # Mock argv for direct function call
 def test_cli_demo_agent_success(
     mock_load_dotenv,
