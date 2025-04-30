@@ -101,20 +101,18 @@ class PythonParser(LanguageParser):
         super().__init__()
 
         # Initialize Tree-sitter for Python
-        self.PY_LANGUAGE = Language(tree_sitter_python.language())
-
+        self.language = Language(tree_sitter_python.language())
         # Initialize the parser
-        self.parser = Parser()
-        self.parser.language = self.PY_LANGUAGE
+        self.parser = Parser(self.language)
 
         # Compile queries
-        self.function_query = self.PY_LANGUAGE.query(FUNCTION_QUERY)
-        self.function_call_query = self.PY_LANGUAGE.query(FUNCTION_CALL_QUERY)
-        self.import_query = self.PY_LANGUAGE.query(IMPORT_QUERY)
-        self.string_query = self.PY_LANGUAGE.query(STRING_QUERY)
-        self.comment_query = self.PY_LANGUAGE.query(COMMENT_QUERY)
-        self.assignment_query = self.PY_LANGUAGE.query(ASSIGNMENT_QUERY)
-        self.file_ref_query = self.PY_LANGUAGE.query(FILE_REF_QUERY)
+        self.function_query = self.language.query(FUNCTION_QUERY)
+        self.function_call_query = self.language.query(FUNCTION_CALL_QUERY)
+        self.import_query = self.language.query(IMPORT_QUERY)
+        self.string_query = self.language.query(STRING_QUERY)
+        self.comment_query = self.language.query(COMMENT_QUERY)
+        self.assignment_query = self.language.query(ASSIGNMENT_QUERY)
+        self.file_ref_query = self.language.query(FILE_REF_QUERY)
 
     def parse_file(self, file_path: str) -> Any:
         """

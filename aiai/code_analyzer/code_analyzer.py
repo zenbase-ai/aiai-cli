@@ -20,7 +20,7 @@ class CodeAnalyzer:
     of functions and their relationships.
     """
 
-    def __init__(self, language: str = "python"):
+    def __init__(self, language: str | None = None):
         """
         Initialize the code analyzer with a specific language parser.
 
@@ -29,12 +29,10 @@ class CodeAnalyzer:
         """
         setup_django()
         self.language = language
-        self.parser = get_parser_for_language(language)
-        if not self.parser:
-            raise ValueError(f"Unsupported language: {language}")
+        self.parser = get_parser_for_language(language) if language else None
 
-        self.visited_files = set[str]()
-        self.dependency_graph = DependencyGraph()
+        if language and not self.parser:
+            raise ValueError(f"Unsupported language: {language}")
 
     def analyze_from_file(
         self,
@@ -58,9 +56,25 @@ class CodeAnalyzer:
         if not os.path.exists(entrypoint_file):
             raise FileNotFoundError(f"Entrypoint file not found: {entrypoint_file}")
 
+        # Lazily detect language and initialize parser if needed
+        if self.parser is None:
+            detected_lang = self._detect_language(entrypoint_file)
+            self.language = detected_lang
+            self.parser = get_parser_for_language(detected_lang)
+
+            if not self.parser:
+                raise ValueError(f"Unsupported language detected from file extension: {detected_lang}")
+
         # Reset state for new analysis
-        self.visited_files = set()
+        self.visited_files = set[str]()
         self.dependency_graph = DependencyGraph()
+
+        # Clear any language-parser specific caches/state
+        if hasattr(self.parser, "clear_state"):
+            try:
+                self.parser.clear_state()
+            except Exception:
+                logger.debug("Parser clear_state() failed", exc_info=True)
 
         # Begin analysis from the entrypoint
         self._analyze_file(
@@ -476,3 +490,26 @@ class CodeAnalyzer:
 
         # Return combined results
         return {"code_graph": code_graph, "data_files": data_file_references}
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _detect_language(file_path: str) -> str:
+        """Detect programming language based on file extension.
+
+        Currently supports Python (.py) and TypeScript/JavaScript (.ts, .tsx, .js, .jsx).
+        Defaults to "python" if extension is unrecognized.
+        """
+        _, ext = os.path.splitext(file_path.lower())
+
+        mapping = {
+            ".py": "python",
+            ".ts": "typescript",
+            ".tsx": "typescript",
+            ".js": "typescript",
+            ".jsx": "typescript",
+        }
+
+        return mapping.get(ext, "python")

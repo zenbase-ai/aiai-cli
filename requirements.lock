@@ -678,6 +678,9 @@ traitlets==5.14.3
     # via matplotlib-inline
 tree-sitter==0.24.0
     # via aiai-cli
+    # via tree-sitter-languages
+tree-sitter-languages==1.10.2
+    # via aiai-cli
 tree-sitter-python==0.23.6
     # via aiai-cli
 typer==0.12.5
