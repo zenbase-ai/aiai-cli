@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from time import monotonic
-from typing import Callable, Optional, cast
+from typing import cast, Callable, Optional
 
 import rich
 import typer
