@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from time import monotonic
-from typing import cast, Callable, Optional
+from typing import Callable, Optional, cast
 
 import rich
 import typer
@@ -222,7 +222,7 @@ def main(
     concurrency: int = 16,
 ):  # noqa: C901 – the CLI can be a bit long
     """Interactive `aiai` CLI as described in `aiai/cli/README.md`.
-    
+
     You can provide custom data with --data and a custom evaluation function with --custom-eval-file.
     The custom evaluation file should contain an 'main' function that takes agent output and returns a reward dict.
     """
@@ -330,23 +330,23 @@ def main(
     # ------------------------------------------------------------------
     rules_eval = None
     custom_eval_fn = None
-    
+
     try:
         if custom_eval_file and custom_eval_file.exists():
             typer.echo(f"Using custom evaluation file: {custom_eval_file}")
             # Import the custom evaluation module
             import importlib.util
             import sys
-            
+
             module_name = custom_eval_file.stem
             spec = importlib.util.spec_from_file_location(module_name, custom_eval_file)
             if spec is None or spec.loader is None:
                 raise ImportError(f"Could not load custom eval file: {custom_eval_file}")
-                
+
             custom_eval_module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = custom_eval_module
             spec.loader.exec_module(custom_eval_module)
-            
+
             # Check if the module has a main function
             if hasattr(custom_eval_module, "main"):
                 custom_eval_fn = custom_eval_module.main
@@ -369,7 +369,7 @@ def main(
         )
         rules_eval = None
         custom_eval_fn = None
-        
+
     # ------------------------------------------------------------------
     # 6️⃣  Optimization run
     # ------------------------------------------------------------------
