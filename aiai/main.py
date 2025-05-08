@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
 from time import monotonic
-from typing import cast
+from typing import cast, Callable, Optional
 
 import rich
 import typer
@@ -116,7 +116,7 @@ def _validate_entrypoint(entrypoint: Path):
 def _optimization_run(
     entrypoint: Path,
     data: Path | None,
-    rules_eval: RulesEval,
+    rules_eval: RulesEval | None,
     context: AgentContext,
     evaluator: str,
     optimizer: str,
@@ -124,6 +124,7 @@ def _optimization_run(
     examples: int,
     concurrency: int,
     seed: int,
+    custom_eval_fn: Optional[Callable] = None,
 ):
     """Run a single optimisation pass (no epochs)."""
     # Import models here, after setup_django has run
@@ -142,10 +143,16 @@ def _optimization_run(
             with (cwd / "synthetic_data.json").open("w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
+    # Create the evaluator - either using custom function or SyntheticEvalRunner
+    if custom_eval_fn:
+        eval_callable = custom_eval_fn
+    else:
+        eval_callable = SyntheticEvalRunner(rules_eval, model=evaluator)
+
     batch_runner = BatchRunner(
         script=entrypoint,
         data=cast(list, data),
-        eval=SyntheticEvalRunner(rules_eval, model=evaluator),
+        eval=eval_callable,
         concurrency=concurrency,
     )
     with loading("Evaluating..."):
@@ -209,11 +216,16 @@ def main(
     optimizer: str = "openai/gpt-4.1",
     synthesizer: str = "openai/gpt-4.1-nano",
     data: Path = None,
+    custom_eval_file: Path = None,
     examples: int = 25,
     seed: int = 42,
     concurrency: int = 16,
 ):  # noqa: C901 – the CLI can be a bit long
-    """Interactive `aiai` CLI as described in `aiai/cli/README.md`."""
+    """Interactive `aiai` CLI as described in `aiai/cli/README.md`.
+    
+    You can provide custom data with --data and a custom evaluation function with --custom-eval-file.
+    The custom evaluation file should contain an 'main' function that takes agent output and returns a reward dict.
+    """
     if examples > 25:
         typer.secho(
             "⚠️  Maximum number of synthetic examples is 25. Setting to 25.\n",
@@ -279,6 +291,7 @@ def main(
             optimizer=optimizer,
             synthesizer=synthesizer,
             data=str(data),
+            custom_eval_file=str(custom_eval_file) if custom_eval_file else None,
             examples=examples,
             seed=seed,
             concurrency=concurrency,
@@ -313,24 +326,54 @@ def main(
     )
 
     # ------------------------------------------------------------------
-    # 5️⃣  Evaluation criteria generation
+    # 5️⃣  Evaluation criteria generation or loading
     # ------------------------------------------------------------------
+    rules_eval = None
+    custom_eval_fn = None
+    
     try:
-        # No need for inner import now
-        with loading("Generating evals…"):
-            generator = EvalGenerator(opt_ctx, evaluator)
-            rules_eval, _ = generator.perform()  # Ignore head_to_head
-        typer.echo(rules_eval.prompt.strip())
+        if custom_eval_file and custom_eval_file.exists():
+            typer.echo(f"Using custom evaluation file: {custom_eval_file}")
+            # Import the custom evaluation module
+            import importlib.util
+            import sys
+            
+            module_name = custom_eval_file.stem
+            spec = importlib.util.spec_from_file_location(module_name, custom_eval_file)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Could not load custom eval file: {custom_eval_file}")
+                
+            custom_eval_module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = custom_eval_module
+            spec.loader.exec_module(custom_eval_module)
+            
+            # Check if the module has a main function
+            if hasattr(custom_eval_module, "main"):
+                custom_eval_fn = custom_eval_module.main
+                typer.echo("Custom evaluation function 'main' loaded successfully.")
+            else:
+                typer.secho(
+                    "⚠️  Custom eval file must contain a 'main' function.\n",
+                    fg=typer.colors.YELLOW,
+                )
+        else:
+            # No need for inner import now
+            with loading("Generating evals…"):
+                generator = EvalGenerator(opt_ctx, evaluator)
+                rules_eval, _ = generator.perform()  # Ignore head_to_head
+            typer.echo(rules_eval.prompt.strip())
     except Exception as exc:  # noqa: BLE001 – non‑critical failure
         typer.secho(
             f"⚠️  Skipped evaluation criteria generation due to error: {exc}\n",
             fg=typer.colors.YELLOW,
         )
         rules_eval = None
+        custom_eval_fn = None
+        
     # ------------------------------------------------------------------
     # 6️⃣  Optimization run
     # ------------------------------------------------------------------
-    if rules_eval:
+    if rules_eval or custom_eval_fn:
         _optimization_run(
             entrypoint,
             data=data,
@@ -342,6 +385,7 @@ def main(
             examples=examples,
             seed=seed,
             concurrency=concurrency,
+            custom_eval_fn=custom_eval_fn,
         )
     else:
         typer.secho(
