@@ -237,8 +237,7 @@ def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
                 </insights>
 
                 <output>
-                    Return both rules and tips for evaluating task results:
-
+                    Return:
                     1. Rules (in always/never format):
                     • Always: ONLY include rules that are absolutely clear-cut requirements
                       (format as direct actions: "Include complete information")
