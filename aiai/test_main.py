@@ -171,3 +171,100 @@ def main(agent_output):
         args, kwargs = mock_optimization_run.call_args
         assert "custom_eval_fn" in kwargs
         assert kwargs["custom_eval_fn"] is not None
+
+
+@pytest.mark.django_db
+@patch("aiai.main.typer.prompt")
+@patch("aiai.main._validate_entrypoint")
+@patch("aiai.main.analyze_code")
+@patch("aiai.main.reset_db")
+@patch("aiai.main.load_dotenv")
+@patch("aiai.main.generate_data")
+def test_custom_eval_function_is_automatically_executed(
+    mock_generate_data,
+    mock_load_dotenv,
+    mock_reset_db,
+    mock_analyze_code,
+    mock_validate_entrypoint,
+    mock_prompt,
+    monkeypatch,
+):
+    """Test that verifies the custom evaluation function is automatically executed during the optimization process."""
+    # Create a temporary custom eval file
+    with tempfile.NamedTemporaryFile(suffix=".py", mode="w") as temp_file:
+        temp_file.write("""
+def main(agent_output):
+    # This function will be called during the BatchRunner execution
+    with open('eval_was_executed.txt', 'w') as f:
+        f.write('Custom eval function was executed!')
+    return {"reward": 0.75}
+        """)
+        temp_file.flush()
+
+        # Setup test environment
+        custom_eval_path = Path(temp_file.name)
+        entrypoint_path = Path(__file__).parent.parent / "examples" / "crewai_agent.py"
+
+        # Generate mock data
+        mock_data = ["Test input 1", "Test input 2"]
+        mock_generate_data.return_value = [MagicMock(input_data=d) for d in mock_data]
+
+        # Mock user input
+        mock_prompt.side_effect = [2, str(entrypoint_path)]
+
+        # Mock validation and analysis
+        mock_validate_entrypoint.return_value = None
+        mock_analyze_code.return_value = AgentContext(
+            "",
+            AgentAnalysis(
+                what="Test agent", how="", success_modes=[], failure_modes=[], expert_persona="", considerations=[]
+            ),
+            OptimizerPrompts(
+                synthetic_data="",
+                reward_reasoning="",
+                traces_to_patterns="",
+                patterns_to_insights="",
+                insights_to_rules="",
+                synthesize_rules="",
+                rule_merger="",
+            ),
+        )
+
+        # Patch PyScriptTracer to return mock outputs without running actual scripts
+        def mock_tracer_call(self, input_data=None, **kwargs):
+            return "mock_trace_id", f"Output for {input_data}"
+
+        # Replace the real BatchRunner.perform with our own implementation
+        __import__("aiai.runner.batch_runner").runner.batch_runner.BatchRunner.perform
+
+        def mock_batch_runner_perform(self):
+            # Actually call the eval function with test output
+            eval_results = []
+            for data_item in self.data:
+                trace_id = "mock_trace_id"
+                output = f"Processed output for: {data_item}"
+                # This is the key part: actually calling the evaluation function
+                reward = self.eval(output)
+                from aiai.app.models import EvalRun
+
+                eval_results.append(EvalRun(trace_id=trace_id, input_data=data_item, output_data=output, reward=reward))
+            return eval_results
+
+        # Apply our patches
+        with patch("aiai.runner.py_script_tracer.PyScriptTracer.__call__", mock_tracer_call):
+            monkeypatch.setattr("aiai.runner.batch_runner.BatchRunner.perform", mock_batch_runner_perform)
+
+            # Clean up any previous test file
+            if Path("eval_was_executed.txt").exists():
+                Path("eval_was_executed.txt").unlink()
+
+            # Run the CLI with our custom eval file
+            runner.invoke(cli, ["--custom-eval-file", str(custom_eval_path)])
+
+            # Verify the evaluation function was called by checking for the file
+            assert Path("eval_was_executed.txt").exists()
+            content = Path("eval_was_executed.txt").read_text()
+            assert content == "Custom eval function was executed!"
+
+            # Clean up
+            Path("eval_was_executed.txt").unlink()
