@@ -454,6 +454,141 @@ class RuleLocator:
         )
         return modifications
 
+    def _locate_precise_rule_positions(self, raw_code_mods: list[CodeModification]) -> list[dict]:
+        """
+        For each identified function or data file that needs rules applied,
+        determine precise locations to insert the rules within the source code.
+
+        Args:
+            raw_code_mods: List of CodeModification objects identifying which functions/files
+                          need rules applied
+
+        Returns:
+            list: Enhanced list of dictionaries with precise insertion points for rules
+        """
+        from aiai.app.models import DataFileInfo, FunctionInfo
+
+        precise_code_mods = []
+        lm = instructor.from_litellm(litellm.completion)
+
+        for mod in raw_code_mods:
+            # Fetch the full source code from the database
+            if mod.function_id:
+                target_type = "function"
+                function = FunctionInfo.objects.get(id=mod.function_id)
+                source_code = function.source_code
+                target_info = {
+                    "id": function.id,
+                    "name": function.name,
+                    "file_path": function.file_path,
+                    "signature": function.signature,
+                    "docstring": function.docstring or "",
+                }
+            else:  # data_file
+                target_type = "data_file"
+                data_file = DataFileInfo.objects.get(id=mod.data_file_id)
+                source_code = data_file.content
+                target_info = {
+                    "id": data_file.id,
+                    "file_path": data_file.file_path,
+                    "file_type": data_file.file_type,
+                }
+
+            # Get precise placement information from the LLM
+            prompt_elements = {
+                "always": mod.always,
+                "never": mod.never,
+                "tips": mod.tips,
+            }
+
+            # Define a structure to capture precise insertion points
+            class PreciseModification(BaseModel):
+                position_description: str = Field(
+                    description="Description of where to insert these rules (e.g., 'After the instructions tag')"
+                )
+                line_number: int | None = Field(
+                    description="Approximate line number for insertion, if determinable", default=None
+                )
+                context_before: str = Field(description="A few words of text that come before the insertion point")
+                context_after: str = Field(description="A few words of text that come after the insertion point")
+
+            # Ask the LLM for precise placement
+            precise_mod = lm.create(
+                model=self.model,
+                response_model=PreciseModification,
+                max_retries=3,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": dedent(
+                            f"""\
+                            You are an expert in analyzing prompts in code. Your task is to determine 
+                            PRECISELY where specific rules should be inserted into a {target_type}'s source code.
+                            
+                            You'll be given:
+                            1. The source code of a {target_type}
+                            2. Rules ("always", "never") and tips that need to be added
+                            
+                            You need to identify EXACT positions to insert these rules, such as:
+                            - After an <instructions> tag in the sample_agent definition
+                            - Within the definition of the sample_agent
+                            
+                            For each insertion point, provide:
+                            - The context before and after the insertion point (a few words)
+                            - A clear description of the position
+                            - Approximately the line number
+                            
+                            Focus on finding the most natural and effective positions where these rules 
+                            would enhance the existing prompt without disrupting its structure.
+                            """
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": dedent(
+                            f"""\
+                            Here is the source code of the {target_type}:
+                            
+                            <source_code>
+                            {source_code}
+                            </source_code>
+                            
+                            Here are the rules and tips to add:
+                            
+                            <rules>
+                                <always>
+                                    {json.dumps(prompt_elements["always"])}
+                                </always>
+                                <never>
+                                    {json.dumps(prompt_elements["never"])}
+                                </never>
+                                <tips>
+                                    {json.dumps(prompt_elements["tips"])}
+                                </tips>
+                            </rules>
+
+                            Please identify the precise positions in the source code where these rules 
+                            should be inserted.
+                            """
+                        ),
+                    },
+                ],
+            )
+
+            # Build the enhanced modification
+            precise_mod_dict = {
+                "target_type": target_type,
+                "target": target_info,
+                "mods": mod.model_dump(include=["always", "never", "tips"]),
+                "precise_insertion_points": precise_mod.model_dump(),
+                "target_file_path": target_info["file_path"] + f":{precise_mod.line_number}",
+                "source_code": source_code,
+            }
+
+            precise_code_mods.append(precise_mod_dict)
+
+        return precise_code_mods
+
     def perform(self):
         setup_django()
         from aiai.app.models import DataFileInfo, FunctionInfo
@@ -466,24 +601,9 @@ class RuleLocator:
         print("Locating optimal modifications...")
         raw_code_mods = self._locate_rules(prompt_functions, prompt_data_files)
 
-        code_mods: list[dict] = []
-        for mod in raw_code_mods:
-            if mod.function_id:
-                code_mods.append(
-                    {
-                        "target_type": "function",
-                        "target": next(f for f in prompt_functions if f["id"] == mod.function_id),
-                        "mods": mod.model_dump(include=["always", "never", "tips"]),
-                    }
-                )
-            elif mod.data_file_id:
-                code_mods.append(
-                    {
-                        "target_type": "data_file",
-                        "target": next(f for f in prompt_data_files if f["id"] == mod.data_file_id),
-                        "mods": mod.model_dump(include=["always", "never", "tips"]),
-                    }
-                )
+        print("Finding precise insertion points for rules...")
+        code_mods = self._locate_precise_rule_positions(raw_code_mods)
+
         return code_mods
 
 

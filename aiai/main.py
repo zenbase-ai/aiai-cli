@@ -80,7 +80,7 @@ def generate_optimization_report(code_mods: list[dict], write_to: Path):
         file = code_mod["target"]["file_path"]
         md_lines.append(f"## File: {file}\n")
         md_lines.append("Source:")
-        md_lines.append(f"```python\n{code_mod['target']['source_code']}\n```")
+        md_lines.append(f"```python\n{code_mod['source_code']}\n```")
         md_lines.append("Optimizations:")
         if code_mod["mods"].get("always"):
             md_lines.append("<always>")
@@ -193,11 +193,10 @@ def _optimization_run(
     # Console output
     for code_mod in code_mods:
         file = code_mod["target"]["file_path"]
+        precise_location = code_mod["target_file_path"]
         typer.echo("")
         typer.echo(f"File: {file} ".ljust(100, "="))
-        typer.echo("Source:")
-        typer.echo(f"```python\n{code_mod['target']['source_code']}\n```")
-        typer.echo("Optimizations:")
+        typer.echo(f"Optimizations to insert here {precise_location}:")
         rich.print_json(data=code_mod["mods"])
 
     # Generate markdown report
