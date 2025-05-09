@@ -1,6 +1,6 @@
 [project]
 name = "aiai-cli"
-version = "0.1.9"
+version = "0.1.10"
 description = "Your friendly neighborhood AI agent optimization AI agent"
 authors = [
     { name = "Amir Mehr", email = "amir@zenbase.ai" },
