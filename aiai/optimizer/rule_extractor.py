@@ -214,6 +214,9 @@ def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
                     are in the form of rules and tips for the LLM to follow. These rules and tips should be specific,
                     detailed, simple, and actionable for the LLM without any code changes.
 
+                    For each rule and tip you generate, provide a reasoning that explains why this rule is important
+                    based on the insights and patterns observed in the trace data.
+
                     {context.optimizer_prompts.insights_to_rules}
                 </instructions>
 
@@ -265,14 +268,22 @@ def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
                     IMPORTANT: Only include rules in the "always" or "never" sections if they are
                     absolutely clear-cut, binary requirements. If a rule is not a strict ALWAYS or NEVER
                     requirement, or if it's more nuanced, place it in the "tips" section instead.
+
+                    3. For each rule and tip, provide a reasoning that explains why it's important based
+                    on the insights and patterns observed in the trace data.
+
+                    Format your response as a JSON with the following structure:
+                    - "always": a list of dictionaries, each with "rule" and "reasoning" fields
+                    - "never": a list of dictionaries, each with "rule" and "reasoning" fields
+                    - "tips": a list of dictionaries, each with "rule" and "reasoning" fields
                 </output>
                 """
             ),
             output={
                 "schema": {
-                    "always": "list[string]",
-                    "never": "list[string]",
-                    "tips": "list[string]",
+                    "always": "list[{rule: string, reasoning: string}]",
+                    "never": "list[{rule: string, reasoning: string}]",
+                    "tips": "list[{rule: string, reasoning: string}]",
                 }
             },
             optimize=True,
@@ -283,9 +294,9 @@ def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
             reduce_key="_all",
             output={
                 "schema": {
-                    "always": "list[string]",
-                    "never": "list[string]",
-                    "tips": "list[string]",
+                    "always": "list[{rule: string, reasoning: string}]",
+                    "never": "list[{rule: string, reasoning: string}]",
+                    "tips": "list[{rule: string, reasoning: string}]",
                 }
             },
             prompt=dedent(
@@ -301,6 +312,9 @@ def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
                     improve the agent's performance. Identify the most important changes and combine them into
                     a single set of changes. Each group of changes should be specific, detailed, simple, and
                     actionable for the LLM. Each group should have at most 5 items.
+
+                    For each rule and tip you include, provide a reasoning that explains why this rule is important
+                    based on the insights and patterns observed in the trace data.
 
                     Rules must not be about code execution (e.g. environment variables, API keys, etc.)
 
@@ -373,6 +387,15 @@ def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
                     IMPORTANT: Only include rules in the "always" or "never" sections if they are
                     absolutely clear-cut, binary requirements. If a rule is not a strict ALWAYS or NEVER
                     requirement, or if it's more nuanced, place it in the "tips" section instead.
+
+                    3. For each rule and tip, provide a reasoning that explains why it's important based
+                    on the insights and patterns observed in the trace data. Ensure the reasoning is 
+                    specific, evidence-based, and explains the impact on the agent's performance.
+
+                    Format your response as a JSON with the following structure:
+                    - "always": a list of dictionaries, each with "rule" and "reasoning" fields
+                    - "never": a list of dictionaries, each with "rule" and "reasoning" fields
+                    - "tips": a list of dictionaries, each with "rule" and "reasoning" fields
                 </output>
                 """
             ),
@@ -413,7 +436,8 @@ def generate_rules_and_tips(context: AgentContext, model="openai/o4-mini") -> di
         model: The model to use for the analysis
 
     Returns:
-        dict: A dictionary containing always/never rules, tips
+        dict: A dictionary containing always/never rules and tips, each as a list of dictionaries with 'rule' and
+        'reasoning' fields
     """
     from aiai.app.models import EvalRun, OtelSpan
 
@@ -482,8 +506,9 @@ def generate_rules_and_tips(context: AgentContext, model="openai/o4-mini") -> di
 
         # Read back your always/never/tips
         with open(out_path) as f:
-            rules = json.load(f)
-        return pydash.pick(rules[0], "always", "never", "tips")
+            results = json.load(f)
+
+        return pydash.pick(results[0], "always", "never", "tips")
 
     finally:
         # Clean up temp files
