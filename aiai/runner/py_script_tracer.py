@@ -3,7 +3,7 @@ import inspect
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import openlit
 from opentelemetry import trace
@@ -52,7 +52,7 @@ class PyScriptTracer:
             del sys.modules[self.module_name]
         self.provider.force_flush()
 
-    def __call__(self, input_data=None, span_decorator: Callable[[Any], dict] | None = None) -> tuple[str, Any]:
+    def __call__(self, input_data=None, span_decorator: Optional[Callable[[Any], dict]] = None) -> tuple[str, Any]:
         with self.tracer.start_as_current_span("script_execution") as span:
             span.set_attribute("file_path", str(self.file_path))
 
