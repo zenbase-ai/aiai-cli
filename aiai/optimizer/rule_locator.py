@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -41,6 +42,7 @@ class CodeModification(BaseModel):
 class RuleLocator:
     rules: dict
     model: str = "openai/o4-mini"
+    max_workers = 8
 
     def _add_line_numbers(self, source_code: str, line_start: int) -> str:
         """
@@ -416,16 +418,16 @@ class RuleLocator:
 
         lm = instructor.from_litellm(litellm.completion)
 
-        # For each individual rule, determine the best placement
+        # Use ThreadPool to process rules in parallel
         all_modifications = []
 
-        for rule_item in individual_rules:
+        def process_rule(rule_item):
             rule_type = rule_item["type"]
             rule = rule_item["rule"]
             reasoning = rule_item["reasoning"]
 
             # Ask the LLM to find the best placement for this specific rule
-            modifications = lm.create(
+            return lm.create(
                 model=self.model,
                 response_model=list[CodeModification],
                 max_retries=3,
@@ -490,7 +492,19 @@ class RuleLocator:
                 ],
             )
 
-            all_modifications.extend(modifications)
+        # Process rules in parallel
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all tasks
+            future_to_rule = {executor.submit(process_rule, rule_item): rule_item for rule_item in individual_rules}
+
+            # Process results as they complete
+            for future in as_completed(future_to_rule):
+                try:
+                    modifications = future.result()
+                    all_modifications.extend(modifications)
+                except Exception as exc:
+                    rule_item = future_to_rule[future]
+                    print(f"Processing rule '{rule_item['rule']}' generated an exception: {exc}")
 
         return all_modifications
 
@@ -508,160 +522,175 @@ class RuleLocator:
         """
         from aiai.app.models import DataFileInfo, FunctionInfo
 
-        precise_code_mods = []
         lm = instructor.from_litellm(litellm.completion)
 
-        for mod in raw_code_mods:
-            # Fetch the full source code from the database
-            if mod.function_id:
-                target_type = "function"
-                function = FunctionInfo.objects.get(id=mod.function_id)
-                # Add line numbers to the source code
-                source_code = self._add_line_numbers(function.source_code, function.line_start)
-                target_info = {
-                    "id": function.id,
-                    "name": function.name,
-                    "file_path": function.file_path,
-                    "signature": function.signature,
-                    "docstring": function.docstring or "",
-                }
-            else:  # data_file
-                target_type = "data_file"
-                data_file = DataFileInfo.objects.get(id=mod.data_file_id)
-                source_code = self._add_line_numbers(data_file.content, line_start=1)
-                target_info = {
-                    "id": data_file.id,
-                    "file_path": data_file.file_path,
-                    "file_type": data_file.file_type,
-                }
+        # Function to process a single modification
+        def process_modification(mod):
+            try:
+                # Fetch the full source code from the database
+                if mod.function_id:
+                    target_type = "function"
+                    function = FunctionInfo.objects.get(id=mod.function_id)
+                    # Add line numbers to the source code
+                    source_code = self._add_line_numbers(function.source_code, function.line_start)
+                    target_info = {
+                        "id": function.id,
+                        "name": function.name,
+                        "file_path": function.file_path,
+                        "signature": function.signature,
+                        "docstring": function.docstring or "",
+                    }
+                else:  # data_file
+                    target_type = "data_file"
+                    data_file = DataFileInfo.objects.get(id=mod.data_file_id)
+                    source_code = self._add_line_numbers(data_file.content, line_start=1)
+                    target_info = {
+                        "id": data_file.id,
+                        "file_path": data_file.file_path,
+                        "file_type": data_file.file_type,
+                    }
 
-            # Determine the rule type, content and reasoning from the original rules list
-            rule_type = None
-            rule_content = None
-            rule_reasoning = ""
+                # Determine the rule type, content and reasoning from the original rules list
+                rule_type = None
+                rule_content = None
+                rule_reasoning = ""
 
-            if mod.always:
-                rule_type = "always"
-                rule_content = mod.always[0]  # Since we're handling individual rules
+                if mod.always:
+                    rule_type = "always"
+                    rule_content = mod.always[0]  # Since we're handling individual rules
 
-                # Find the matching rule in original rules list to get the reasoning
-                for rule_item in self.rules.get("always", []):
-                    if isinstance(rule_item, dict) and rule_item.get("rule") == rule_content:
-                        rule_reasoning = rule_item.get("reasoning", "")
-                        break
+                    # Find the matching rule in original rules list to get the reasoning
+                    for rule_item in self.rules.get("always", []):
+                        if isinstance(rule_item, dict) and rule_item.get("rule") == rule_content:
+                            rule_reasoning = rule_item.get("reasoning", "")
+                            break
 
-            elif mod.never:
-                rule_type = "never"
-                rule_content = mod.never[0]
+                elif mod.never:
+                    rule_type = "never"
+                    rule_content = mod.never[0]
 
-                # Find the matching rule in original rules list to get the reasoning
-                for rule_item in self.rules.get("never", []):
-                    if isinstance(rule_item, dict) and rule_item.get("rule") == rule_content:
-                        rule_reasoning = rule_item.get("reasoning", "")
-                        break
+                    # Find the matching rule in original rules list to get the reasoning
+                    for rule_item in self.rules.get("never", []):
+                        if isinstance(rule_item, dict) and rule_item.get("rule") == rule_content:
+                            rule_reasoning = rule_item.get("reasoning", "")
+                            break
 
-            elif mod.tips:
-                rule_type = "tips"
-                rule_content = mod.tips[0]
+                elif mod.tips:
+                    rule_type = "tips"
+                    rule_content = mod.tips[0]
 
-                # Find the matching rule in original rules list to get the reasoning
-                for rule_item in self.rules.get("tips", []):
-                    if isinstance(rule_item, dict) and rule_item.get("rule") == rule_content:
-                        rule_reasoning = rule_item.get("reasoning", "")
-                        break
+                    # Find the matching rule in original rules list to get the reasoning
+                    for rule_item in self.rules.get("tips", []):
+                        if isinstance(rule_item, dict) and rule_item.get("rule") == rule_content:
+                            rule_reasoning = rule_item.get("reasoning", "")
+                            break
 
-            if not rule_type or not rule_content:
-                continue  # Skip if no rule found
+                if not rule_type or not rule_content:
+                    return None  # Skip if no rule found
 
-            # Define a structure to capture precise insertion points
-            class PreciseModification(BaseModel):
-                position_description: str = Field(
-                    description="Description of where to insert this rule (e.g., 'After the instructions tag')"
+                # Define a structure to capture precise insertion points
+                class PreciseModification(BaseModel):
+                    position_description: str = Field(
+                        description="Description of where to insert this rule (e.g., 'After the instructions tag')"
+                    )
+                    line_number: int | None = Field(
+                        description="Approximate line number for insertion, if determinable", default=None
+                    )
+                    context_before: str = Field(description="A few words of text that come before the insertion point")
+                    context_after: str = Field(description="A few words of text that come after the insertion point")
+
+                # Ask the LLM for precise placement
+                precise_mod = lm.create(
+                    model=self.model,
+                    response_model=PreciseModification,
+                    max_retries=3,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": dedent(
+                                f"""\
+                                You are an expert in analyzing prompts in code. Your task is to determine 
+                                PRECISELY where a specific rule should be inserted into a {target_type}'s source code.
+                                
+                                You'll be given:
+                                1. The source code of a {target_type}
+                                2. A single rule of type "{rule_type}" that needs to be added
+                                3. The reasoning behind this rule, explaining why it's important
+                                
+                                You need to identify the EXACT position to insert this rule, such as:
+                                - After an <instructions> tag
+                                - Within a specific section of the prompt
+                                - After other similar rules
+                                
+                                For the insertion point, provide:
+                                - The context before and after the insertion point (a few words)
+                                - A clear description of the position
+                                - Approximately the line number
+                                
+                                Focus on finding the most natural and effective position where this rule 
+                                would enhance the existing prompt without disrupting its structure.
+                                Use the reasoning to understand the rule's purpose and find the most
+                                contextually appropriate location.
+                                """
+                            ),
+                        },
+                        {
+                            "role": "user",
+                            "content": dedent(
+                                f"""\
+                                Here is the source code of the {target_type}:
+                                
+                                <source_code>
+                                {source_code}
+                                </source_code>
+                                
+                                Here is the rule to add:
+                                
+                                <rule>
+                                    <{rule_type}>
+                                        {rule_content}
+                                    </{rule_type}>
+                                </rule>
+
+                                <reasoning>
+                                    {rule_reasoning}
+                                </reasoning>
+
+                                Please identify the precise position in the source code where this rule 
+                                should be inserted.
+                                """
+                            ),
+                        },
+                    ],
                 )
-                line_number: int | None = Field(
-                    description="Approximate line number for insertion, if determinable", default=None
-                )
-                context_before: str = Field(description="A few words of text that come before the insertion point")
-                context_after: str = Field(description="A few words of text that come after the insertion point")
 
-            # Ask the LLM for precise placement
-            precise_mod = lm.create(
-                model=self.model,
-                response_model=PreciseModification,
-                max_retries=3,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": dedent(
-                            f"""\
-                            You are an expert in analyzing prompts in code. Your task is to determine 
-                            PRECISELY where a specific rule should be inserted into a {target_type}'s source code.
-                            
-                            You'll be given:
-                            1. The source code of a {target_type}
-                            2. A single rule of type "{rule_type}" that needs to be added
-                            3. The reasoning behind this rule, explaining why it's important
-                            
-                            You need to identify the EXACT position to insert this rule, such as:
-                            - After an <instructions> tag
-                            - Within a specific section of the prompt
-                            - After other similar rules
-                            
-                            For the insertion point, provide:
-                            - The context before and after the insertion point (a few words)
-                            - A clear description of the position
-                            - Approximately the line number
-                            
-                            Focus on finding the most natural and effective position where this rule 
-                            would enhance the existing prompt without disrupting its structure.
-                            Use the reasoning to understand the rule's purpose and find the most
-                            contextually appropriate location.
-                            """
-                        ),
-                    },
-                    {
-                        "role": "user",
-                        "content": dedent(
-                            f"""\
-                            Here is the source code of the {target_type}:
-                            
-                            <source_code>
-                            {source_code}
-                            </source_code>
-                            
-                            Here is the rule to add:
-                            
-                            <rule>
-                                <{rule_type}>
-                                    {rule_content}
-                                </{rule_type}>
-                            </rule>
+                # Build the enhanced modification
+                return {
+                    "target_type": target_type,
+                    "target": target_info,
+                    "rule_type": rule_type,
+                    "rule_content": rule_content,
+                    "rule_reasoning": rule_reasoning,
+                    "precise_insertion_point": precise_mod.model_dump(),
+                    "target_file_path": target_info["file_path"] + f":{precise_mod.line_number}",
+                    "source_code": source_code,
+                }
+            except Exception as e:
+                print(f"Error processing modification: {str(e)}")
+                return None
 
-                            <reasoning>
-                                {rule_reasoning}
-                            </reasoning>
+        # Process all modifications in parallel
+        precise_code_mods = []
 
-                            Please identify the precise position in the source code where this rule 
-                            should be inserted.
-                            """
-                        ),
-                    },
-                ],
-            )
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # Submit all tasks
+            future_to_mod = {executor.submit(process_modification, mod): mod for mod in raw_code_mods}
 
-            # Build the enhanced modification
-            precise_mod_dict = {
-                "target_type": target_type,
-                "target": target_info,
-                "rule_type": rule_type,
-                "rule_content": rule_content,
-                "rule_reasoning": rule_reasoning,
-                "precise_insertion_point": precise_mod.model_dump(),
-                "target_file_path": target_info["file_path"] + f":{precise_mod.line_number}",
-                "source_code": source_code,
-            }
-
-            precise_code_mods.append(precise_mod_dict)
+            # Process results as they complete
+            for future in as_completed(future_to_mod):
+                result = future.result()
+                if result:
+                    precise_code_mods.append(result)
 
         return precise_code_mods
 
