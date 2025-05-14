@@ -30,7 +30,7 @@ dependencies = [
     "aiai-cli[crewai]>=0.1.6",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.11"
 
 [project.optional-dependencies]
 crewai = ["crewai==0.114.0", "crewai-tools"]

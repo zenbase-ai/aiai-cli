@@ -6,7 +6,7 @@ This guide will help you install AIAI CLI and run your first agent optimization.
 
 ### System Requirements
 
-- Python 3.8 or higher
+- Python 3.11 or higher
 - pip (Python package manager)
 - Virtual environment (recommended)
 

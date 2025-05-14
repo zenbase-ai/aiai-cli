@@ -608,7 +608,7 @@ class RuleLocator:
                         {
                             "role": "system",
                             "content": dedent(
-                                f"""\
+                                """\
                                 You are an expert in analyzing prompts in code. Your task is to determine 
                                 PRECISELY where a specific rule should be inserted into a source code.
                                 
