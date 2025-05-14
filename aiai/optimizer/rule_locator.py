@@ -610,11 +610,11 @@ class RuleLocator:
                             "content": dedent(
                                 f"""\
                                 You are an expert in analyzing prompts in code. Your task is to determine 
-                                PRECISELY where a specific rule should be inserted into a {target_type}'s source code.
+                                PRECISELY where a specific rule should be inserted into a source code.
                                 
                                 You'll be given:
-                                1. The source code of a {target_type}
-                                2. A single rule of type "{rule_type}" that needs to be added
+                                1. The source code
+                                2. A single rule that needs to be added
                                 3. The reasoning behind this rule, explaining why it's important
                                 
                                 You need to identify the EXACT position to insert this rule, such as:
@@ -638,7 +638,7 @@ class RuleLocator:
                             "role": "user",
                             "content": dedent(
                                 f"""\
-                                Here is the source code of the {target_type}:
+                                Here is the source code:
                                 
                                 <source_code>
                                 {source_code}
