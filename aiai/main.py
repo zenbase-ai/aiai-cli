@@ -71,34 +71,56 @@ def analyze_code(file: Path, model: str) -> AgentContext:
     return context
 
 
+def group_and_sort_mods(code_mods: list[dict]) -> dict:
+    """Group modifications by file and sort them by line number within each file.
+
+    Args:
+        code_mods: List of code modification dictionaries
+
+    Returns:
+        Dictionary with file paths as keys and sorted lists of modifications as values
+    """
+    # Group modifications by file
+    file_groups = {}
+    for mod in code_mods:
+        file_path = mod["target"]["file_path"]
+        if file_path not in file_groups:
+            file_groups[file_path] = []
+        file_groups[file_path].append(mod)
+
+    # Sort each group by line number
+    for file_path, mods in file_groups.items():
+        mods.sort(key=lambda m: m["precise_insertion_point"].get("line_number", 0) or 0)
+
+    return file_groups
+
+
 def generate_optimization_report(code_mods: list[dict], write_to: Path):
-    """Generate a markdown report from optimization results."""
-    md_lines = ["# Optimization Results\n"]
+    """Generate a markdown report from optimization results in the specified format."""
+    md_lines = []
 
-    # Build markdown content
-    for code_mod in code_mods:
-        file = code_mod["target"]["file_path"]
-        md_lines.append(f"## File: {file}\n")
-        md_lines.append("Source:")
-        md_lines.append(f"```python\n{code_mod['target']['source_code']}\n```")
-        md_lines.append("Optimizations:")
-        if code_mod["mods"].get("always"):
-            md_lines.append("<always>")
-            for i, rule in enumerate(code_mod["mods"]["always"]):
-                md_lines.append(f"  {i + 1}. {rule}")
-            md_lines.append("</always>")
-        if code_mod["mods"].get("never"):
-            md_lines.append("<never>")
-            for i, rule in enumerate(code_mod["mods"]["never"]):
-                md_lines.append(f"  {i + 1}. {rule}")
-            md_lines.append("</never>")
-        if code_mod["mods"].get("tips"):
-            md_lines.append("<tips>")
-            for i, rule in enumerate(code_mod["mods"]["tips"]):
-                md_lines.append(f"  {i + 1}. {rule}")
-            md_lines.append("</tips>")
-        md_lines.append("\n")
+    # Group and sort modifications
+    file_groups = group_and_sort_mods(code_mods)
 
+    # Process each file
+    for file_path, mods in file_groups.items():
+        md_lines.append(f"# {file_path}")
+        md_lines.append("")
+
+        for mod in mods:
+            line_number = mod["precise_insertion_point"].get("line_number", "?")
+            rule_type = mod["rule_type"].upper()
+            rule = mod["rule_content"]
+
+            md_lines.append(f"{rule_type}")
+            md_lines.append(f"{rule}")
+            md_lines.append(f"{file_path}:{line_number}")
+            md_lines.append("---")
+
+        md_lines.append("---------------")
+        md_lines.append("")
+
+    # Write to file
     content = "\n".join(md_lines)
     write_to.write_text(content)
     return content
@@ -190,20 +212,31 @@ def _optimization_run(
 
     typer.echo("\n📋 Optimization results:\n")
 
-    # Console output
-    for code_mod in code_mods:
-        file = code_mod["target"]["file_path"]
+    # Group and sort modifications
+    file_groups = group_and_sort_mods(code_mods)
+
+    # Console output in requested format
+    for file_path, mods in file_groups.items():
+        typer.echo(f"# {file_path}")
         typer.echo("")
-        typer.echo(f"File: {file} ".ljust(100, "="))
-        typer.echo("Source:")
-        typer.echo(f"```python\n{code_mod['target']['source_code']}\n```")
-        typer.echo("Optimizations:")
-        rich.print_json(data=code_mod["mods"])
+
+        for mod in mods:
+            line_number = mod["precise_insertion_point"].get("line_number", "?")
+            rule_type = mod["rule_type"].upper()
+            rule = mod["rule_content"]
+
+            typer.echo(f"{rule_type}")
+            typer.echo(f"{rule}")
+            typer.echo(f"{file_path}:{line_number}")
+            typer.echo("---")
+
+        typer.echo("---------------")
+        typer.echo("")
 
     # Generate markdown report
     report_path = cwd / f"optimization_{datetime.now():%Y%m%d_%H%M}.md"
     generate_optimization_report(code_mods, write_to=report_path)
-    typer.echo(f"\n📝 Optimization report saved to: {report_path}\n")
+    typer.echo(f"\n📝 Report saved to: {report_path}\n")
 
 
 cli = typer.Typer(rich_markup_mode="markdown")
