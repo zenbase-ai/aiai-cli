@@ -16,7 +16,7 @@ AIAI CLI is a powerful tool for optimizing AI agents through automated rule extr
 pip install aiai-cli
 ```
 
-AIAI CLI requires Python 3.8 or higher and an OpenAI API key for some features.
+AIAI CLI requires Python 3.11 or higher and an OpenAI API key for some features.
 
 ## Quick Start
 

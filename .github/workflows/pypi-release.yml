@@ -1,0 +1,39 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: eifinger/setup-rye@v3
+        id: setup-rye
+        with:
+          enable-cache: true
+          cache-prefix: ${{ matrix.python-version }}
+      - name: Pin python-version ${{ matrix.python-version }}
+        run: rye pin ${{ matrix.python-version }}
+      - name: Update Rye
+        run: rye self update
+      - name: Install dependencies
+        run: rye sync --no-lock
+      - name: Run Tests
+        env:
+          HF_DATASETS_TRUST_REMOTE_CODE: "true"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL_NAME: ${{ secrets.OPENAI_MODEL_NAME }}
+        run: rye run pytest -v
+      - name: Build package
+        run: rye build
+      - name: Publish to PyPI
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: rye publish --token $PYPI_TOKEN --yes --skip-existing

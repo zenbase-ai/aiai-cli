@@ -1,6 +1,6 @@
 [project]
 name = "aiai-cli"
-version = "0.1.10"
+version = "0.1.11"
 description = "Your friendly neighborhood AI agent optimization AI agent"
 authors = [
     { name = "Amir Mehr", email = "amir@zenbase.ai" },
@@ -30,7 +30,7 @@ dependencies = [
     "aiai-cli[crewai]>=0.1.6",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.11"
 
 [project.optional-dependencies]
 crewai = ["crewai==0.114.0", "crewai-tools"]
