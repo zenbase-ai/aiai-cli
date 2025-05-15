@@ -144,8 +144,3 @@ Each rule includes the file path and line number where it should be applied.
 ### Optimizing Your Own Agent
 
 Once you're familiar with the demo, you can optimize your own agent. For a detailed walkthrough of optimizing your custom agent, see the [Optimizing Your Own Agent](../examples/custom-agents.md) guide.
-
-## Next Steps
-
-- Learn more about [rule extraction](../concepts/rule-extraction.md)
-- See examples of [custom agent optimization](../examples/custom-agents.md)
