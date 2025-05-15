@@ -1,4 +1,4 @@
-site_name: AIAI CLI Documentation
+site_name: AIAI CLI
 site_description: Documentation for the AIAI CLI tool for agent optimization
 repo_url: https://github.com/zenbase-ai/aiai-cli
 nav:
@@ -9,6 +9,7 @@ nav:
       - Configuration: user-guide/configuration-reference.md
   - Concepts:
       - Rule Extraction: concepts/rule-extraction.md
+      - Philosophy: concepts/philosophy.md
   - Examples:
       - Custom Agents: examples/custom-agents.md
       - Demo Email Agent: examples/demo-email-agent.md
@@ -39,6 +40,8 @@ theme:
     - navigation.sections
     - navigation.tracking
     - navigation.expand
+    - navigation.indexes
+    - navigation.instant
 
     # Table of contents - Right sidebar
     - toc.integrate
@@ -80,3 +83,7 @@ markdown_extensions:
       toc_depth: 3
 plugins:
   - search
+
+# Custom homepage settings
+extra:
+  homepage: https://aiai-cli.io
