@@ -2,6 +2,25 @@
 
 This guide will help you install AIAI CLI and run your first agent optimization.
 
+## Quick Start
+
+One-liner to play with the demo email agent:
+
+```bash
+OPENAI_API_KEY='sk-...' uvx --from 'aiai-cli[crewai]' aiai
+```
+
+Get up and running quickly with AIAI CLI:
+
+```bash
+# Install the AIAI CLI tool
+pip install aiai-cli
+uv add aiai-cli
+
+# Run AIAI CLI
+aiai
+```
+
 ## Installation
 
 ### System Requirements
@@ -83,3 +102,4 @@ This report contains:
 
 - Learn more about [rule extraction](../concepts/rule-extraction.md)
 - See examples of [custom agent optimization](../examples/custom-agents.md)
+- Explore our [philosophy and principles](../concepts/philosophy.md)

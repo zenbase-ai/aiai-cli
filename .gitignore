@@ -32,3 +32,9 @@ src/aiai/.env
 
 .idea
 /docs/site/
+
+venv
+
+docs/venv/
+
+docs/docs/venv/
