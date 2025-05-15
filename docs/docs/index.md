@@ -34,6 +34,6 @@ AIAI CLI is a powerful tool designed to optimize AI agents through rule extracti
     <div class="card" style="border-radius: 4px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 24px; transition: all 0.3s ease;">
         <h2 style="margin-top: 0;">💬 Join our Slack Community</h2>
         <p>Connect with other AIAI CLI users, get help with your questions, and share your experience with the community.</p>
-        <p style="margin-bottom: 0;"><a href="https://join.slack.com/t/your-community/shared_invite/placeholder" style="display: inline-block; margin-top: 12px; text-decoration: none; font-weight: bold;">Join the conversation →</a></p>
+        <p style="margin-bottom: 0;"><a href="https://join.slack.com/t/zenbasecommunity/shared_invite/zt-3579zf79e-2_TXVGTUDWegVu8pzBDjqA" style="display: inline-block; margin-top: 12px; text-decoration: none; font-weight: bold;">Join the conversation →</a></p>
     </div>
 </div>
