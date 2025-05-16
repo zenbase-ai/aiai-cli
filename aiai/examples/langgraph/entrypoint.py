@@ -1,33 +1,73 @@
 """
-Entry point for the LangGraph lead processing example.
-
-This script loads lead data, extracts lead information, and generates personalized sales emails
-using a LangGraph workflow.
+Minimal LangGraph example for AIAI CLI optimization
 """
 
-from textwrap import dedent
+from typing import Optional, TypedDict
 
-from dotenv import load_dotenv
+from langchain_core.messages import HumanMessage
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END, START, StateGraph
 
-from aiai.examples.langgraph.langgraph_agent import LeadProcessingGraph
+
+class ContentState(TypedDict, total=False):
+    topic: str
+    outline: Optional[str]
+    content: Optional[str]
+    output: Optional[str]
 
 
-def main():
-    """Run the lead processing graph"""
-    load_dotenv()
+def create_agent():
+    """
+    Simple content creation using LangGraph
 
-    example = dedent(
-        """\
-        Amir Mehr is the CTO of Zenbase AI with a focus on optimizing LLM workflows.
-        Sarah Johnson is a Lead Developer at Tech Solutions Inc.
-        interested in prompt engineering and model selection.
-        """
-    )
+    Takes a topic as input, creates an outline, and then
+    expands it into content using a minimal LangGraph.
+    """
+    llm = ChatOpenAI(model="gpt-4o-mini")
 
-    graph = LeadProcessingGraph()
-    result = graph.run(raw_leads_text=example)
-    return result
+    # Define simple functions for each step
+    def create_outline(state: ContentState) -> ContentState:
+        """Create an outline based on the topic"""
+        prompt = f"Create a brief outline with 2-3 main points about: {state['topic']}"
+        response = llm.invoke([HumanMessage(content=prompt)])
+        return {"topic": state["topic"], "outline": response.content.strip()}
+
+    def expand_content(state: ContentState) -> ContentState:
+        """Expand the outline into content"""
+        prompt = f"Write a short article using this outline. Keep it concise:\n\n{state['outline']}"
+        response = llm.invoke([HumanMessage(content=prompt)])
+        return {**state, "content": response.content.strip()}
+
+    def format_result(state: ContentState) -> ContentState:
+        """Format the final output"""
+        output = f"OUTLINE:\n{state['outline']}\n\nCONTENT:\n{state['content']}"
+        return {**state, "output": output}
+
+    # Create a minimal graph with state schema
+    workflow = StateGraph(ContentState)
+
+    # Add our simple nodes
+    workflow.add_node("create_outline", create_outline)
+    workflow.add_node("expand_content", expand_content)
+    workflow.add_node("format_result", format_result)
+
+    # Connect the nodes in sequence
+    workflow.add_edge(START, "create_outline")
+    workflow.add_edge("create_outline", "expand_content")
+    workflow.add_edge("expand_content", "format_result")
+    workflow.add_edge("format_result", END)
+
+    # Compile the graph
+    graph = workflow.compile()
+    return graph
+
+
+def main(inputs=None):
+    inputs = inputs or {"topic": "Benefits of regular exercise"}
+    agent = create_agent()
+    return agent.invoke(inputs)
 
 
 if __name__ == "__main__":
-    main()
+    # If run directly, print the result
+    print(main())

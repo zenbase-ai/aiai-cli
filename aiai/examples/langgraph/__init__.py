@@ -1,10 +1,11 @@
 """
-LangGraph example implementation of a lead processing agent.
+Simple LangGraph example for AIAI CLI.
 
-This example demonstrates using LangGraph to create a workflow that:
-1. Loads lead data from a JSON file
-2. Extracts lead information using an LLM
-3. Generates personalized sales emails for each lead
+A minimal example showing how to use LangGraph to create a multi-step
+workflow that can be optimized with the AIAI CLI.
 """
 
-from aiai.examples.langgraph.langgraph_agent import LeadProcessingGraph as LeadProcessingGraph
+# The main functionality is directly in entrypoint.py
+from aiai.examples.langgraph.entrypoint import main
+
+__all__ = ["main"]
