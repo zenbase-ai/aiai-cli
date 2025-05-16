@@ -31,7 +31,9 @@ def main(example=None):
     return result.raw
 ```
 
-Save this file in your project directory. It will be the starting point for the optimization process.
+> **Important:** The `example` parameter in the `main()` function is crucial. During optimization, the AIAI CLI will automatically invoke your agent with different inputs through this parameter. **Any input your agent would normally receive must come through this parameter**. Your implementation must pass this input to your agent (as shown in the example with `{"input": example}`). This allows the CLI to evaluate performance with various test cases and generate optimization rules specific to your agent's behavior.
+
+Save this file as `entrypoint.py` in your project directory. It will be the starting point for the optimization process.
 
 ## Running the Optimization
 
