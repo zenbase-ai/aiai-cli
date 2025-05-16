@@ -23,7 +23,7 @@ AIAI CLI requires an entrypoint file that contains a `main()` function. This fun
 
 Here's an example of a properly structured entrypoint file:
 
-```python
+```python title="entrypoint.py"
 def main(example=None):
     crew = get_crewai_agent()
     example = example or "default example"
