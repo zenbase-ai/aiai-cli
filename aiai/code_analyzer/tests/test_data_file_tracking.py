@@ -252,7 +252,7 @@ def test_save_data_files_to_db_crewai(test_directory):
 
     # Calculate the project root path
     project_root = Path(__file__).parent.parent.parent.parent
-    crewai_path = project_root / "aiai" / "examples" / "crewai"
+    crewai_path = project_root / "aiai" / "examples" / "crewai_example"
 
     # Ensure path exists
     assert crewai_path.exists(), f"CrewAI path does not exist: {crewai_path}"
