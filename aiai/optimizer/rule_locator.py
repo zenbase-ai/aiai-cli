@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import instructor
 import litellm
+import tqdm
 from docetl.api import Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep
 from pydantic import BaseModel, Field, model_validator
 
@@ -497,6 +499,17 @@ class RuleLocator:
             # Submit all tasks
             future_to_rule = {executor.submit(process_rule, rule_item): rule_item for rule_item in individual_rules}
 
+            # Create progress bar
+            progress_bar = tqdm.tqdm(
+                total=len(future_to_rule),
+                desc="Finding related file",
+                unit="rule",
+                file=sys.stdout,
+                dynamic_ncols=True,
+                position=0,
+                leave=True,
+            )
+
             # Process results as they complete
             for future in as_completed(future_to_rule):
                 try:
@@ -505,6 +518,10 @@ class RuleLocator:
                 except Exception as exc:
                     rule_item = future_to_rule[future]
                     print(f"Processing rule '{rule_item['rule']}' generated an exception: {exc}")
+                finally:
+                    progress_bar.update(1)
+
+            progress_bar.close()
 
         return all_modifications
 
@@ -686,11 +703,25 @@ class RuleLocator:
             # Submit all tasks
             future_to_mod = {executor.submit(process_modification, mod): mod for mod in raw_code_mods}
 
+            # Create progress bar
+            progress_bar = tqdm.tqdm(
+                total=len(future_to_mod),
+                desc="Finding insertion points",
+                unit="mod",
+                file=sys.stdout,
+                dynamic_ncols=True,
+                position=0,
+                leave=True,
+            )
+
             # Process results as they complete
             for future in as_completed(future_to_mod):
                 result = future.result()
                 if result:
                     precise_code_mods.append(result)
+                progress_bar.update(1)
+
+            progress_bar.close()
 
         return precise_code_mods
 
