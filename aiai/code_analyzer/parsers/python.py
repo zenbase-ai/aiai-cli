@@ -291,13 +291,14 @@ class PythonParser(LanguageParser):
         try:
             # Query for imports
             import_nodes = {}
-            for capture in self.import_query.captures(tree.root_node):
-                node = capture[0]
-                node_type = capture[1]
+            captures = self.import_query.captures(tree.root_node)
+            for capture in captures:
+                node = captures[capture]
+                node_type = capture
 
                 if node_type not in import_nodes:
                     import_nodes[node_type] = []
-                import_nodes[node_type].append(node)
+                import_nodes[node_type].extend(node)
 
             # Process regular imports
             for node in import_nodes.get("import.name", []):

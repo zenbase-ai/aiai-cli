@@ -62,7 +62,7 @@ def loading(message: str, silent: bool = True):
 def analyze_code(file: Path, model: str) -> AgentContext:
     from aiai.app.models import FunctionInfo
 
-    CodeAnalyzer().analyze_from_file(file, save_to_db=True)
+    CodeAnalyzer().analyze_project(file, save_to_db=True)
     source_code = json.dumps(
         {name: source for name, source in FunctionInfo.objects.values_list("name", "source_code")},
     )
