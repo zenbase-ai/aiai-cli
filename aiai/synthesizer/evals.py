@@ -1,10 +1,12 @@
-from concurrent.futures import Future, ThreadPoolExecutor
+import sys
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 import instructor
 import litellm
+import tqdm
 from pydantic import BaseModel, Field, computed_field
 
 from aiai.optimizer.contextualizer import AgentContext
@@ -213,9 +215,27 @@ class EvalGenerator:
                 pool.submit(self.rules, examples),
                 pool.submit(self.head_to_head, examples),
             ]
-            rules_eval, head_to_head_eval = SyntheticEval.objects.bulk_create(
-                [f.result().to_db_model() for f in futures],
+
+            # Create progress bar
+            progress_bar = tqdm.tqdm(
+                total=len(futures),
+                desc="Generating evaluations",
+                unit="eval",
+                file=sys.stdout,
+                dynamic_ncols=True,
+                position=0,
+                leave=True,
             )
+
+            # Process completed futures as they finish
+            results = []
+            for future in as_completed(futures):
+                results.append(future.result().to_db_model())
+                progress_bar.update(1)
+
+            progress_bar.close()
+
+            rules_eval, head_to_head_eval = SyntheticEval.objects.bulk_create(results)
 
         return rules_eval, head_to_head_eval
 

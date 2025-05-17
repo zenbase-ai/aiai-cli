@@ -1,17 +1,13 @@
-import io
 import json
 import os
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from time import monotonic
 from typing import Callable, Optional, cast
 
 import rich
 import typer
 from dotenv import load_dotenv
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from aiai.code_analyzer import CodeAnalyzer
 from aiai.optimizer.contextualizer import AgentContext, generate_context
@@ -21,42 +17,21 @@ from aiai.runner.batch_runner import BatchRunner
 from aiai.runner.py_script_tracer import PyScriptTracer
 from aiai.synthesizer.data import generate_data
 from aiai.synthesizer.evals import EvalGenerator, RulesEval, SyntheticEvalRunner
-from aiai.utils import log_event, log_init, reset_db, setup_django
+from aiai.utils import (
+    loading,
+    log_event,
+    log_init,
+    reset_db,
+    setup_django,
+)
 
 # Use absolute imports within the package
 
 # ---------------------------------------------------------------------------
-# Utility: silence stdout/stderr and loading spinner
+# Utility paths
 # ---------------------------------------------------------------------------
 
 cwd = Path.cwd()
-
-
-@contextmanager
-def silence():
-    """Temporarily suppress *all* stdout / stderr output (prints, progress bars, etc.)."""
-    stdout, stderr = io.StringIO(), io.StringIO()
-    with redirect_stdout(stdout), redirect_stderr(stderr):
-        yield stdout, stderr
-
-
-@contextmanager
-def loading(message: str, silent: bool = True):
-    """Show pretty Rich spinner while silencing inner output."""
-    start_at = monotonic()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        transient=True,
-    ) as progress:
-        progress.add_task(description=message, total=None)
-        if silent:
-            with silence():
-                yield
-        else:
-            yield
-    duration = monotonic() - start_at
-    typer.secho(f"✅ {message} completed in {duration:.2f}s", fg=typer.colors.GREEN)
 
 
 def analyze_code(file: Path, model: str) -> AgentContext:
@@ -130,7 +105,7 @@ def _validate_entrypoint(entrypoint: Path):
     if not entrypoint.exists():
         typer.secho(f"❌ Entrypoint file not found: {entrypoint}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-    with loading("Validating entrypoint…"):
+    with loading("Validating entrypoint…", animated_emoji=True):
         with PyScriptTracer(entrypoint) as tracer:
             tracer()
 
@@ -160,7 +135,7 @@ def _optimization_run(
     else:
         data = list(SyntheticDatum.objects.all().values_list("input_data", flat=True))
         if not data:
-            with loading(f"Generating {examples} synthetic inputs…"):
+            with loading(f"Generating {examples} synthetic inputs…", animated_emoji=True):
                 data = [d.input_data for d in generate_data(context, examples, seed, model=synthesizer)]
             with (cwd / "synthetic_data.json").open("w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
@@ -349,7 +324,7 @@ def main(
     # ------------------------------------------------------------------
     # 4️⃣  Code analysis ➜ Dependency graph
     # ------------------------------------------------------------------
-    with loading("Analyzing code…"):
+    with loading("Analyzing code…", animated_emoji=True):
         opt_ctx = analyze_code(entrypoint, analyzer)
     typer.echo(opt_ctx.analysis.what)
     log_event(

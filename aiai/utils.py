@@ -1,7 +1,16 @@
+import io
 import os
+import sys
+import threading
+import time
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from contextvars import ContextVar
+from itertools import cycle
+from time import monotonic
 from uuid import uuid4
 
+import typer
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from scarf import ScarfEventLogger
 
 event_logger = ScarfEventLogger(endpoint_url="https://zenbase.gateway.scarf.sh/events/aiai-cli")
@@ -48,3 +57,90 @@ def setup_django():
 
     # Run migrations silently
     call_command("migrate", verbosity=0, interactive=False)
+
+
+class TqdmAwareStringIO(io.StringIO):
+    """A StringIO that allows tqdm output to pass through."""
+
+    def __init__(self, original_stream=None):
+        super().__init__()
+        self.original_stream = original_stream
+
+    def write(self, s):
+        # If this is tqdm output (which has '\r' at the beginning),
+        # write to the original stream
+        if s.startswith("\r"):
+            if self.original_stream:
+                self.original_stream.write(s)
+                self.original_stream.flush()
+        else:
+            super().write(s)
+
+    def flush(self):
+        if self.original_stream:
+            self.original_stream.flush()
+        super().flush()
+
+
+@contextmanager
+def silence():
+    """Temporarily suppress *all* stdout / stderr output except tqdm progress bars."""
+    stdout = TqdmAwareStringIO(original_stream=sys.stdout)
+    stderr = TqdmAwareStringIO(original_stream=sys.stderr)
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        yield stdout, stderr
+
+
+@contextmanager
+def loading(message: str, silent: bool = True, animated_emoji: bool = False):
+    """Show pretty Rich spinner while silencing inner output.
+
+    Args:
+        message: Message to display
+        silent: Whether to silence stdout/stderr
+        animated_emoji: Whether to show an animated emoji alongside the progress message
+    """
+    start_at = monotonic()
+    stop_animation = threading.Event()
+
+    if animated_emoji:
+        # Create and start emoji animation thread
+        def emoji_animation():
+            emojis = cycle(["⏳", "🔄", "🔁", "🔃", "🔄", "⌛"])
+            while not stop_animation.is_set():
+                emoji = next(emojis)
+                print(f"\r{emoji} {message}", end="", flush=True)
+                time.sleep(0.3)
+
+        animation_thread = threading.Thread(target=emoji_animation)
+        animation_thread.daemon = True
+        animation_thread.start()
+
+        try:
+            if silent:
+                with silence():
+                    yield
+            else:
+                yield
+        finally:
+            # Stop the animation
+            stop_animation.set()
+            animation_thread.join(timeout=0.5)
+            # Clear the animation line
+            print("\r" + " " * (len(message) + 10) + "\r", end="", flush=True)
+    else:
+        # Original implementation with Progress
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            transient=True,
+        ) as progress:
+            progress.add_task(description=message, total=None)
+            if silent:
+                with silence():
+                    yield
+            else:
+                yield
+
+    duration = monotonic() - start_at
+    typer.secho(f"✅ {message} completed in {duration:.2f}s", fg=typer.colors.GREEN)
