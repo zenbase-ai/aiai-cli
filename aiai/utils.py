@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 import sys
 import threading
@@ -27,6 +28,37 @@ def log_init():
         python_version=platform.python_version(),
         machine=platform.machine(),
     )
+
+    # Configure logging levels based on DEBUG environment variable
+    debug_mode = os.getenv("DEBUG", "False").lower() == "true"
+
+    # Ensure a basic handler is configured, especially for debug mode
+    # If DEBUG is true, set root logger level to INFO, otherwise let it be (usually WARNING by default)
+    # This ensures that if specific loggers are set to INFO, they can actually output.
+    if debug_mode:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+    # If not in debug mode, we assume specific configurations or defaults are fine,
+    # and we don't want to override a potentially more nuanced existing setup with a broad basicConfig.
+
+    loggers_config = {
+        "aiai": logging.INFO,  # Always INFO for aiai itself as per memory
+        "tqdm": logging.WARNING,
+        "docetl": logging.CRITICAL,
+        "litellm": logging.CRITICAL,
+        "openlit": logging.CRITICAL,
+        "django": logging.CRITICAL,
+    }
+
+    if debug_mode:
+        # In debug mode, set all specified loggers to INFO for verbosity
+        for logger_name in loggers_config:
+            logging.getLogger(logger_name).setLevel(logging.INFO)
+            # For tqdm, INFO might be too verbose, let's keep it at WARNING or INFO based on preference.
+            # For now, INFO is fine as per 'every log' request.
+    else:
+        # In non-debug (silent) mode, apply specific levels from memory
+        for logger_name, level in loggers_config.items():
+            logging.getLogger(logger_name).setLevel(level)
 
 
 def log_event(event: str, **properties):
@@ -84,11 +116,19 @@ class TqdmAwareStringIO(io.StringIO):
 
 @contextmanager
 def silence():
-    """Temporarily suppress *all* stdout / stderr output except tqdm progress bars."""
-    stdout = TqdmAwareStringIO(original_stream=sys.stdout)
-    stderr = TqdmAwareStringIO(original_stream=sys.stderr)
-    with redirect_stdout(stdout), redirect_stderr(stderr):
-        yield stdout, stderr
+    """Temporarily suppress *all* stdout / stderr output except tqdm progress bars,
+    unless the DEBUG environment variable is set to 'True'."""
+    debug_mode = os.getenv("DEBUG", "False").lower() == "true"
+
+    if debug_mode:
+        # In debug mode, don't suppress anything. Yield original streams.
+        yield sys.stdout, sys.stderr
+    else:
+        # Original silence logic
+        stdout = TqdmAwareStringIO(original_stream=sys.stdout)
+        stderr = TqdmAwareStringIO(original_stream=sys.stderr)
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            yield stdout, stderr
 
 
 @contextmanager
