@@ -48,4 +48,4 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEBUG: "true"
-        run: rye run python -m aiai --run-demo-agent
+        run: rye run aiai --run-demo-agent
