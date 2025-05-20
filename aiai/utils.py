@@ -125,8 +125,8 @@ def silence():
         yield sys.stdout, sys.stderr
     else:
         # Original silence logic
-        stdout = TqdmAwareStringIO(original_stream=sys.stdout)
-        stderr = TqdmAwareStringIO(original_stream=sys.stderr)
+        stdout = TqdmAwareStringIO(original_stream=sys.__stdout__)
+        stderr = TqdmAwareStringIO(original_stream=sys.__stderr__)
         with redirect_stdout(stdout), redirect_stderr(stderr):
             yield stdout, stderr
 
