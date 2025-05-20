@@ -217,23 +217,55 @@ def _optimization_run(
 cli = typer.Typer(rich_markup_mode="markdown")
 
 
-@cli.command()
+@cli.command(
+    help=dedent(
+        """
+        Interactive `aiai` CLI as described in `aiai/cli/README.md`.
+
+        You can provide custom data with --data and a custom evaluation function with --custom-eval-file.
+        The custom evaluation file should contain an 'main' function that takes agent output and returns a reward dict.
+
+        Args:
+            analyzer: Model to use for code analysis
+            evaluator: Model to use for evaluation
+            optimizer: Model to use for optimization
+            synthesizer: Model to use for data synthesis
+            data: Path to custom data file
+            custom_eval_file: Path to custom evaluation file
+            examples: Number of synthetic examples to generate
+            seed: Seed for synthetic data generation
+            concurrency: Number of concurrent evaluation runs
+        """
+    )
+)
 def main(
-    analyzer: str = "openai/o4-mini",
-    evaluator: str = "openai/o4-mini",
-    optimizer: str = "openai/gpt-4.1",
-    synthesizer: str = "openai/gpt-4.1-nano",
-    data: Path = None,
-    custom_eval_file: Path = None,
-    examples: int = 25,
-    seed: int = 42,
-    concurrency: int = 16,
-):  # noqa: C901 – the CLI can be a bit long
+    analyzer: str = typer.Option("openai/o4-mini", help="Model to use for code analysis"),
+    evaluator: str = typer.Option("openai/o4-mini", help="Model to use for evaluation"),
+    optimizer: str = typer.Option("openai/gpt-4.1", help="Model to use for optimization"),
+    synthesizer: str = typer.Option("openai/gpt-4.1-nano", help="Model to use for data synthesis"),
+    data: Optional[Path] = typer.Option(None, help="Path to custom data file (--data)"),
+    custom_eval_file: Optional[Path] = typer.Option(None, help="Path to custom evaluation file (--custom-eval-file)"),
+    examples: int = typer.Option(25, help="Number of synthetic examples to generate (--examples)"),
+    seed: int = typer.Option(42, help="Seed for synthetic data generation (--seed)"),
+    concurrency: int = typer.Option(16, help="Number of concurrent evaluation runs (--concurrency)"),
+    run_demo_agent: bool = typer.Option(
+        False, "--run-demo-agent", help="Run the demo agent (OpenAI example) and exit."
+    ),
+):
     """Interactive `aiai` CLI as described in `aiai/cli/README.md`.
 
     You can provide custom data with --data and a custom evaluation function with --custom-eval-file.
     The custom evaluation file should contain an 'main' function that takes agent output and returns a reward dict.
     """
+    # --- Logging setup (moved up)
+    log_init()
+    log_event("main_call_start")
+
+    # --- Argument validation
+    if custom_eval_file and not custom_eval_file.exists():
+        typer.secho(f"❌ Custom evaluation file not found: {custom_eval_file}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
     if examples > 25:
         typer.secho(
             "⚠️  Maximum number of synthetic examples is 25. Setting to 25.\n",
@@ -244,17 +276,19 @@ def main(
     load_dotenv()
 
     typer.secho("\n🚀 Welcome to aiai! 🤖\n", fg=typer.colors.BRIGHT_CYAN, bold=True)
-    log_init()
 
     # ------------------------------------------------------------------
     # 1️⃣  Agent selection
     # ------------------------------------------------------------------
-    typer.secho("What would you like to optimize?\n (1) Outbound email agent (Demo)\n (2) My own agent")
-    choice = typer.prompt("Enter your choice (1 or 2)", type=int)
+    if not run_demo_agent:
+        typer.secho("What would you like to optimize?\n (1) Outbound email agent (Demo)\n (2) My own agent")
+        choice = typer.prompt("Enter your choice (1 or 2)", type=int)
 
-    if choice not in (1, 2):
-        typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        if choice not in (1, 2):
+            typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
+    else:
+        choice = 1
 
     if choice == 1:
         if not os.getenv("OPENAI_API_KEY"):
