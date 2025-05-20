@@ -249,7 +249,7 @@ def main(
     seed: int = typer.Option(42, help="Seed for synthetic data generation (--seed)"),
     concurrency: int = typer.Option(16, help="Number of concurrent evaluation runs (--concurrency)"),
     run_demo_agent: bool = typer.Option(
-        False, "--run-demo-agent", help="Run the demo agent (CrewAI example) and exit."
+        False, "--run-demo-agent", help="Run the demo agent (OpenAI example) and exit."
     ),
 ):
     """Interactive `aiai` CLI as described in `aiai/cli/README.md`.
