@@ -144,3 +144,57 @@ def loading(message: str, silent: bool = True, animated_emoji: bool = False):
 
     duration = monotonic() - start_at
     typer.secho(f"✅ {message} completed in {duration:.2f}s", fg=typer.colors.GREEN)
+
+def group_and_sort_mods(code_mods: list[dict]) -> dict:
+    """Group modifications by function and sort them by line number and rule_type.
+
+    Args:
+        code_mods: List of code modification dictionaries
+
+    Returns:
+        Dictionary with function IDs as keys and sorted lists of modifications as values
+    """
+    # Import needed model
+    setup_django()
+    from aiai.app.models import FunctionInfo
+    
+    # Group modifications by function
+    function_groups = {}
+    function_not_found = []
+    
+    for mod in code_mods:
+        file_path = mod["target"]["file_path"]
+        line_number = mod["precise_insertion_point"].get("line_number", 0) or 0
+        
+        # Find the function this modification belongs to
+        containing_function = FunctionInfo.objects.filter(
+            file_path=file_path,
+            line_start__lte=line_number,
+            line_end__gte=line_number
+        ).first()
+        
+        if containing_function:
+            function_id = containing_function.id
+            if function_id not in function_groups:
+                function_groups[function_id] = []
+            function_groups[function_id].append(mod)
+        else:
+            # Handle modifications that don't belong to any known function
+            function_not_found.append(mod)
+    
+    # Sort each group by line number and then by rule_type
+    for function_id, mods in function_groups.items():
+        # First sort by line number
+        mods.sort(key=lambda m: m["precise_insertion_point"].get("line_number", 0) or 0)
+        # Then stable sort by rule_type if it exists
+        if mods and "rule_type" in mods[0]:
+            mods.sort(key=lambda m: m.get("rule_type", ""), reverse=False)
+    
+    # Add modifications that couldn't be assigned to a function
+    if function_not_found:
+        function_groups["no_function"] = sorted(
+            function_not_found, 
+            key=lambda m: (m["target"]["file_path"], m["precise_insertion_point"].get("line_number", 0) or 0)
+        )
+    
+    return function_groups

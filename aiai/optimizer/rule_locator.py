@@ -14,7 +14,7 @@ import tqdm
 from docetl.api import Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep
 from pydantic import BaseModel, Field, model_validator
 
-from aiai.utils import setup_django
+from aiai.utils import setup_django, group_and_sort_mods
 
 if TYPE_CHECKING:
     from aiai.app.models import FunctionInfo
@@ -725,7 +725,131 @@ class RuleLocator:
 
         return precise_code_mods
 
+    def apply_rule_changes(self, grouped_modifications: dict) -> dict:
+        """
+        Apply rule changes to functions by sending them to the LLM.
+        
+        Args:
+            grouped_modifications: Dictionary with function IDs as keys and lists of modifications as values
+            
+        Returns:
+            Dictionary with function IDs as keys and updated source code as values
+        """
+        from aiai.app.models import FunctionInfo
+        import instructor
+        import litellm
+        from textwrap import dedent
+        
+        lm = instructor.from_litellm(litellm.completion)
+        results = {}
+        
+        # Process each function group
+        for function_id, modifications in grouped_modifications.items():
+            # Skip the special "no_function" group
+            if function_id == "no_function":
+                continue
+                
+            try:
+                # Get the function info from the database
+                function = FunctionInfo.objects.get(id=function_id)
+
+                source_code = self._add_line_numbers(function.source_code, function.line_start)
+                
+                # Define a model for the updated source code
+                class UpdatedSourceCode(BaseModel):
+                    updated_code: str = Field(description="The updated source code with rules integrated")
+                    explanation: str = Field(description="Brief explanation of how the rules were integrated")
+                
+                # Send to LLM for update
+                updated_source = lm.create(
+                    model=self.model,
+                    response_model=UpdatedSourceCode,
+                    max_retries=3,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": dedent(
+                                """\
+                                You are an expert in updating prompt code with new rules. Your task is to
+                                insert rules and tips into a given function's source code.
+                                
+                                You will be given:
+                                1. The original source code of a function
+                                2. A list of rules to add, with their types and insertion points
+                                
+                                Format rules using this structure:
+                                <rules>
+                                    <always>
+                                        rule 1
+                                        rule 2
+                                    </always>
+                                    <never>
+                                        rule 3
+                                        rule 4
+                                    </never>
+                                </rules>
+                                <tips>
+                                    tip 1
+                                    tip 2
+                                </tips>
+                                
+                                Your task is to integrate these rules into the source code,
+                                considering the suggested insertion locations.
+                                
+                                Return the complete updated source code.
+                                """
+                            ),
+                        },
+                        {
+                            "role": "user",
+                            "content": dedent(
+                                f"""\
+                                Here is the function source code:
+                                
+                                <source_code>
+                                {source_code}
+                                </source_code>
+                                
+                                Here are the rules to add:
+                                
+                                {json.dumps([{
+                                    "rule_type": mod.get("rule_type"),
+                                    "rule_content": mod.get("rule_content"),
+                                    "position_description": mod["precise_insertion_point"].get("position_description"),
+                                } for mod in modifications], indent=2)}
+                                
+                                Please update the source code to include these rules in the appropriate
+                                locations within the prompt, using the format specified in the system message.
+                                Return the complete updated source code.
+                                """
+                            ),
+                        },
+                    ],
+                )
+                
+                # Store the result
+                results[function_id] = {
+                    "function": function,
+                    "updated_code": updated_source.updated_code,
+                    "explanation": updated_source.explanation
+                }
+                
+            except Exception as e:
+                print(f"Error processing function {function_id}: {str(e)}")
+        
+        return results
+        
     def perform(self):
+        """
+        Locate rules and optionally apply them to functions.
+        
+        Args:
+            apply_changes: Whether to apply the rules to the functions
+            
+        Returns:
+            If apply_changes is True, returns a dictionary with function IDs and updated source code.
+            Otherwise, returns grouped modifications by function.
+        """
         setup_django()
         from aiai.app.models import DataFileInfo, FunctionInfo
 
@@ -740,7 +864,7 @@ class RuleLocator:
         print("Finding precise insertion points for rules...")
         code_mods = self._locate_precise_rule_positions(raw_code_mods)
 
-        return code_mods
+        return group_and_sort_mods(code_mods)
 
 
 if __name__ == "__main__":

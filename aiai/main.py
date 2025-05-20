@@ -46,50 +46,20 @@ def analyze_code(file: Path, model: str) -> AgentContext:
     return context
 
 
-def group_and_sort_mods(code_mods: list[dict]) -> dict:
-    """Group modifications by file and sort them by line number within each file.
-
-    Args:
-        code_mods: List of code modification dictionaries
-
-    Returns:
-        Dictionary with file paths as keys and sorted lists of modifications as values
-    """
-    # Group modifications by file
-    file_groups = {}
-    for mod in code_mods:
-        file_path = mod["target"]["file_path"]
-        if file_path not in file_groups:
-            file_groups[file_path] = []
-        file_groups[file_path].append(mod)
-
-    # Sort each group by line number
-    for file_path, mods in file_groups.items():
-        mods.sort(key=lambda m: m["precise_insertion_point"].get("line_number", 0) or 0)
-
-    return file_groups
-
-
-def generate_optimization_report(code_mods: list[dict], write_to: Path):
+def generate_optimization_report(code_mods: dict, write_to: Path):
     """Generate a markdown report from optimization results in the specified format."""
     md_lines = []
 
-    # Group and sort modifications
-    file_groups = group_and_sort_mods(code_mods)
-
     # Process each file
-    for file_path, mods in file_groups.items():
-        md_lines.append(f"# {file_path}")
-        md_lines.append("")
-
+    for file_path, mods in code_mods.items():
         for mod in mods:
-            line_number = mod["precise_insertion_point"].get("line_number", "?")
+            target_path = mod['target_file_path']
             rule_type = mod["rule_type"].upper()
             rule = mod["rule_content"]
 
             md_lines.append(f"{rule_type}")
             md_lines.append(f"{rule}")
-            md_lines.append(f"{file_path}:{line_number}")
+            md_lines.append(f"{target_path}")
             md_lines.append("---")
 
         md_lines.append("---------------")
@@ -175,34 +145,30 @@ def _optimization_run(
     # ------------------------------------------------------------------
     # Rule placement
     # ------------------------------------------------------------------
+    rule_locator = RuleLocator(rules_and_tips, model=optimizer)
     with loading("Generating code modifications…"):
-        code_mods = RuleLocator(rules_and_tips, model=optimizer).perform()
+        code_mods = rule_locator.perform()
 
     # ------------------------------------------------------------------
     # Display placements & save to markdown
     # ------------------------------------------------------------------
+    test_result = rule_locator.apply_rule_changes(code_mods)
     if not code_mods:
         typer.echo("⚠️  No rule placements found.")
         raise typer.Exit(code=1)
 
     typer.echo("\n📋 Optimization results:\n")
 
-    # Group and sort modifications
-    file_groups = group_and_sort_mods(code_mods)
-
     # Console output in requested format
-    for file_path, mods in file_groups.items():
-        typer.echo(f"# {file_path}")
-        typer.echo("")
-
+    for function_id, mods in code_mods.items():
         for mod in mods:
-            line_number = mod["precise_insertion_point"].get("line_number", "?")
             rule_type = mod["rule_type"].upper()
             rule = mod["rule_content"]
+            target_path = mod['target_file_path']
 
             typer.echo(f"{rule_type}")
             typer.echo(f"{rule}")
-            typer.echo(f"{file_path}:{line_number}")
+            typer.echo(f"{target_path}")
             typer.echo("---")
 
         typer.echo("---------------")

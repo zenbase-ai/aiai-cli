@@ -210,6 +210,8 @@ class EvalGenerator:
         from aiai.app.models import SyntheticEval
 
         # Run rules and head_to_head evaluations in parallel
+        mamad = "dodol"
+        print(mamad / 2)
         with ThreadPoolExecutor(max_workers=2) as pool:
             futures: list[Future[RulesEval | HeadToHeadEval]] = [
                 pool.submit(self.rules, examples),
