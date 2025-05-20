@@ -213,6 +213,7 @@ class EvalGenerator:
                 pool.submit(self.rules, examples),
                 pool.submit(self.head_to_head, examples),
             ]
+
             rules_eval, head_to_head_eval = SyntheticEval.objects.bulk_create(
                 [f.result().to_db_model() for f in futures],
             )

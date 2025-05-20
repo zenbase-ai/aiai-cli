@@ -1,17 +1,13 @@
-import io
 import json
 import os
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
-from time import monotonic
 from typing import Callable, Optional, cast
 
 import rich
 import typer
 from dotenv import load_dotenv
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from aiai.code_analyzer import CodeAnalyzer
 from aiai.optimizer.contextualizer import AgentContext, generate_context
@@ -21,42 +17,21 @@ from aiai.runner.batch_runner import BatchRunner
 from aiai.runner.py_script_tracer import PyScriptTracer
 from aiai.synthesizer.data import generate_data
 from aiai.synthesizer.evals import EvalGenerator, RulesEval, SyntheticEvalRunner
-from aiai.utils import log_event, log_init, reset_db, setup_django
+from aiai.utils import (
+    loading,
+    log_event,
+    log_init,
+    reset_db,
+    setup_django,
+)
 
 # Use absolute imports within the package
 
 # ---------------------------------------------------------------------------
-# Utility: silence stdout/stderr and loading spinner
+# Utility paths
 # ---------------------------------------------------------------------------
 
 cwd = Path.cwd()
-
-
-@contextmanager
-def silence():
-    """Temporarily suppress *all* stdout / stderr output (prints, progress bars, etc.)."""
-    stdout, stderr = io.StringIO(), io.StringIO()
-    with redirect_stdout(stdout), redirect_stderr(stderr):
-        yield stdout, stderr
-
-
-@contextmanager
-def loading(message: str, silent: bool = True):
-    """Show pretty Rich spinner while silencing inner output."""
-    start_at = monotonic()
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        transient=True,
-    ) as progress:
-        progress.add_task(description=message, total=None)
-        if silent:
-            with silence():
-                yield
-        else:
-            yield
-    duration = monotonic() - start_at
-    typer.secho(f"✅ {message} completed in {duration:.2f}s", fg=typer.colors.GREEN)
 
 
 def analyze_code(file: Path, model: str) -> AgentContext:
@@ -130,7 +105,7 @@ def _validate_entrypoint(entrypoint: Path):
     if not entrypoint.exists():
         typer.secho(f"❌ Entrypoint file not found: {entrypoint}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
-    with loading("Validating entrypoint…"):
+    with loading("Validating entrypoint…", animated_emoji=True):
         with PyScriptTracer(entrypoint) as tracer:
             tracer()
 
@@ -160,7 +135,7 @@ def _optimization_run(
     else:
         data = list(SyntheticDatum.objects.all().values_list("input_data", flat=True))
         if not data:
-            with loading(f"Generating {examples} synthetic inputs…"):
+            with loading(f"Generating {examples} synthetic inputs…", animated_emoji=True):
                 data = [d.input_data for d in generate_data(context, examples, seed, model=synthesizer)]
             with (cwd / "synthetic_data.json").open("w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
@@ -242,23 +217,55 @@ def _optimization_run(
 cli = typer.Typer(rich_markup_mode="markdown")
 
 
-@cli.command()
+@cli.command(
+    help=dedent(
+        """
+        Interactive `aiai` CLI as described in `aiai/cli/README.md`.
+
+        You can provide custom data with --data and a custom evaluation function with --custom-eval-file.
+        The custom evaluation file should contain an 'main' function that takes agent output and returns a reward dict.
+
+        Args:
+            analyzer: Model to use for code analysis
+            evaluator: Model to use for evaluation
+            optimizer: Model to use for optimization
+            synthesizer: Model to use for data synthesis
+            data: Path to custom data file
+            custom_eval_file: Path to custom evaluation file
+            examples: Number of synthetic examples to generate
+            seed: Seed for synthetic data generation
+            concurrency: Number of concurrent evaluation runs
+        """
+    )
+)
 def main(
-    analyzer: str = "openai/o4-mini",
-    evaluator: str = "openai/o4-mini",
-    optimizer: str = "openai/gpt-4.1",
-    synthesizer: str = "openai/gpt-4.1-nano",
-    data: Path = None,
-    custom_eval_file: Path = None,
-    examples: int = 25,
-    seed: int = 42,
-    concurrency: int = 16,
-):  # noqa: C901 – the CLI can be a bit long
+    analyzer: str = typer.Option("openai/o4-mini", help="Model to use for code analysis"),
+    evaluator: str = typer.Option("openai/o4-mini", help="Model to use for evaluation"),
+    optimizer: str = typer.Option("openai/gpt-4.1", help="Model to use for optimization"),
+    synthesizer: str = typer.Option("openai/gpt-4.1-nano", help="Model to use for data synthesis"),
+    data: Optional[Path] = typer.Option(None, help="Path to custom data file (--data)"),
+    custom_eval_file: Optional[Path] = typer.Option(None, help="Path to custom evaluation file (--custom-eval-file)"),
+    examples: int = typer.Option(25, help="Number of synthetic examples to generate (--examples)"),
+    seed: int = typer.Option(42, help="Seed for synthetic data generation (--seed)"),
+    concurrency: int = typer.Option(16, help="Number of concurrent evaluation runs (--concurrency)"),
+    run_demo_agent: bool = typer.Option(
+        False, "--run-demo-agent", help="Run the demo agent (OpenAI example) and exit."
+    ),
+):
     """Interactive `aiai` CLI as described in `aiai/cli/README.md`.
 
     You can provide custom data with --data and a custom evaluation function with --custom-eval-file.
     The custom evaluation file should contain an 'main' function that takes agent output and returns a reward dict.
     """
+    # --- Logging setup (moved up)
+    log_init()
+    log_event("main_call_start")
+
+    # --- Argument validation
+    if custom_eval_file and not custom_eval_file.exists():
+        typer.secho(f"❌ Custom evaluation file not found: {custom_eval_file}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+
     if examples > 25:
         typer.secho(
             "⚠️  Maximum number of synthetic examples is 25. Setting to 25.\n",
@@ -269,17 +276,19 @@ def main(
     load_dotenv()
 
     typer.secho("\n🚀 Welcome to aiai! 🤖\n", fg=typer.colors.BRIGHT_CYAN, bold=True)
-    log_init()
 
     # ------------------------------------------------------------------
     # 1️⃣  Agent selection
     # ------------------------------------------------------------------
-    typer.secho("What would you like to optimize?\n (1) Outbound email agent (Demo)\n (2) My own agent")
-    choice = typer.prompt("Enter your choice (1 or 2)", type=int)
+    if not run_demo_agent:
+        typer.secho("What would you like to optimize?\n (1) Outbound email agent (Demo)\n (2) My own agent")
+        choice = typer.prompt("Enter your choice (1 or 2)", type=int)
 
-    if choice not in (1, 2):
-        typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+        if choice not in (1, 2):
+            typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
+    else:
+        choice = 1
 
     if choice == 1:
         if not os.getenv("OPENAI_API_KEY"):
@@ -293,7 +302,7 @@ def main(
         # or we pass the root path explicitly.
         # For simplicity, using a relative path from expected root execution
         log_event("demo")
-        entrypoint = (Path(__file__).parent / "examples/crewai_agent.py").resolve()
+        entrypoint = (Path(__file__).parent / "examples/openai_agent.py").resolve()
 
     elif choice == 2:
         typer.secho(
@@ -349,7 +358,7 @@ def main(
     # ------------------------------------------------------------------
     # 4️⃣  Code analysis ➜ Dependency graph
     # ------------------------------------------------------------------
-    with loading("Analyzing code…"):
+    with loading("Analyzing code…", animated_emoji=True):
         opt_ctx = analyze_code(entrypoint, analyzer)
     typer.echo(opt_ctx.analysis.what)
     log_event(
@@ -391,7 +400,7 @@ def main(
                 )
         else:
             # No need for inner import now
-            with loading("Generating evals…"):
+            with loading("Generating evals…", animated_emoji=True):
                 generator = EvalGenerator(opt_ctx, evaluator)
                 rules_eval, _ = generator.perform()  # Ignore head_to_head
             typer.echo(rules_eval.prompt.strip())

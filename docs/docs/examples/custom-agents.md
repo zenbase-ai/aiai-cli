@@ -15,23 +15,37 @@ Before optimizing your own agent, make sure you have:
 
 ## Preparing Your Agent
 
-AIAI CLI requires an entrypoint file that contains a `main()` function. This function should:
+To optimize your agent with AIAI CLI, you need to create an "entrypoint file" - a simple Python file that connects your agent to the optimization system.
 
-1. Accept an input example parameter
-2. Run your agent with that input
-3. Return the agent's raw output
+### What is an entrypoint file?
 
-Here's an example of a properly structured entrypoint file:
+An entrypoint file is just a Python file with a `main()` function that:
+- Takes an input from AIAI
+- Passes that input to your agent
+- Returns your agent's output
 
-```python
-def main(example=None):
-    crew = get_crewai_agent()
-    example = example or "default example"
-    result = crew.kickoff({"input": example})
-    return result.raw
+### Creating your entrypoint.py
+
+Create a file named `entrypoint.py` in your project with this structure:
+
+```python title="entrypoint.py"
+def main(inputs=None):
+    # Get your agent using your preferred method
+    agent = get_your_own_agent()
+    
+    # Use the inputs or a default if none provided
+    inputs = inputs or "default example"
+    
+    # Run your agent with the inputs
+    result = agent.run(inputs)
+    
+    # Return the raw output from your agent
+    return result
 ```
 
-Save this file in your project directory. It will be the starting point for the optimization process.
+> **Important:** The `inputs` parameter lets AIAI test your agent with different inputs. Make sure your agent uses this input to generate its response.
+
+This file will be the starting point for the optimization process.
 
 ## Running the Optimization
 
@@ -62,7 +76,7 @@ runs your agent with the provided example.
 Path to entrypoint:
 ```
 
-Enter the full path to your entrypoint file (e.g., `/path/to/your/agent.py`).
+Enter the full path to your entrypoint file (e.g., `/path/to/your/entrypoint.py`).
 
 After providing the path, the optimization process begins:
 
