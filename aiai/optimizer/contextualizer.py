@@ -34,9 +34,11 @@ class OptimizerPrompts(BaseModel):
     """
 
     synthetic_data: str = Field(
-        description="A prompt to generate realistic synthetic data. "
-        "Make sure it is generating just one data point."
-        "Make sure it just generate input values."
+        description=(
+            "A prompt to generate realistic synthetic data. "
+            "Make sure it is generating just one data point. "
+            "Make sure it just generates input values."
+        )
     )
     reward_reasoning: str = Field(
         description=(
