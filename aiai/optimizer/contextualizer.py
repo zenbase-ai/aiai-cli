@@ -33,7 +33,11 @@ class OptimizerPrompts(BaseModel):
     Do not describe code-related success/failure modes.
     """
 
-    synthetic_data: str = Field(description="A prompt to generate realistic synthetic data.")
+    synthetic_data: str = Field(
+        description="A prompt to generate realistic synthetic data. "
+        "Make sure it is generating just one data point."
+        "Make sure it just generate input values."
+    )
     reward_reasoning: str = Field(
         description=(
             "A prompt to generate hypothetical reasoning for a given reward given the execution trace of the agent."

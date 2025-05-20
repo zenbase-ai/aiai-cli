@@ -400,7 +400,7 @@ def main(
                 )
         else:
             # No need for inner import now
-            with loading("Generating evals…"):
+            with loading("Generating evals…", animated_emoji=True):
                 generator = EvalGenerator(opt_ctx, evaluator)
                 rules_eval, _ = generator.perform()  # Ignore head_to_head
             typer.echo(rules_eval.prompt.strip())
