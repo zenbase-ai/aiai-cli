@@ -105,78 +105,6 @@ def test_cli_demo_agent_success(
 @patch("aiai.main.typer.prompt")
 @patch("aiai.main._validate_entrypoint")
 @patch("aiai.main.analyze_code")
-@patch("aiai.main._optimization_run")
-@patch("aiai.main.reset_db")
-@patch("aiai.main.load_dotenv")
-@patch.object(sys, "argv", ["aiai", "--custom-eval-file", "test_eval.py"])
-def test_cli_with_custom_eval_file(
-    mock_load_dotenv,
-    mock_reset_db,
-    mock_optimization_run,
-    mock_analyze_code,
-    mock_validate_entrypoint,
-    mock_prompt,
-    capsys,
-):
-    """Test the path using a custom evaluation file."""
-    # Create a temporary file with a valid custom eval function
-    with tempfile.NamedTemporaryFile(suffix=".py", mode="w") as temp_file:
-        temp_file.write("""
-def main(agent_output):
-    return {"reward": 0.75}
-        """)
-        temp_file.flush()
-
-        custom_eval_path = Path(temp_file.name)
-
-        # Simulate user choosing '2' for custom agent
-        mock_prompt.return_value = 2
-        # Second prompt is for the entrypoint path
-        mock_prompt.side_effect = [2, str(custom_eval_path)]
-
-        # Mock core functions
-        mock_validate_entrypoint.return_value = None
-        mock_analyze_code.return_value = AgentContext(
-            "",
-            AgentAnalysis(
-                what="",
-                how="",
-                success_modes=[],
-                failure_modes=[],
-                expert_persona="",
-                considerations=[],
-            ),
-            OptimizerPrompts(
-                synthetic_data="",
-                reward_reasoning="",
-                traces_to_patterns="",
-                patterns_to_insights="",
-                insights_to_rules="",
-                synthesize_rules="",
-                rule_merger="",
-            ),
-        )
-
-        # Act - invoke CLI with custom eval file
-        result = runner.invoke(cli, ["--custom-eval-file", str(custom_eval_path)])
-
-        # Assert
-        assert result.exit_code == 0, f"CLI exited with code {result.exit_code}\nOutput:\n{result.output}"
-        assert "Using custom evaluation file" in result.output
-        assert "Custom evaluation function 'main' loaded successfully" in result.output
-
-        # Verify optimization was run with the custom eval function
-        mock_optimization_run.assert_called_once()
-        # Get the custom_eval_fn that was passed to _optimization_run
-        args, kwargs = mock_optimization_run.call_args
-        assert "custom_eval_fn" in kwargs
-        assert kwargs["custom_eval_fn"] is not None
-
-
-@pytest.mark.django_db
-@patch("aiai.main.typer.prompt")
-@patch("aiai.main._validate_entrypoint")
-@patch("aiai.main.analyze_code")
 @patch("aiai.main.reset_db")
 @patch("aiai.main.load_dotenv")
 @patch("aiai.main.generate_data")
@@ -190,26 +118,31 @@ def test_custom_eval_function_is_automatically_executed(
     monkeypatch,
 ):
     """Test that verifies the custom evaluation function is automatically executed during the optimization process."""
-    # Create a temporary custom eval file
+    # Create a temporary entrypoint file that includes both a main() and an eval() function
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w") as temp_file:
-        temp_file.write("""
-def main(agent_output):
+        temp_file.write(
+            """
+def main(example=None):
+    return "dummy output"
+
+
+def eval(agent_output):
     # This function will be called during the BatchRunner execution
     with open('eval_was_executed.txt', 'w') as f:
         f.write('Custom eval function was executed!')
-    return {"reward": 0.75}
-        """)
+    return {\"reward\": 0.75}
+            """
+        )
         temp_file.flush()
 
         # Setup test environment
-        custom_eval_path = Path(temp_file.name)
-        entrypoint_path = Path(__file__).parent.parent / "examples" / "crewai_agent.py"
+        entrypoint_path = Path(temp_file.name)
 
         # Generate mock data
         mock_data = ["Test input 1", "Test input 2"]
         mock_generate_data.return_value = [MagicMock(input_data=d) for d in mock_data]
 
-        # Mock user input
+        # Mock user input: choose custom agent (option 2) and provide entrypoint path
         mock_prompt.side_effect = [2, str(entrypoint_path)]
 
         # Mock validation and analysis
@@ -258,8 +191,8 @@ def main(agent_output):
             if Path("eval_was_executed.txt").exists():
                 Path("eval_was_executed.txt").unlink()
 
-            # Run the CLI with our custom eval file
-            runner.invoke(cli, ["--custom-eval-file", str(custom_eval_path)])
+            # Run the CLI; prompts will supply entrypoint path containing eval function
+            runner.invoke(cli)
 
             # Verify the evaluation function was called by checking for the file
             assert Path("eval_was_executed.txt").exists()
@@ -268,3 +201,69 @@ def main(agent_output):
 
             # Clean up
             Path("eval_was_executed.txt").unlink()
+
+
+@pytest.mark.django_db
+@patch("aiai.main.typer.prompt")
+@patch("aiai.main._validate_entrypoint")
+@patch("aiai.main.analyze_code")
+@patch("aiai.main._optimization_run")
+@patch("aiai.main.reset_db")
+@patch("aiai.main.load_dotenv")
+@patch.object(sys, "argv", ["aiai"])
+def test_cli_with_entrypoint_eval_function(
+    mock_load_dotenv,
+    mock_reset_db,
+    mock_optimization_run,
+    mock_analyze_code,
+    mock_validate_entrypoint,
+    mock_prompt,
+):
+    """Ensure CLI successfully loads an `eval` function defined inside the entrypoint."""
+
+    # Create a temporary entrypoint with both main() and eval()
+    with tempfile.NamedTemporaryFile(suffix=".py", mode="w") as tmp_entry:
+        tmp_entry.write(
+            """
+def main(example=None):
+    return "dummy output"
+
+
+def eval(agent_output):
+    return {\"reward\": 1.0}
+            """
+        )
+        tmp_entry.flush()
+
+        entrypoint_path = Path(tmp_entry.name)
+
+        # Simulate user choices: custom agent (2) then entrypoint path
+        mock_prompt.side_effect = [2, str(entrypoint_path)]
+
+        # Mock out heavy operations
+        mock_validate_entrypoint.return_value = None
+        mock_analyze_code.return_value = AgentContext(
+            "",
+            AgentAnalysis(what="", how="", success_modes=[], failure_modes=[], expert_persona="", considerations=[]),
+            OptimizerPrompts(
+                synthetic_data="",
+                reward_reasoning="",
+                traces_to_patterns="",
+                patterns_to_insights="",
+                insights_to_rules="",
+                synthesize_rules="",
+                rule_merger="",
+            ),
+        )
+
+        # Invoke CLI
+        result = runner.invoke(cli)
+
+        # Expectations
+        assert result.exit_code == 0, result.output
+        assert "Entrypoint evaluation function 'eval' loaded successfully." in result.output
+
+        # Ensure optimization run received the custom eval fn
+        mock_optimization_run.assert_called_once()
+        _, kwargs = mock_optimization_run.call_args
+        assert kwargs.get("custom_eval_fn") is not None

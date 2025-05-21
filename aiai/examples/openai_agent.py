@@ -68,4 +68,3 @@ def test_eval(agent_output):
     score += random.uniform(0, 1)
 
     return {"reward": score}
-
