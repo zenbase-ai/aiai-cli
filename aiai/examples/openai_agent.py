@@ -1,4 +1,5 @@
 import os
+import random
 
 import openai
 
@@ -49,3 +50,22 @@ def main(example=None):
 
     final_output = f"OUTLINE:\n{outline}\n\nCONTENT:\n{full_content}"
     return final_output
+
+
+# Template for custom evaluation functions. To use, change the name of the following function to `eval`
+def test_eval(agent_output):
+    """
+    Custom evaluation function that scores agent output.
+
+    Args:
+        agent_output: The output from the agent to evaluate
+
+    Returns:
+        A dictionary with a 'reward' key containing a float from 0 to 1
+    """
+    score = 0.0
+
+    score += random.uniform(0, 1)
+
+    return {"reward": score}
+
