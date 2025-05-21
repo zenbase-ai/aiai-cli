@@ -24,7 +24,7 @@ def generate_data(
 
     from aiai.app.models import FunctionInfo, SyntheticDatum
 
-    assert 0 < count <= 25, "Count must be between 1 and 25."
+    assert 1 <= count <= 25, "Count must be between 1 and 25."
 
     examples = examples or get_examples(list(FunctionInfo.objects.all()))
 

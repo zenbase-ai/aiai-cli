@@ -9,7 +9,6 @@ import pydash
 from docetl.api import ClusterOp, Dataset, MapOp, Pipeline, PipelineOutput, PipelineStep, ReduceOp, UnnestOp
 
 from aiai.optimizer.contextualizer import AgentContext
-from aiai.utils import setup_django
 
 cwd = Path(__file__).parent
 
@@ -389,7 +388,7 @@ def build_pipeline(context: AgentContext, **kwargs) -> Pipeline:
                     requirement, or if it's more nuanced, place it in the "tips" section instead.
 
                     3. For each rule and tip, provide a reasoning that explains why it's important based
-                    on the insights and patterns observed in the trace data. Ensure the reasoning is 
+                    on the insights and patterns observed in the trace data. Ensure the reasoning is
                     specific, evidence-based, and explains the impact on the agent's performance.
 
                     Format your response as a JSON with the following structure:
@@ -519,6 +518,8 @@ def generate_rules_and_tips(context: AgentContext, model="openai/o4-mini") -> di
 
 
 if __name__ == "__main__":
+    from aiai.utils import setup_django
+
     setup_django()
     from aiai.app.models import OtelSpan
 

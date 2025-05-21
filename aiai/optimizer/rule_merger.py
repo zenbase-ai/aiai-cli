@@ -1,4 +1,5 @@
 import json
+from textwrap import dedent
 
 import instructor
 import litellm
@@ -31,14 +32,16 @@ def merge_rules(
         messages=[
             {
                 "role": "system",
-                "content": (
-                    "You are an expert prompt engineer. "
-                    "You are tasked with combining rules for prompting. "
-                    "Combine these rules into a single, semantically deduplicated yet comprehensive set of rules. "
-                    "The new rules include new learnings. "
-                    "These rules will be injected into a prompt. "
-                    "These rules should be direct and actionable for an LLM. "
-                    "Rules should only come from the old and new rules."
+                "content": dedent(
+                    """\
+                    You are an expert prompt engineer.
+                    You are tasked with combining rules for prompting.
+                    Combine these rules into a single, semantically deduplicated yet comprehensive set of rules.
+                    The new rules include new learnings.
+                    These rules will be injected into a prompt.
+                    These rules should be direct and actionable for an LLM.
+                    Rules should only come from the old and new rules.
+                    """
                 ),
             },
             {
