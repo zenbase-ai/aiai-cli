@@ -174,6 +174,28 @@ aiai \
 --synthesizer="azure/gpt-4o"
 ```
 
+## Custom Evaluation
+
+Instead of using AIAI's automatically generated evaluation criteria, you can provide your own custom evaluation function in your entrypoint file:
+
+
+1. Define a function named `eval` in your entrypoint file that takes a single parameter (agent_output)
+2. The function can return any output format needed for your evaluation
+
+
+```python
+def eval(agent_output):
+    """Custom evaluation function"""
+    # Your evaluation logic here
+    # Can return any value or structure:
+    return {
+        "overall_score": 0.85,
+        "metrics": {"relevance": 0.9, "accuracy": 0.8}
+    }
+```
+
+When detected, this function will be used instead of the default evaluator. For a complete example, see [Adding Custom Evaluation Functions](../examples/custom-agents.md#adding-custom-evaluation-functions).
+
 ## Related Topics
 
 - [Installation](../getting-started/getting-started.md)
