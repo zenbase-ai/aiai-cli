@@ -97,7 +97,7 @@ data.json should be a JSON file with a list of inputs.
     "input1",
     "input2",
 ]
-```
+```json
 
 ### Synthetic Data Options
 
