@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from textwrap import dedent
@@ -296,13 +297,33 @@ def main(
             if not typer.confirm("Have you added an `OPENAI_API_KEY` to the `.env` file?", default=False):
                 raise typer.Exit(code=1)
 
-        # Path to the pre‑configured demo entrypoint
-        # NOTE: This path needs adjustment when run from cli/app.py
-        # Let's assume the script is run from the project root for now,
-        # or we pass the root path explicitly.
-        # For simplicity, using a relative path from expected root execution
         log_event("demo")
-        entrypoint = (Path(__file__).parent / "examples/openai_agent.py").resolve()
+
+        source_examples_dir = (Path(__file__).parent / "aiai_demo").resolve()
+        target_examples_dir = Path.cwd() / "aiai_demo"
+
+        try:
+            if not target_examples_dir.exists():
+                shutil.copytree(source_examples_dir, target_examples_dir)
+                typer.secho(
+                    f"📁 Demo files copied to {target_examples_dir}",
+                    fg=typer.colors.GREEN,
+                )
+            else:
+                typer.secho(
+                    f"📁 Using existing demo directory at {target_examples_dir}",
+                    fg=typer.colors.YELLOW,
+                )
+        except Exception as exc:  # noqa: BLE001 – non-critical failure
+            # Fall back to using the packaged version if copying fails
+            typer.secho(
+                f"⚠️  Failed to copy demo files: {exc}\nUsing packaged example instead.",
+                fg=typer.colors.YELLOW,
+            )
+            target_examples_dir = source_examples_dir
+
+        # Set the entrypoint to the copied (or packaged) demo agent
+        entrypoint = (target_examples_dir / "entrypoint.py").resolve()
 
     elif choice == 2:
         typer.secho(
