@@ -47,6 +47,52 @@ def main(inputs=None):
 
 This file will be the starting point for the optimization process.
 
+### Adding Custom Evaluation Functions
+
+You can optionally add a custom evaluation function to your entrypoint file to control how AIAI evaluates your agent's outputs. This is useful when you have specific criteria for judging your agent's performance.
+
+To add a custom evaluator:
+
+1. Define a function named `eval` in your entrypoint file
+2. The function should take a single parameter (agent output)
+3. The function can return any output format you need for your evaluation logic
+
+```python title="entrypoint.py with custom evaluation"
+def main(inputs=None):
+    # Your agent logic here
+    # ...
+    return result
+
+def eval(agent_output):
+    """
+    Custom evaluation function that processes agent output.
+
+    Args:
+        agent_output: The output from the agent to evaluate
+
+    Returns:
+        Can return any value or structure based on your evaluation needs
+    """
+    # Your custom evaluation logic
+    # This can be as simple or complex as needed
+    
+    # Example 1: Return a dictionary with multiple metrics
+    return {
+        "conciseness": 0.85,
+        "relevance": 0.92,
+        "accuracy": 0.78,
+        "overall_score": 0.85
+    }
+    
+    # Example 2: Return a simple score
+    # return 0.85
+    
+    # Example 3: Return a boolean
+    # return agent_output.startswith("The answer is")
+```
+
+When AIAI CLI detects the `eval` function in your entrypoint, it will use this instead of generating its own evaluation criteria.
+
 ## Running the Optimization
 
 Start the optimization process by running:

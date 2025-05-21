@@ -1,5 +1,12 @@
 # Getting Started
 
+If you want to jump straight to optimizing your own agent, see the [Optimizing Your Own Agent](../examples/custom-agents.md) guide.
+
+## System Requirements
+
+- Python 3.11 or higher
+- OpenAI API key
+
 To get started using AIAI CLI:
 
 1. Install AIAI CLI from PyPI with:
@@ -19,24 +26,6 @@ Set your OpenAI API key in your shell environment:
 ```bash
 export OPENAI_API_KEY=sk-your-api-key
 ```
-
-## System Requirements
-
-- Python 3.11 or higher
-- pip (Python package manager)
-- Virtual environment (recommended)
-
-## Understanding AIAI CLI
-
-AIAI CLI is designed to optimize AI agents through an interactive process:
-
-1. **Code Analysis** - AIAI analyzes your agent's code to build a dependency graph
-2. **Evaluation Generation** - The system creates evaluation criteria specific to your agent
-3. **Synthetic Data** - Test examples are generated to evaluate performance
-4. **Rule Extraction** - Optimization rules are extracted by analyzing execution traces
-5. **Rule Localization** - The system identifies exactly where to apply optimizations
-
-Each of these steps works together to improve your agent's performance and reliability.
 
 ## Running Your First Optimization
 
