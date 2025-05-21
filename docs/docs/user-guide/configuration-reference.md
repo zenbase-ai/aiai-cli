@@ -97,7 +97,7 @@ data.json should be a JSON file with a list of inputs.
     "input1",
     "input2",
 ]
-```json
+```
 
 ### Synthetic Data Options
 
@@ -187,11 +187,19 @@ Instead of using AIAI's automatically generated evaluation criteria, you can pro
 def eval(agent_output):
     """Custom evaluation function"""
     # Your evaluation logic here
-    # Can return any value or structure:
+    # Example 1: Return a dictionary with multiple metrics
     return {
-        "overall_score": 0.85,
-        "metrics": {"relevance": 0.9, "accuracy": 0.8}
+        "conciseness": 0.85,
+        "relevance": 0.92,
+        "accuracy": 0.78,
+        "overall_score": 0.85
     }
+    
+    # Example 2: Return a simple score
+    # return 0.85
+    
+    # Example 3: Return a boolean
+    # return agent_output.startswith("The answer is")
 ```
 
 When detected, this function will be used instead of the default evaluator. For a complete example, see [Adding Custom Evaluation Functions](../examples/custom-agents.md#adding-custom-evaluation-functions).
