@@ -214,6 +214,56 @@ def _optimization_run(
     typer.echo(f"\n📝 Report saved to: {report_path}\n")
 
 
+def get_evaluation(
+    entrypoint: Path, *, opt_ctx: AgentContext, evaluator: str
+) -> tuple[Optional[Callable], Optional[RulesEval]]:
+    """Return a tuple of (custom_eval_fn, rules_eval).
+
+    Priority order:
+    1. If the entrypoint module defines a callable named ``eval`` it is used as the
+       evaluation function.
+    2. Otherwise we fall back to generating evaluation criteria
+
+    """
+
+    custom_eval_fn: Optional[Callable] = None
+    rules_eval: Optional[RulesEval] = None
+
+    try:
+        import importlib.util
+        import sys
+
+        # Dynamically import the entrypoint module so that we can introspect it
+        spec = importlib.util.spec_from_file_location(entrypoint.stem, entrypoint)
+        if spec and spec.loader:
+            entry_mod = importlib.util.module_from_spec(spec)
+            sys.modules[entrypoint.stem] = entry_mod  # type: ignore[arg-type]
+            spec.loader.exec_module(entry_mod)  # type: ignore[arg-type]
+
+            # Look for a callable named `eval`
+            potential_eval = getattr(entry_mod, "eval", None)
+            if callable(potential_eval):
+                custom_eval_fn = potential_eval
+                typer.echo("Entrypoint evaluation function 'eval' loaded successfully.")
+
+        # If we did not find an eval function, generate evaluation rules instead
+        if custom_eval_fn is None:
+            with loading("Generating evals…", animated_emoji=True):
+                generator = EvalGenerator(opt_ctx, evaluator)
+                rules_eval, _ = generator.perform()  # Ignore head_to_head
+            typer.echo(rules_eval.prompt.strip())
+
+    except Exception as exc:  # noqa: BLE001 – non-critical failure
+        typer.secho(
+            f"⚠️  Skipped evaluation criteria generation due to error: {exc}\n",
+            fg=typer.colors.YELLOW,
+        )
+        custom_eval_fn = None
+        rules_eval = None
+
+    return custom_eval_fn, rules_eval
+
+
 cli = typer.Typer(rich_markup_mode="markdown")
 
 
@@ -244,7 +294,6 @@ def main(
     optimizer: str = typer.Option("openai/gpt-4.1", help="Model to use for optimization"),
     synthesizer: str = typer.Option("openai/gpt-4.1-nano", help="Model to use for data synthesis"),
     data: Optional[Path] = typer.Option(None, help="Path to custom data file (--data)"),
-    custom_eval_file: Optional[Path] = typer.Option(None, help="Path to custom evaluation file (--custom-eval-file)"),
     examples: int = typer.Option(25, help="Number of synthetic examples to generate (--examples)"),
     seed: int = typer.Option(42, help="Seed for synthetic data generation (--seed)"),
     concurrency: int = typer.Option(16, help="Number of concurrent evaluation runs (--concurrency)"),
@@ -261,10 +310,43 @@ def main(
     log_init()
     log_event("main_call_start")
 
-    # --- Argument validation
-    if custom_eval_file and not custom_eval_file.exists():
-        typer.secho(f"❌ Custom evaluation file not found: {custom_eval_file}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
+    load_dotenv()
+
+    # ------------------------------------------------------------------
+    # Load configuration from JSON file if provided via `config` env var
+    # ------------------------------------------------------------------
+    config_path_str = os.getenv("config")
+    if config_path_str:
+        try:
+            config_path = Path(config_path_str).expanduser()
+            with config_path.open("r", encoding="utf-8") as f:
+                cfg = json.load(f)
+        except FileNotFoundError:
+            typer.secho(
+                f"⚠️  Config file not found: {config_path_str}. Continuing with provided parameters.\n",
+                fg=typer.colors.YELLOW,
+            )
+        except json.JSONDecodeError as exc:
+            typer.secho(
+                f"⚠️  Failed to parse config file '{config_path_str}': {exc}. Continuing with provided parameters.\n",
+                fg=typer.colors.YELLOW,
+            )
+        else:
+            # Override CLI / default values with those supplied in the JSON file
+            typer.echo(f"Using config file: {config_path}")
+            analyzer = cfg.get("analyzer", analyzer)
+            evaluator = cfg.get("evaluator", evaluator)
+            optimizer = cfg.get("optimizer", optimizer)
+            synthesizer = cfg.get("synthesizer", synthesizer)
+
+            data_value = cfg.get("data")
+            if data_value is not None:
+                data = Path(data_value).expanduser()
+
+            examples = cfg.get("examples", examples)
+            seed = cfg.get("seed", seed)
+            concurrency = cfg.get("concurrency", concurrency)
+            run_demo_agent = cfg.get("run_demo_agent", run_demo_agent)
 
     if examples > 25:
         typer.secho(
@@ -272,8 +354,6 @@ def main(
             fg=typer.colors.YELLOW,
         )
         examples = 25
-
-    load_dotenv()
 
     typer.secho("\n🚀 Welcome to aiai! 🤖\n", fg=typer.colors.BRIGHT_CYAN, bold=True)
 
@@ -333,7 +413,6 @@ def main(
             optimizer=optimizer,
             synthesizer=synthesizer,
             data=str(data),
-            custom_eval_file=str(custom_eval_file) if custom_eval_file else None,
             examples=examples,
             seed=seed,
             concurrency=concurrency,
@@ -370,47 +449,7 @@ def main(
     # ------------------------------------------------------------------
     # 5️⃣  Evaluation criteria generation or loading
     # ------------------------------------------------------------------
-    rules_eval = None
-    custom_eval_fn = None
-
-    try:
-        if custom_eval_file and custom_eval_file.exists():
-            typer.echo(f"Using custom evaluation file: {custom_eval_file}")
-            # Import the custom evaluation module
-            import importlib.util
-            import sys
-
-            module_name = custom_eval_file.stem
-            spec = importlib.util.spec_from_file_location(module_name, custom_eval_file)
-            if spec is None or spec.loader is None:
-                raise ImportError(f"Could not load custom eval file: {custom_eval_file}")
-
-            custom_eval_module = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = custom_eval_module
-            spec.loader.exec_module(custom_eval_module)
-
-            # Check if the module has a main function
-            if hasattr(custom_eval_module, "main"):
-                custom_eval_fn = custom_eval_module.main
-                typer.echo("Custom evaluation function 'main' loaded successfully.")
-            else:
-                typer.secho(
-                    "⚠️  Custom eval file must contain a 'main' function.\n",
-                    fg=typer.colors.YELLOW,
-                )
-        else:
-            # No need for inner import now
-            with loading("Generating evals…", animated_emoji=True):
-                generator = EvalGenerator(opt_ctx, evaluator)
-                rules_eval, _ = generator.perform()  # Ignore head_to_head
-            typer.echo(rules_eval.prompt.strip())
-    except Exception as exc:  # noqa: BLE001 – non‑critical failure
-        typer.secho(
-            f"⚠️  Skipped evaluation criteria generation due to error: {exc}\n",
-            fg=typer.colors.YELLOW,
-        )
-        rules_eval = None
-        custom_eval_fn = None
+    custom_eval_fn, rules_eval = get_evaluation(entrypoint, opt_ctx=opt_ctx, evaluator=evaluator)
 
     # ------------------------------------------------------------------
     # 6️⃣  Optimization run
