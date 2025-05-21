@@ -210,7 +210,6 @@ def eval(agent_output):
 @patch("aiai.main._optimization_run")
 @patch("aiai.main.reset_db")
 @patch("aiai.main.load_dotenv")
-@patch.object(sys, "argv", ["aiai"])
 def test_cli_with_entrypoint_eval_function(
     mock_load_dotenv,
     mock_reset_db,
