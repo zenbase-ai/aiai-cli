@@ -478,7 +478,7 @@ class RuleLocator:
                             </data_files>
 
                             Here is the specific rule to add:
-                            
+
                             <rule>
                                 <{rule_type}>
                                     {rule}
@@ -502,7 +502,7 @@ class RuleLocator:
             # Create progress bar
             progress_bar = tqdm.tqdm(
                 total=len(future_to_rule),
-                desc="Finding related file",
+                desc="Finding related files",
                 unit="rule",
                 file=sys.stdout,
                 dynamic_ncols=True,
@@ -626,25 +626,25 @@ class RuleLocator:
                             "role": "system",
                             "content": dedent(
                                 """\
-                                You are an expert in analyzing prompts in code. Your task is to determine 
+                                You are an expert in analyzing prompts in code. Your task is to determine
                                 PRECISELY where a specific rule should be inserted into a source code.
-                                
+
                                 You'll be given:
                                 1. The source code
                                 2. A single rule that needs to be added
                                 3. The reasoning behind this rule, explaining why it's important
-                                
+
                                 You need to identify the EXACT position to insert this rule, such as:
                                 - After an <instructions> tag
                                 - Within a specific section of the prompt
                                 - After other similar rules
-                                
+
                                 For the insertion point, provide:
                                 - The context before and after the insertion point (a few words)
                                 - A clear description of the position
                                 - Approximately the line number
-                                
-                                Focus on finding the most natural and effective position where this rule 
+
+                                Focus on finding the most natural and effective position where this rule
                                 would enhance the existing prompt without disrupting its structure.
                                 Use the reasoning to understand the rule's purpose and find the most
                                 contextually appropriate location.
@@ -656,13 +656,13 @@ class RuleLocator:
                             "content": dedent(
                                 f"""\
                                 Here is the source code:
-                                
+
                                 <source_code>
                                 {source_code}
                                 </source_code>
-                                
+
                                 Here is the rule to add:
-                                
+
                                 <rule>
                                     <{rule_type}>
                                         {rule_content}
@@ -673,7 +673,7 @@ class RuleLocator:
                                     {rule_reasoning}
                                 </reasoning>
 
-                                Please identify the precise position in the source code where this rule 
+                                Please identify the precise position in the source code where this rule
                                 should be inserted.
                                 """
                             ),

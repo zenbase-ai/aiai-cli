@@ -17,13 +17,7 @@ from aiai.runner.batch_runner import BatchRunner
 from aiai.runner.py_script_tracer import PyScriptTracer
 from aiai.synthesizer.data import generate_data
 from aiai.synthesizer.evals import EvalGenerator, RulesEval, SyntheticEvalRunner
-from aiai.utils import (
-    loading,
-    log_event,
-    log_init,
-    reset_db,
-    setup_django,
-)
+from aiai.utils import loading, log_event, log_init, reset_db, setup_django
 
 # Use absolute imports within the package
 
@@ -281,7 +275,9 @@ def main(
     # 1️⃣  Agent selection
     # ------------------------------------------------------------------
     if not run_demo_agent:
-        typer.secho("What would you like to optimize?\n (1) Outbound email agent (Demo)\n (2) My own agent")
+        typer.secho(
+            "What would you like to optimize?\n (1) Show me a simple demo agent\n (2) I want to optimize my own agent"
+        )
         choice = typer.prompt("Enter your choice (1 or 2)", type=int)
 
         if choice not in (1, 2):
